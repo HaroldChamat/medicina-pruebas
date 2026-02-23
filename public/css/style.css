@@ -1,0 +1,16 @@
+.card {
+    border-radius: 16px;
+}
+
+
+.btn {
+    border-radius: 10px;
+}
+
+header {
+    background-color: #f8f9fa;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
