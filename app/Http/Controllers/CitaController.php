@@ -49,7 +49,7 @@ class CitaController extends Controller
             $q->where('Nombre_cargo', 'Paciente')
         )->get();
 
-        $Citas = Cita::where('estado', '!=', 'Finalizada')->get();
+        
 
         return view('citas', compact('Citas', 'medicos', 'pacientes'));
     }

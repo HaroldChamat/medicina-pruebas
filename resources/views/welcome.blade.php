@@ -1,6 +1,13 @@
 @extends('layouts.app')
     @section('content')
-
+        @if(session('cargo'))
+            <div style="background:#f0f0f0; padding:10px; margin:10px;">
+                <strong>DEBUG:</strong>
+                cargo = {{ session('cargo') }} |
+                admin = {{ session('admin') }} |
+                user_id = {{ session('user_id') }}
+            </div>
+        @endif
         <header class="mb-4">
             <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm px-4">
                 <a class="navbar-brand fw-bold" href="{{ url('/') }}">
@@ -64,7 +71,7 @@
         @endif
 
         @if($nombreCargo)
-            @if ($nombreCargo === 'Admin')
+            @if ($nombreCargo === 'admin')
                 <div class="container mb-4">
                     <div class="alert alert-success d-flex align-items-center justify-content-between shadow-sm">
                         <div>
@@ -76,7 +83,7 @@
                 </div>
             @endif
             
-            @if ($nombreCargo === 'Admin' || $nombreCargo === 'Medico')
+            @if ($nombreCargo === 'admin' || $nombreCargo === 'Medico')
                 <div class="container">
                     <div class="row g-4">
                         <div class="col-md-6 p-5">
@@ -141,7 +148,7 @@
                     @endif
 
 
-                    @if ($nombreCargo === 'Medico' || $nombreCargo === 'Admin')
+                    @if ($nombreCargo === 'Medico' || $nombreCargo === 'admin')
                         <div class="col-md-6 p-5">
                             <div class="card h-100 shadow-sm border-0">
                                 <div class="card-body d-flex flex-column">
