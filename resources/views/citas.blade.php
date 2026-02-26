@@ -1,37 +1,7 @@
 @extends('layouts.app')
 @section('content')
 
-    <header class="mb-4 shadow-sm">
-        <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm px-4">
-            <a class="navbar-brand" href="{{ url('/') }}">
-                {{ config('app.name', 'Laravel') }}
-            </a>
 
-            {{-- Navegación solo para Admin y Médico --}}
-            @if(session('admin') === 1 || session('cargo') === 'Medico')
-                <div class="navbar-nav ms-auto">
-                    <a class="nav-link" href="/Informacion">Informes Medicos</a>
-                </div>
-                <div class="navbar-nav ms-auto">
-                    <a class="nav-link" href="/Especialidad">Especialidades</a>
-                </div>
-                <div class="navbar-nav ms-auto">
-                    <a class="nav-link" href="/Horario">Horarios</a>
-                </div>
-            @endif
-
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">Ir a inicio</a>
-            </div>
-
-            @if(session('cargo'))
-                <button type="button" class="btn btn-outline-danger">
-                    <a href="/logout" class="nav-link">Cerrar Sesión</a>
-                </button>
-            @endif
-
-        </nav>
-    </header>
 
     {{-- Filtros: solo Admin --}}
     @if(session('admin') === 1)
@@ -107,7 +77,19 @@
                                     @endif
                                 </td>
                                 <td>{{ \Carbon\Carbon::parse($cita->Fecha_y_hora)->format('d/m/Y H:i') }}</td>
-                                <td>{{ $cita->estado }}</td>
+                                <td>
+                                    @if($cita->estado === 'Pendiente')
+                                        <span class="badge bg-warning text-dark">⏳ Pendiente</span>
+                                    @elseif($cita->estado === 'Programada')
+                                        <span class="badge bg-primary">📅 Programada</span>
+                                    @elseif($cita->estado === 'Finalizada')
+                                        <span class="badge bg-success">✅ Finalizada</span>
+                                    @elseif($cita->estado === 'Cancelada')
+                                        <span class="badge bg-danger">❌ Cancelada</span>
+                                    @else
+                                        <span class="badge bg-secondary">{{ $cita->estado }}</span>
+                                    @endif
+                                </td>
 
                                 @if(session('admin') === 1 || session('cargo') === 'Medico')
                                     <td>
@@ -211,6 +193,7 @@
                             <label class="form-label">Estado</label>
                             <select id="estado" name="estado" class="form-select">
                                 <option value="Pendiente">Pendiente</option>
+                                <option value="Programada">Programada</option>
                                 <option value="Finalizada">Finalizada</option>
                                 <option value="Cancelada">Cancelada</option>
                             </select>

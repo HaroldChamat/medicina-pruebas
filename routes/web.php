@@ -9,37 +9,50 @@ use App\Http\Controllers\EspecialidadController;
 use App\Http\Controllers\InformeController;
 use App\Http\Controllers\HistorialController;
 
-Route::get('/Especialidad', [UserController::class, 'index_especialidad'])->name('Especialidad');
+// ── Rutas públicas ──────────────────────────────────────────────────────────
 Route::get('/', [UserController::class, 'index_welcome'])->name('welcome');
-Route::get('/C_usuario', [UserController::class, 'index'])->name('C_usuario');
-Route::post('/usuario/store', [UserController::class, 'store'])->name('User.store');
-Route::get('/Horario', [HorarioController::class, 'index'])->name('Horario');
-Route::resource('horario', HorarioController::class)->only(['store', 'update']);
 Route::post('/login', [LoginController::class, 'login'])->name('login');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
 
-// ── Solo Admin ──────────────────────────────────────────────────────
+// ── Solo Admin ──────────────────────────────────────────────────────────────
 Route::middleware(['cargo:Admin'])->group(function () {
-    Route::delete('/citas/{id}', [CitaController::class, 'destroy']);
-    Route::put('/citas/{id}', [CitaController::class, 'update']);
+    // Usuarios
+    Route::get('/C_usuario', [UserController::class, 'index'])->name('C_usuario');
+    Route::post('/usuario/store', [UserController::class, 'store'])->name('User.store');
+    Route::put('/usuario/{id}', [UserController::class, 'update'])->name('User.update');
+    Route::delete('/usuario/{id}', [UserController::class, 'destroy'])->name('User.destroy');
+
+    // Especialidades
+    Route::get('/Especialidad', [UserController::class, 'index_especialidad'])->name('Especialidad');
     Route::post('/usuario/especialidad', [EspecialidadController::class, 'actualizarEspecialidad']);
+
+    // Citas: solo Admin puede crear y eliminar
+    Route::post('/citas', [CitaController::class, 'store']);
+    Route::delete('/citas/{id}', [CitaController::class, 'destroy']);
 });
 
-// ── Admin y Médico ───────────────────────────────────────────────────
+// ── Admin y Médico ───────────────────────────────────────────────────────────
 Route::middleware(['cargo:Admin,Medico'])->group(function () {
     Route::get('/citas/{id}/edit', [CitaController::class, 'edit']);
+    Route::put('/citas/{id}', [CitaController::class, 'update']);   // ← movido aquí, antes solo era Admin
+
     Route::get('/Informacion', [InformeController::class, 'index_paciente'])->name('informe.paciente');
     Route::get('/Informe/{cita}', [InformeController::class, 'create'])->name('informe.create');
     Route::post('/Informe/{cita}', [InformeController::class, 'store'])->name('informe.store');
+    Route::put('/Informe/{cita}', [InformeController::class, 'update'])->name('informe.update');
     Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
+
+    // Horarios
+    Route::get('/Horario', [HorarioController::class, 'index'])->name('Horario');
+    Route::resource('horario', HorarioController::class)->only(['store', 'update']);
 });
 
-// ── Admin y Paciente (crear cita) ────────────────────────────────────
+// ── Admin y Paciente (solicitar cita) ────────────────────────────────────────
 Route::middleware(['cargo:Admin,Paciente'])->group(function () {
     Route::post('/citas', [CitaController::class, 'store']);
 });
 
-// ── Todos los roles autenticados ─────────────────────────────────────
+// ── Todos los roles autenticados ─────────────────────────────────────────────
 Route::middleware(['cargo:Admin,Medico,Paciente'])->group(function () {
     Route::get('/citas', [CitaController::class, 'index'])->name('citas');
     Route::get('/citas/horas-disponibles', [CitaController::class, 'horasDisponibles']);
