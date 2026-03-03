@@ -9,8 +9,14 @@ class HistorialController extends Controller
 {
     public function index(User $paciente)
     {
+        // Seguridad: paciente solo puede ver su propio historial
+        if (session('cargo') === 'Paciente' && session('user_id') != $paciente->id) {
+            abort(403, 'No autorizado');
+        }
+
         $historial = Cita::with([
-                'medico',
+                'medico.especialidad',
+                'medico.cargo',
                 'enfermedad',
                 'tratamiento'
             ])

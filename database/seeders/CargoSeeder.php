@@ -15,13 +15,13 @@ class CargoSeeder extends Seeder
         $cargos = [
             ['Nombre_cargo' => 'Paciente'],
             ['Nombre_cargo' => 'Medico'],
-            ['Nombre_cargo' => 'Otro'],   // Admin general
+            ['Nombre_cargo' => 'Admin'],   // Admin general
         ];
 
         foreach ($cargos as $cargo) {
             \App\Models\Cargo::create($cargo);
         }
 
-        $this->command->info('✅ Cargos creados: Paciente, Medico, Otro');
+        $this->command->info('✅ Cargos creados: Paciente, Medico, Admin');
     }
 }

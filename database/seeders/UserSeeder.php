@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
     {
         DB::table('users')->truncate();
 
-        $cargoAdmin    = Cargo::where('Nombre_cargo', 'Otro')->first();
+        $cargoAdmin    = Cargo::where('Nombre_cargo', 'Admin')->first();
         $cargoMedico   = Cargo::where('Nombre_cargo', 'Medico')->first();
         $cargoPaciente = Cargo::where('Nombre_cargo', 'Paciente')->first();
 

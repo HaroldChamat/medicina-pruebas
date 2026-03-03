@@ -2,24 +2,7 @@
 
     @section('content')
 
-        <header class="mb-4">
-            <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm px-4">
-                <a class="navbar-brand fw-bold" href="{{ url('/') }}">
-                    {{ config('app.name', 'Laravel') }}
-                </a>
 
-                <div class="ms-auto d-flex align-items-center gap-3">
-                    <a class="nav-link fw-semibold" href="/citas">Citas</a>
-                    <a class="nav-link fw-semibold" href="/">Ir a inicio</a>
-
-                    @if(session('admin') === 1 || session('cargo') === 'Medico' || session('cargo') === 'Paciente')
-                        <a href="/logout" class="btn btn-outline-danger btn-sm">
-                            Cerrar sesión
-                        </a>
-                    @endif
-                </div>
-            </nav>
-        </header>
 
         <div class="container">
 
