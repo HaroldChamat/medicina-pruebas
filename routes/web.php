@@ -13,7 +13,18 @@ use App\Http\Controllers\HistorialController;
 
 Route::get('/Especialidad', [UserController::class, 'index_especialidad'])->name('Especialidad');
 
-Route::get('/', [UserController::class, 'index_welcome'])->name('welcome');
+Route::get('/', function () {
+    return view('inicio');
+})->name('inicio');
+
+Route::get('/login', function () {
+    return view('welcome', [
+        'medicos' => [],
+        'pacientes' => [],
+        'nombreCargo' => null,
+        'usuario' => null
+    ]);
+})->name('login.view');
 
 Route::get('/C_usuario', [UserController::class, 'index'])->name('C_usuario');
 

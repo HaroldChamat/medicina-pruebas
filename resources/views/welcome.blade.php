@@ -3,8 +3,8 @@
 
         <header class="mb-4">
             <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm px-4">
-                <a class="navbar-brand fw-bold" href="{{ url('/') }}">
-                    {{ config('app.name', 'Laravel') }}
+                <a class="navbar-brand fw-bold text-primary" href="{{ url('/') }}">
+                     Centro Médico
                 </a>
 
                 <div class="ms-auto d-flex align-items-center gap-3">

@@ -25,9 +25,7 @@
             <link rel="stylesheet" href="{{ asset('css/style.css') }}">
         </head>
 
-        <body style="background-image: url('{{ asset('img/descarga1.jpg') }}');
-                background-size: cover;
-                background-repeat: no-repeat;">
+        <body style="background-color: #ffffff; margin: 0; padding: 0; min-height: 100vh;">
 
             <main>
                 @yield('content')
