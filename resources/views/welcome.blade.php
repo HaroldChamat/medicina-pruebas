@@ -1,13 +1,6 @@
 @extends('layouts.app')
 @section('content')
 
-<<<<<<< HEAD
-        <header class="mb-4">
-            <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm px-4">
-                <a class="navbar-brand fw-bold text-primary" href="{{ url('/') }}">
-                     Centro Médico
-                </a>
-=======
     @if(!session()->has('cargo'))
         <div class="container mt-4">
             <div class="row justify-content-center">
@@ -24,7 +17,6 @@
                                 @error('rut')
                                     <div class="text-danger small mb-2">{{ $message }}</div>
                                 @enderror
->>>>>>> 164c4e5531911c67cb07aac6261a748e7343a69f
 
                                 <p class="mb-1">¿Eres nuevo? <a href="/C_usuario">Crear cuenta</a></p>  {{-- ← AGREGA ESTA LÍNEA --}}
 
