@@ -475,11 +475,15 @@ $(document).ready(function () {
                 _token: $('meta[name="csrf-token"]').attr('content'),
                 _method: 'DELETE'
             },
-            success: function () { location.reload(); },
-            error: function (xhr) {
-                console.error(xhr.responseText);
-                alert('Error al eliminar la cita');
-            }
+            success: function () {
+            mostrarToast('Cita eliminada correctamente', 'success');
+            agregarNotificacion('Cita eliminada', 'danger');
+            setTimeout(() => location.reload(), 1500);
+        },
+        error: function (xhr) {
+            mostrarToast('Error al eliminar la cita', 'danger');
+        }
+
         });
     });
 
@@ -521,12 +525,13 @@ $(document).ready(function () {
                 estado: $('#estado').val()
             },
             success: function () {
-                modalEditar.hide();
-                location.reload();
-            },
-            error: function (xhr) {
-                alert(xhr.responseJSON?.message ?? 'Error al actualizar');
-            }
+            mostrarToast('Cita actualizada correctamente', 'success');
+            agregarNotificacion('Cita #' + $('#cita_id').val() + ' actualizada', 'info');
+            setTimeout(() => { modalEditar.hide(); location.reload(); }, 1500);
+        },
+        error: function (xhr) {
+            mostrarToast(xhr.responseJSON?.message ?? 'Error al actualizar', 'danger');
+        }
         });
     });
 
@@ -546,12 +551,13 @@ $(document).ready(function () {
             type: 'POST',
             data: $(this).serialize(),
             success: function () {
-                modalCrear.hide();
-                location.reload();
-            },
-            error: function (xhr) {
-                alert(xhr.responseJSON?.message ?? 'Error al crear la cita');
-            }
+            mostrarToast('Cita creada correctamente', 'success');
+            agregarNotificacion('Nueva cita agendada', 'success');
+            setTimeout(() => { modalCrear.hide(); location.reload(); }, 1500);
+        },
+        error: function (xhr) {
+            mostrarToast(xhr.responseJSON?.message ?? 'Error al crear la cita', 'danger');
+        }
         });
     });
 
@@ -725,13 +731,13 @@ ${dataWhatsapp.tratamiento || 'No registrado'}
                 correo: correo
             },
             success: function () {
-                alert('Correo enviado correctamente');
-                modalEmail.hide();
-                $('#selectCitaEmail, #correoEmail').val('');
-            },
-            error: function (xhr) {
-                alert('Error al enviar el correo');
-            }
+            mostrarToast('Correo enviado correctamente', 'success');
+            agregarNotificacion('Informe enviado por correo', 'info');
+            modalEmail.hide();
+        },
+        error: function () {
+            mostrarToast('Error al enviar el correo', 'danger');
+        }
         });
     });
 

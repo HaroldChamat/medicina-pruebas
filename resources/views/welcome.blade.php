@@ -31,44 +31,71 @@
 
     {{-- ══ ADMIN ══ --}}
     @if(session('admin') === 1)
-        <div class="container mb-4">
-            <div class="alert alert-success d-flex align-items-center justify-content-between shadow-sm">
-                <div>
-                    <strong>Bienvenido, Administrador</strong><br>
-                    <small>Tienes acceso completo al sistema.</small>
-                </div>
-                <span class="badge bg-success fs-6">👑 ADMIN</span>
+    <div class="container mb-4">
+        <div class="p-4 rounded-3 text-white d-flex align-items-center justify-content-between"
+             style="background: linear-gradient(135deg, #0d3b6e, #1a6fa8);">
+            <div>
+                <h4 class="fw-bold mb-1">
+                    <i class="bi bi-shield-check me-2"></i>Bienvenido, Administrador
+                </h4>
+                <small class="opacity-75">Tienes acceso completo al sistema.</small>
             </div>
+            <span class="badge fs-6 px-3 py-2" style="background-color: rgba(255,255,255,0.2);">
+                👑 ADMIN
+            </span>
         </div>
+    </div>
 
-        <div class="container">
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title fw-bold text-primary mb-2">👨‍⚕️ Médicos</h5>
-                            <p class="card-text text-muted mb-4">Gestión de médicos registrados.</p>
-                            <button type="button" class="btn btn-outline-primary mt-auto w-100"
-                                    data-bs-toggle="modal" data-bs-target="#modalMedicos">
-                                Ver y gestionar médicos
-                            </button>
-                        </div>
+    <div class="container mb-5">
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-primary-soft">
+                        <i class="bi bi-people-fill fs-3 text-primary"></i>
                     </div>
+                    <h6 class="fw-bold">Médicos</h6>
+                    <p class="text-muted small mb-3">Gestión de médicos registrados.</p>
+                    <button class="btn btn-outline-primary btn-sm rounded-pill"
+                        data-bs-toggle="modal" data-bs-target="#modalMedicos">
+                        Ver médicos
+                    </button>
                 </div>
-                <div class="col-md-6">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title fw-bold text-success mb-2">🧑 Pacientes</h5>
-                            <p class="card-text text-muted mb-4">Gestión de pacientes registrados.</p>
-                            <button type="button" class="btn btn-outline-success mt-auto w-100"
-                                    data-bs-toggle="modal" data-bs-target="#modalPacientes">
-                                Ver y gestionar pacientes
-                            </button>
-                        </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-success-soft">
+                        <i class="bi bi-person-heart fs-3 text-success"></i>
                     </div>
+                    <h6 class="fw-bold">Pacientes</h6>
+                    <p class="text-muted small mb-3">Gestión de pacientes registrados.</p>
+                    <button class="btn btn-outline-success btn-sm rounded-pill"
+                        data-bs-toggle="modal" data-bs-target="#modalPacientes">
+                        Ver pacientes
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-info-soft">
+                        <i class="bi bi-calendar-week fs-3 text-info"></i>
+                    </div>
+                    <h6 class="fw-bold">Citas</h6>
+                    <p class="text-muted small mb-3">Administrar citas del sistema.</p>
+                    <a href="/citas" class="btn btn-outline-info btn-sm rounded-pill">Ver citas</a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-warning-soft">
+                        <i class="bi bi-person-plus fs-3 text-warning"></i>
+                    </div>
+                    <h6 class="fw-bold">Crear usuario</h6>
+                    <p class="text-muted small mb-3">Registrar nuevos usuarios.</p>
+                    <a href="/C_usuario" class="btn btn-outline-warning btn-sm rounded-pill">Crear</a>
                 </div>
             </div>
         </div>
+    </div>
 
         {{-- Modal Médicos --}}
         <div class="modal fade" id="modalMedicos" tabindex="-1">
@@ -232,85 +259,101 @@
 
     {{-- ══ MÉDICO ══ --}}
     @elseif(session('cargo') === 'Medico')
-        <div class="container mb-4">
-            <div class="alert alert-success d-flex align-items-center justify-content-between shadow-sm">
-                <div>
-                    <strong>Bienvenido, Dr. {{ $usuario->name }} {{ $usuario->Apellidos }}</strong><br>
-                    <small>Aquí puedes gestionar tus citas e informes médicos.</small>
-                </div>
-                <span class="badge bg-success fs-6">👨‍⚕️ MÉDICO</span>
+    <div class="container mb-4">
+        <div class="p-4 rounded-3 text-white d-flex align-items-center justify-content-between"
+             style="background: linear-gradient(135deg, #1a7a4a, #2ecc71);">
+            <div>
+                <h4 class="fw-bold mb-1">
+                    <i class="bi bi-person-badge me-2"></i>
+                    Bienvenido, Dr. {{ $usuario->name }} {{ $usuario->Apellidos }}
+                </h4>
+                <small class="opacity-75">Aquí puedes gestionar tus citas e informes médicos.</small>
             </div>
+            <span class="badge fs-6 px-3 py-2" style="background-color: rgba(255,255,255,0.2);">
+                <i class="bi bi-heart-pulse me-1"></i> MÉDICO
+            </span>
         </div>
-        <div class="container">
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0 text-center">
-                        <div class="card-body d-flex flex-column">
-                            <div class="fs-1 mb-2">📅</div>
-                            <h5 class="fw-bold">Mis citas</h5>
-                            <p class="text-muted small">Ver y gestionar tus citas asignadas.</p>
-                            <a href="/citas" class="btn btn-outline-primary mt-auto">Ver citas</a>
-                        </div>
+    </div>
+
+    <div class="container mb-5">
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-primary-soft">
+                        <i class="bi bi-calendar-check fs-3 text-primary"></i>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0 text-center">
-                        <div class="card-body d-flex flex-column">
-                            <div class="fs-1 mb-2">📋</div>
-                            <h5 class="fw-bold">Informes médicos</h5>
-                            <p class="text-muted small">Crear y editar informes de tus pacientes.</p>
-                            <a href="/Informacion" class="btn btn-outline-info mt-auto">Ver informes</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0 text-center">
-                        <div class="card-body d-flex flex-column">
-                            <div class="fs-1 mb-2">🕐</div>
-                            <h5 class="fw-bold">Mi horario</h5>
-                            <p class="text-muted small">Consultar tu horario de atención.</p>
-                            <a href="/Horario" class="btn btn-outline-secondary mt-auto">Ver horario</a>
-                        </div>
-                    </div>
+                    <h6 class="fw-bold">Mis citas</h6>
+                    <p class="text-muted small mb-3">Ver y gestionar tus citas asignadas.</p>
+                    <a href="/citas" class="btn btn-outline-primary btn-sm rounded-pill">Ver citas</a>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-info-soft">
+                        <i class="bi bi-file-earmark-medical fs-3 text-info"></i>
+                    </div>
+                    <h6 class="fw-bold">Informes médicos</h6>
+                    <p class="text-muted small mb-3">Crear y editar informes de tus pacientes.</p>
+                    <a href="/Informacion" class="btn btn-outline-info btn-sm rounded-pill">Ver informes</a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-secondary-soft">
+                        <i class="bi bi-clock-history fs-3 text-secondary"></i>
+                    </div>
+                    <h6 class="fw-bold">Mi horario</h6>
+                    <p class="text-muted small mb-3">Consultar tu horario de atención.</p>
+                    <a href="/Horario" class="btn btn-outline-secondary btn-sm rounded-pill">Ver horario</a>
+                </div>
+            </div>
         </div>
+    </div>
 
     {{-- ══ PACIENTE ══ --}}
     @elseif(session('cargo') === 'Paciente')
-        <div class="container mb-4">
-            <div class="alert alert-info text-center shadow-sm">
-                <strong>Bienvenido/a, {{ $usuario->name }} {{ $usuario->Apellidos }}</strong>
-                <hr>
-                <small>Puedes revisar tus citas, tu historial médico y solicitar nuevas atenciones.</small>
+    <div class="container mb-4">
+        <div class="p-4 rounded-3 text-white d-flex align-items-center justify-content-between"
+             style="background: linear-gradient(135deg, #1565c0, #42a5f5);">
+            <div>
+                <h4 class="fw-bold mb-1">
+                    <i class="bi bi-person-circle me-2"></i>
+                    Bienvenido/a, {{ $usuario->name }} {{ $usuario->Apellidos }}
+                </h4>
+                <small class="opacity-75">Puedes revisar tus citas, historial médico y solicitar nuevas atenciones.</small>
             </div>
+            <span class="badge fs-6 px-3 py-2" style="background-color: rgba(255,255,255,0.2);">
+                <i class="bi bi-person me-1"></i> PACIENTE
+            </span>
         </div>
-        <div class="container">
-            <div class="row g-4 justify-content-center">
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0 text-center">
-                        <div class="card-body d-flex flex-column">
-                            <div class="fs-1 mb-2">📅</div>
-                            <h5 class="fw-bold">Mis citas</h5>
-                            <p class="text-muted small">Ver tus citas médicas y solicitar nuevas.</p>
-                            <a href="/citas" class="btn btn-outline-primary mt-auto">Ver mis citas</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0 text-center">
-                        <div class="card-body d-flex flex-column">
-                            <div class="fs-1 mb-2">📄</div>
-                            <h5 class="fw-bold">Mis informes</h5>
-                            <p class="text-muted small">Descargar tus informes médicos en PDF.</p>
-                            <a href="/Informe" class="btn btn-outline-danger mt-auto">Ver informes</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    </div>
 
+    <div class="container mb-5">
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-primary-soft">
+                        <i class="bi bi-calendar-check fs-3 text-primary"></i>
+                    </div>
+                    <h6 class="fw-bold">Mis citas</h6>
+                    <p class="text-muted small mb-3">Ver tus citas médicas y solicitar nuevas.</p>
+                    <a href="/citas" class="btn btn-outline-primary btn-sm rounded-pill">Ver mis citas</a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-danger-soft">
+                        <i class="bi bi-file-earmark-pdf fs-3 text-danger"></i>
+                    </div>
+                    <h6 class="fw-bold">Mis informes</h6>
+                    <p class="text-muted small mb-3">Descargar tus informes médicos en PDF.</p>
+                    <a href="/Informe" class="btn btn-outline-danger btn-sm rounded-pill">Ver informes</a>
+                </div>
+            </div>
+        </div>
+    </div>
     @endif
+
 
 @endsection
 
@@ -393,4 +436,27 @@ $(document).ready(function () {
 });
 </script>
 @endif
+
+<style>
+    .card-dashboard {
+        border-radius: 14px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card-dashboard:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    }
+    .icon-dash {
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .bg-primary-soft   { background-color: #e8f0fb; }
+    .bg-success-soft   { background-color: #e6f9f0; }
+    .bg-info-soft      { background-color: #e3f6fc; }
+    .bg-warning-soft   { background-color: #fff8e1; }
+    .bg-danger-soft    { background-color: #fdecea; }
+    .bg-secondary-soft { background-color: #f0f0f0; }
+</style>
+
 @endsection

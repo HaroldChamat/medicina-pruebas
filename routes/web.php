@@ -23,12 +23,12 @@ Route::get('/', function () {
 Route::get('/login', [UserController::class, 'index_welcome'])->name('welcome');
 Route::post('/login', [LoginController::class, 'login'])->name('login');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::get('/C_usuario', [UserController::class, 'index'])->name('C_usuario');
+Route::post('/usuario/store', [UserController::class, 'store'])->name('User.store');
 
 // ── Solo Admin ──────────────────────────────────────────────────────────────
 Route::middleware(['cargo:Admin'])->group(function () {
     // Usuarios
-    Route::get('/C_usuario', [UserController::class, 'index'])->name('C_usuario');
-    Route::post('/usuario/store', [UserController::class, 'store'])->name('User.store');
     Route::put('/usuario/{id}', [UserController::class, 'update'])->name('User.update');
     Route::delete('/usuario/{id}', [UserController::class, 'destroy'])->name('User.destroy');
 
