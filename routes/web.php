@@ -50,7 +50,8 @@ Route::middleware(['cargo:Admin,Medico'])->group(function () {
     Route::get('/Informe/{cita}', [InformeController::class, 'create'])->name('informe.create');
     Route::post('/Informe/{cita}', [InformeController::class, 'store'])->name('informe.store');
     Route::put('/Informe/{cita}', [InformeController::class, 'update'])->name('informe.update');
-    Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
+    Route::get('/Informe', [InformeController::class, 'index'])->name('informe.index');
+    
 
     // Horarios
     Route::get('/Horario', [HorarioController::class, 'index'])->name('Horario');
@@ -68,5 +69,5 @@ Route::middleware(['cargo:Admin,Medico,Paciente'])->group(function () {
     Route::get('/citas/horas-disponibles', [CitaController::class, 'horasDisponibles']);
     Route::get('/informe/pdf/{cita}', [InformeController::class, 'pdf'])->name('informe.pdf');
     Route::post('/informe/email', [InformeController::class, 'enviarPorEmail']);
-    Route::get('/Informe', [InformeController::class, 'index'])->name('informe.index');
+    Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
 });

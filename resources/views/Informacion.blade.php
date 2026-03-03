@@ -10,21 +10,43 @@
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
             <div class="row g-3">
+
+                {{-- Filtro médico: solo visible para Admin --}}
+                @if(session('admin') === 1)
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-person-badge me-1"></i> Médico
+                        </label>
+                        <select id="filtroMedico" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach($medicos as $medico)
+                                <option value="{{ $medico->id }}">
+                                    {{ $medico->name }} {{ $medico->Apellidos }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    {{-- Para médico: selector oculto fijo en su propio ID --}}
+                    <input type="hidden" id="filtroMedico" value="{{ session('user_id') }}">
+                @endif
+
                 <div class="col-md-4">
-                    <label class="form-label fw-semibold">Médico</label>
-                    <select id="filtroMedico" class="form-select">
-                        <option value="">Todos</option>
-                        @foreach($medicos as $medico)
-                            <option value="{{ $medico->id }}">
-                                {{ $medico->name }} {{ $medico->Apellidos }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">ID Cita</label>
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-hash me-1"></i> ID Cita
+                    </label>
                     <input type="number" id="filtroCita" class="form-control" placeholder="Ej: 12">
                 </div>
+
+                {{-- Botón limpiar --}}
+                @if(session('admin') === 1)
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button class="btn btn-outline-secondary w-100" id="btnLimpiarInformes">
+                            <i class="bi bi-x-circle me-1"></i> Limpiar filtros
+                        </button>
+                    </div>
+                @endif
+
             </div>
         </div>
     </div>
@@ -166,6 +188,17 @@ $(document).ready(function () {
     $('#filtroMedico').on('change', filtrar);
     $('#filtroCita').on('keyup', filtrar);
 
+    $('#btnLimpiarInformes').on('click', function () {
+        $('#filtroMedico').val('');
+        $('#filtroCita').val('');
+        $('tbody tr').show();
+    });
+
+    // Aplicar filtro automático al cargar si es médico
+    @if(session('cargo') === 'Medico')
+        filtrar();
+    @endif
+    
     // ─── ABRIR MODAL VER/EDITAR ──────────────────────────────────────
     let modalInforme;
 

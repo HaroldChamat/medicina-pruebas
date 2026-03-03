@@ -121,6 +121,41 @@
                     </tbody>
                 </table>
 
+                {{-- ── PAGINACIÓN ── --}}
+                @if($Citas instanceof \Illuminate\Pagination\LengthAwarePaginator && $Citas->hasPages())
+                    <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+                        <div class="text-muted small">
+                            Mostrando {{ $Citas->firstItem() }}–{{ $Citas->lastItem() }}
+                            de {{ $Citas->total() }} citas
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0">
+                                {{-- Anterior --}}
+                                <li class="page-item {{ $Citas->onFirstPage() ? 'disabled' : '' }}">
+                                    <a class="page-link rounded-start" href="{{ $Citas->previousPageUrl() }}">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+
+                                {{-- Números de página --}}
+                                @foreach($Citas->getUrlRange(1, $Citas->lastPage()) as $page => $url)
+                                    <li class="page-item {{ $Citas->currentPage() === $page ? 'active' : '' }}">
+                                        <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                                    </li>
+                                @endforeach
+
+                                {{-- Siguiente --}}
+                                <li class="page-item {{ !$Citas->hasMorePages() ? 'disabled' : '' }}">
+                                    <a class="page-link rounded-end" href="{{ $Citas->nextPageUrl() }}">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                @endif
+
+
                 {{-- Botones de acciones globales --}}
                 <div class="d-flex flex-wrap gap-2 justify-content-end mt-4">
 

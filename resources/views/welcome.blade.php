@@ -105,7 +105,13 @@
                         <h5 class="modal-title fw-bold">👨‍⚕️ Lista de Médicos</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
+                    
                     <div class="modal-body">
+                        <div class="mb-3">
+                            <input type="text" id="buscadorMedicos" class="form-control"
+                                placeholder="🔍 Buscar por nombre, apellido, RUT o email...">
+                        </div>
+                        <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead class="table-light text-uppercase small">
                                 <tr>
@@ -157,6 +163,11 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
+                        <div class="mb-3">
+                            <input type="text" id="buscadorPacientes" class="form-control"
+                                placeholder="🔍 Buscar por nombre, apellido, RUT o email...">
+                        </div>
+                        <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead class="table-light text-uppercase small">
                                 <tr>
@@ -337,17 +348,24 @@
                     </div>
                     <h6 class="fw-bold">Mis citas</h6>
                     <p class="text-muted small mb-3">Ver tus citas médicas y solicitar nuevas.</p>
-                    <a href="/citas" class="btn btn-outline-primary btn-sm rounded-pill">Ver mis citas</a>
+                    <a href="/citas" class="btn btn-outline-primary btn-sm rounded-pill">
+                        Ver mis citas
+                    </a>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
-                    <div class="icon-dash mx-auto mb-3 bg-danger-soft">
-                        <i class="bi bi-file-earmark-pdf fs-3 text-danger"></i>
+                    <div class="icon-dash mx-auto mb-3 bg-warning-soft">
+                        <i class="bi bi-clock-history fs-3 text-warning"></i>
                     </div>
-                    <h6 class="fw-bold">Mis informes</h6>
-                    <p class="text-muted small mb-3">Descargar tus informes médicos en PDF.</p>
-                    <a href="/Informe" class="btn btn-outline-danger btn-sm rounded-pill">Ver informes</a>
+                    <h6 class="fw-bold">Mi historial médico</h6>
+                    <p class="text-muted small mb-3">
+                        Ver diagnósticos, tratamientos e informes PDF de tus citas finalizadas.
+                    </p>
+                    <a href="{{ route('historial.index', session('user_id')) }}"
+                       class="btn btn-outline-warning btn-sm rounded-pill">
+                        Ver historial
+                    </a>
                 </div>
             </div>
         </div>
@@ -431,6 +449,40 @@ $(document).ready(function () {
             success: function () { modalEliminar.hide(); location.reload(); },
             error: function (xhr) { alert(xhr.responseJSON?.message ?? 'Error al eliminar'); }
         });
+    });
+
+});
+</script>
+@endif
+
+@if(session('admin') === 1)
+<script>
+$(document).ready(function () {
+
+    // Buscador médicos
+    $('#buscadorMedicos').on('keyup', function () {
+        const texto = $(this).val().toLowerCase();
+        $('#modalMedicos tbody tr').each(function () {
+            $(this).toggle($(this).text().toLowerCase().includes(texto));
+        });
+    });
+
+    // Buscador pacientes
+    $('#buscadorPacientes').on('keyup', function () {
+        const texto = $(this).val().toLowerCase();
+        $('#modalPacientes tbody tr').each(function () {
+            $(this).toggle($(this).text().toLowerCase().includes(texto));
+        });
+    });
+
+    // Limpiar buscador al cerrar modal
+    $('#modalMedicos').on('hidden.bs.modal', function () {
+        $('#buscadorMedicos').val('');
+        $('#modalMedicos tbody tr').show();
+    });
+    $('#modalPacientes').on('hidden.bs.modal', function () {
+        $('#buscadorPacientes').val('');
+        $('#modalPacientes tbody tr').show();
     });
 
 });

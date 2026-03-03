@@ -62,8 +62,9 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white fw-semibold px-3" href="/Informe">
-                        <i class="bi bi-file-earmark-pdf me-1"></i> Mis informes
+                    <a class="nav-link text-white fw-semibold px-3"
+                    href="{{ route('historial.index', session('user_id')) }}">
+                        <i class="bi bi-clock-history me-1"></i> Mi historial
                     </a>
                 </li>
             @endif
