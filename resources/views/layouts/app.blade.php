@@ -16,6 +16,10 @@
               rel="stylesheet"
               integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
               crossorigin="anonymous">
+        
+        <!-- Bootstrap Icons -->  
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
 
         <!-- Estilos propios -->
         <link rel="stylesheet" href="{{ asset('css/style.css') }}">
@@ -27,7 +31,9 @@
                  background-attachment: fixed;">
 
         {{-- Navbar global por rol --}}
+        @if(!Request::is('/'))
         @include('partials.navbar')
+        @endif
 
         <main>
             @yield('content')

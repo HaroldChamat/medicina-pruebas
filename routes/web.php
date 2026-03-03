@@ -10,7 +10,17 @@ use App\Http\Controllers\InformeController;
 use App\Http\Controllers\HistorialController;
 
 // ── Rutas públicas ──────────────────────────────────────────────────────────
-Route::get('/', [UserController::class, 'index_welcome'])->name('welcome');
+Route::get('/', function () {
+    if (session()->has('cargo')) {
+        return redirect()->route('welcome');
+    }
+    $especialidades = \App\Models\Especialidad::all();
+    $totalEspecialidades = $especialidades->count();
+    $totalMedicos = \App\Models\User::whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))->count();
+    $totalPacientes = \App\Models\User::whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Paciente'))->count(); // ← AGREGA ESTA
+    return view('inicio', compact('especialidades', 'totalEspecialidades', 'totalMedicos', 'totalPacientes')); // ← agrega $totalPacientes aquí también
+})->name('inicio');
+Route::get('/login', [UserController::class, 'index_welcome'])->name('welcome');
 Route::post('/login', [LoginController::class, 'login'])->name('login');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
 

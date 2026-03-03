@@ -12,11 +12,14 @@
                                 @csrf
                                 <div class="mb-3">
                                     <input type="text" name="rut" class="form-control"
-                                           placeholder="Ingrese RUT" required>
+                                        placeholder="Ingrese RUT" required>
                                 </div>
                                 @error('rut')
                                     <div class="text-danger small mb-2">{{ $message }}</div>
                                 @enderror
+
+                                <p class="mb-1">¿Eres nuevo? <a href="/C_usuario">Crear cuenta</a></p>  {{-- ← AGREGA ESTA LÍNEA --}}
+
                                 <button type="submit" class="btn btn-primary w-100 mt-3">Ingresar</button>
                             </form>
                         </div>
