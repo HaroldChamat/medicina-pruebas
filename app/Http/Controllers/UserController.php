@@ -55,6 +55,28 @@ class UserController extends Controller
         return view('Especialidad', compact('medicos', 'especialidades'));
     }
 
+    public function index_medicos()
+    {
+        if (session('admin') !== 1) abort(403);
+
+        $medicos = User::with(['cargo', 'especialidad'])
+            ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
+            ->get();
+
+        return view('admin.medicos', compact('medicos'));
+    }
+
+    public function index_pacientes()
+    {
+        if (session('admin') !== 1) abort(403);
+
+        $pacientes = User::with('cargo')
+            ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Paciente'))
+            ->get();
+
+        return view('admin.pacientes', compact('pacientes'));
+    }
+    
     public function store(Request $request)
     {
         $request->validate([

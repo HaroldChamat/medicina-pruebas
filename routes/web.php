@@ -39,6 +39,10 @@ Route::middleware(['cargo:Admin'])->group(function () {
     // Citas: solo Admin puede crear y eliminar
     Route::post('/citas', [CitaController::class, 'store']);
     Route::delete('/citas/{id}', [CitaController::class, 'destroy']);
+
+    //Vistas de las gestiones de Medicos y Pacientes
+    Route::get('/admin/medicos', [UserController::class, 'index_medicos'])->name('admin.medicos');
+    Route::get('/admin/pacientes', [UserController::class, 'index_pacientes'])->name('admin.pacientes');
 });
 
 // ── Admin y Médico ───────────────────────────────────────────────────────────

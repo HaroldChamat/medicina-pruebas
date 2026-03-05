@@ -6,14 +6,34 @@ body {
 
 main {
     background-color: transparent;
+    position: relative;
+    z-index: 1;
 }
 
 .container, .container-fluid {
     background-color: transparent;
 }
 
-/* Asegura que el contenido quede por encima de los corazones */
-main, .navbar {
+.navbar {
     position: relative;
-    z-index: 1;
+    z-index: 1030;
+}
+
+/* Modales y backdrop */
+.modal-backdrop {
+    z-index: 1040 !important;
+}
+
+.modal {
+    z-index: 1055 !important;
+}
+
+.modal-dialog {
+    position: relative;
+    z-index: 1056 !important;
+}
+
+.modal-content {
+    position: relative;
+    z-index: 1057 !important;
 }

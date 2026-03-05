@@ -128,10 +128,9 @@
                     </div>
                     <h6 class="fw-bold">Médicos</h6>
                     <p class="text-muted small mb-3">Gestión de médicos registrados.</p>
-                    <button class="btn btn-outline-primary btn-sm rounded-pill"
-                        data-bs-toggle="modal" data-bs-target="#modalMedicos">
+                    <a href="{{ route('admin.medicos') }}" class="btn btn-outline-primary btn-sm rounded-pill">
                         Ver médicos
-                    </button>
+                    </a>
                 </div>
             </div>
             <div class="col-md-3">
@@ -141,10 +140,9 @@
                     </div>
                     <h6 class="fw-bold">Pacientes</h6>
                     <p class="text-muted small mb-3">Gestión de pacientes registrados.</p>
-                    <button class="btn btn-outline-success btn-sm rounded-pill"
-                        data-bs-toggle="modal" data-bs-target="#modalPacientes">
+                    <a href="{{ route('admin.pacientes') }}" class="btn btn-outline-success btn-sm rounded-pill">
                         Ver pacientes
-                    </button>
+                    </a>
                 </div>
             </div>
             <div class="col-md-3">
@@ -178,47 +176,47 @@
                         <h5 class="modal-title fw-bold">👨‍⚕️ Lista de Médicos</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    
                     <div class="modal-body">
                         <div class="mb-3">
                             <input type="text" id="buscadorMedicos" class="form-control"
                                 placeholder="🔍 Buscar por nombre, apellido, RUT o email...">
                         </div>
                         <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light text-uppercase small">
-                                <tr>
-                                    <th>#</th><th>Nombre</th><th>Apellidos</th>
-                                    <th>Email</th><th>RUT</th><th>Teléfono</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($medicos as $medico)
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light text-uppercase small">
                                     <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $medico->name }}</td>
-                                        <td>{{ $medico->Apellidos }}</td>
-                                        <td>{{ $medico->email }}</td>
-                                        <td><span class="badge bg-secondary">{{ $medico->Rut }}</span></td>
-                                        <td>{{ $medico->telefono }}</td>
-                                        <td class="text-center">
-                                            <button class="btn btn-primary btn-sm btnEditarUsuario"
-                                                data-id="{{ $medico->id }}"
-                                                data-name="{{ $medico->name }}"
-                                                data-apellidos="{{ $medico->Apellidos }}"
-                                                data-email="{{ $medico->email }}"
-                                                data-telefono="{{ $medico->telefono }}"
-                                                data-tipo="Médico">✏️ Editar</button>
-                                            <button class="btn btn-danger btn-sm btnEliminarUsuario"
-                                                data-id="{{ $medico->id }}"
-                                                data-name="{{ $medico->name }} {{ $medico->Apellidos }}">
-                                                🗑 Eliminar</button>
-                                        </td>
+                                        <th>#</th><th>Nombre</th><th>Apellidos</th>
+                                        <th>Email</th><th>RUT</th><th>Teléfono</th>
+                                        <th class="text-center">Acciones</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @foreach($medicos as $medico)
+                                        <tr>
+                                            <td>{{ $loop->iteration }}</td>
+                                            <td>{{ $medico->name }}</td>
+                                            <td>{{ $medico->Apellidos }}</td>
+                                            <td>{{ $medico->email }}</td>
+                                            <td><span class="badge bg-secondary">{{ $medico->Rut }}</span></td>
+                                            <td>{{ $medico->telefono }}</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-primary btn-sm btnEditarUsuario"
+                                                    data-id="{{ $medico->id }}"
+                                                    data-name="{{ $medico->name }}"
+                                                    data-apellidos="{{ $medico->Apellidos }}"
+                                                    data-email="{{ $medico->email }}"
+                                                    data-telefono="{{ $medico->telefono }}"
+                                                    data-tipo="Médico">✏️ Editar</button>
+                                                <button class="btn btn-danger btn-sm btnEliminarUsuario"
+                                                    data-id="{{ $medico->id }}"
+                                                    data-name="{{ $medico->name }} {{ $medico->Apellidos }}">
+                                                    🗑 Eliminar</button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -241,40 +239,41 @@
                                 placeholder="🔍 Buscar por nombre, apellido, RUT o email...">
                         </div>
                         <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light text-uppercase small">
-                                <tr>
-                                    <th>#</th><th>Nombre</th><th>Apellidos</th>
-                                    <th>Email</th><th>RUT</th><th>Teléfono</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($pacientes as $paciente)
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light text-uppercase small">
                                     <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $paciente->name }}</td>
-                                        <td>{{ $paciente->Apellidos }}</td>
-                                        <td>{{ $paciente->email }}</td>
-                                        <td><span class="badge bg-secondary">{{ $paciente->Rut }}</span></td>
-                                        <td>{{ $paciente->telefono }}</td>
-                                        <td class="text-center">
-                                            <button class="btn btn-primary btn-sm btnEditarUsuario"
-                                                data-id="{{ $paciente->id }}"
-                                                data-name="{{ $paciente->name }}"
-                                                data-apellidos="{{ $paciente->Apellidos }}"
-                                                data-email="{{ $paciente->email }}"
-                                                data-telefono="{{ $paciente->telefono }}"
-                                                data-tipo="Paciente">✏️ Editar</button>
-                                            <button class="btn btn-danger btn-sm btnEliminarUsuario"
-                                                data-id="{{ $paciente->id }}"
-                                                data-name="{{ $paciente->name }} {{ $paciente->Apellidos }}">
-                                                🗑 Eliminar</button>
-                                        </td>
+                                        <th>#</th><th>Nombre</th><th>Apellidos</th>
+                                        <th>Email</th><th>RUT</th><th>Teléfono</th>
+                                        <th class="text-center">Acciones</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @foreach($pacientes as $paciente)
+                                        <tr>
+                                            <td>{{ $loop->iteration }}</td>
+                                            <td>{{ $paciente->name }}</td>
+                                            <td>{{ $paciente->Apellidos }}</td>
+                                            <td>{{ $paciente->email }}</td>
+                                            <td><span class="badge bg-secondary">{{ $paciente->Rut }}</span></td>
+                                            <td>{{ $paciente->telefono }}</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-primary btn-sm btnEditarUsuario"
+                                                    data-id="{{ $paciente->id }}"
+                                                    data-name="{{ $paciente->name }}"
+                                                    data-apellidos="{{ $paciente->Apellidos }}"
+                                                    data-email="{{ $paciente->email }}"
+                                                    data-telefono="{{ $paciente->telefono }}"
+                                                    data-tipo="Paciente">✏️ Editar</button>
+                                                <button class="btn btn-danger btn-sm btnEliminarUsuario"
+                                                    data-id="{{ $paciente->id }}"
+                                                    data-name="{{ $paciente->name }} {{ $paciente->Apellidos }}">
+                                                    🗑 Eliminar</button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -454,11 +453,48 @@
 <script>
 $(document).ready(function () {
 
-    let modalEditar   = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
-    let modalEliminar = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
     let userIdEliminar = null;
 
-    // Abrir editar
+    // ── Función helper para limpiar todos los modales ────────────────
+    function limpiarModales(callback) {
+        const modalesAbiertos = document.querySelectorAll('.modal.show');
+        
+        if (modalesAbiertos.length === 0) {
+            // No hay modales abiertos, ejecutar callback directo
+            if (callback) callback();
+            return;
+        }
+
+        modalesAbiertos.forEach(m => {
+            const instancia = bootstrap.Modal.getInstance(m);
+            if (instancia) instancia.hide();
+        });
+
+        // Esperar a que terminen las animaciones
+        setTimeout(() => {
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.querySelectorAll('.modal.show').forEach(el => {
+                el.classList.remove('show');
+                el.style.display = 'none';
+            });
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+            if (callback) callback();
+        }, 350);
+    }
+
+    // ── Abrir modal médicos ──────────────────────────────────────────
+    $('#btnVerMedicos').on('click', function () {
+        new bootstrap.Modal(document.getElementById('modalMedicos')).show();
+    });
+
+    // ── Abrir modal pacientes ────────────────────────────────────────
+    $('#btnVerPacientes').on('click', function () {
+        new bootstrap.Modal(document.getElementById('modalPacientes')).show();
+    });
+
+    // ── Abrir editar ─────────────────────────────────────────────────
     $(document).on('click', '.btnEditarUsuario', function () {
         let btn = $(this);
         $('#edit_user_id').val(btn.data('id'));
@@ -468,16 +504,12 @@ $(document).ready(function () {
         $('#edit_telefono').val(btn.data('telefono'));
         $('#tituloEditarUsuario').text('Editar ' + btn.data('tipo'));
 
-        let modalActual = bootstrap.Modal.getInstance(document.querySelector('.modal.show'));
-        if (modalActual) {
-            modalActual.hide();
-            setTimeout(() => modalEditar.show(), 400);
-        } else {
-            modalEditar.show();
-        }
+        limpiarModales(() => {
+            new bootstrap.Modal(document.getElementById('modalEditarUsuario')).show();
+        });
     });
 
-    // Guardar edición
+    // ── Guardar edición ──────────────────────────────────────────────
     $('#formEditarUsuario').on('submit', function (e) {
         e.preventDefault();
         $.ajax({
@@ -491,26 +523,26 @@ $(document).ready(function () {
                 email:     $('#edit_email').val(),
                 telefono:  $('#edit_telefono').val(),
             },
-            success: function () { modalEditar.hide(); location.reload(); },
-            error: function (xhr) { alert(xhr.responseJSON?.message ?? 'Error al guardar'); }
+            success: function () {
+                limpiarModales(() => location.reload());
+            },
+            error: function (xhr) {
+                alert(xhr.responseJSON?.message ?? 'Error al guardar');
+            }
         });
     });
 
-    // Abrir eliminar
+    // ── Abrir eliminar ───────────────────────────────────────────────
     $(document).on('click', '.btnEliminarUsuario', function () {
         userIdEliminar = $(this).data('id');
         $('#nombreEliminar').text($(this).data('name'));
 
-        let modalActual = bootstrap.Modal.getInstance(document.querySelector('.modal.show'));
-        if (modalActual) {
-            modalActual.hide();
-            setTimeout(() => modalEliminar.show(), 400);
-        } else {
-            modalEliminar.show();
-        }
+        limpiarModales(() => {
+            new bootstrap.Modal(document.getElementById('modalConfirmarEliminar')).show();
+        });
     });
 
-    // Confirmar eliminar
+    // ── Confirmar eliminar ───────────────────────────────────────────
     $('#btnConfirmarEliminar').on('click', function () {
         $.ajax({
             url: '/usuario/' + userIdEliminar,
@@ -519,20 +551,16 @@ $(document).ready(function () {
                 _token:  $('meta[name="csrf-token"]').attr('content'),
                 _method: 'DELETE',
             },
-            success: function () { modalEliminar.hide(); location.reload(); },
-            error: function (xhr) { alert(xhr.responseJSON?.message ?? 'Error al eliminar'); }
+            success: function () {
+                limpiarModales(() => location.reload());
+            },
+            error: function (xhr) {
+                alert(xhr.responseJSON?.message ?? 'Error al eliminar');
+            }
         });
     });
 
-});
-</script>
-@endif
-
-@if(session('admin') === 1)
-<script>
-$(document).ready(function () {
-
-    // Buscador médicos
+    // ── Buscador médicos ─────────────────────────────────────────────
     $('#buscadorMedicos').on('keyup', function () {
         const texto = $(this).val().toLowerCase();
         $('#modalMedicos tbody tr').each(function () {
@@ -540,7 +568,7 @@ $(document).ready(function () {
         });
     });
 
-    // Buscador pacientes
+    // ── Buscador pacientes ───────────────────────────────────────────
     $('#buscadorPacientes').on('keyup', function () {
         const texto = $(this).val().toLowerCase();
         $('#modalPacientes tbody tr').each(function () {
@@ -548,7 +576,7 @@ $(document).ready(function () {
         });
     });
 
-    // Limpiar buscador al cerrar modal
+    // ── Limpiar buscadores al cerrar ─────────────────────────────────
     $('#modalMedicos').on('hidden.bs.modal', function () {
         $('#buscadorMedicos').val('');
         $('#modalMedicos tbody tr').show();
