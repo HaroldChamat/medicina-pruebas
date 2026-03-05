@@ -6,7 +6,10 @@
 
         <div class="container">
 
-            <h4 class="fw-bold mb-4">Especialidades de Médicos</h4>
+            <div class="page-header">
+                <h3 class="fw-bold">🩺 Especialidades de Médicos</h3>
+                <p class="small mt-1">Gestión de especialidades asignadas a los médicos.</p>
+            </div>
 
             <div class="card shadow-sm border-0">
                 <div class="card-body p-0">

@@ -3,12 +3,12 @@
 
 <div class="container mt-4">
 
-    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div class="page-header d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
         <div>
             <h4 class="fw-bold mb-1">
                 <i class="bi bi-people-fill me-2"></i> Lista de Médicos
             </h4>
-            <p class="text-muted small mb-0">Gestión de médicos registrados en el sistema.</p>
+            <p class="small mb-0" style="color: rgba(255,255,255,0.75);">Gestión de médicos registrados en el sistema.</p>
         </div>
         <a href="/login" class="btn btn-outline-light btn-sm rounded-pill">
             <i class="bi bi-arrow-left me-1"></i> Volver

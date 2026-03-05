@@ -4,7 +4,10 @@
 
 <div class="container mt-4">
 
-    <h3 class="fw-bold mb-4">📋 Informes Médicos</h3>
+    <div class="page-header">
+        <h3 class="fw-bold">📋 Informes Médicos</h3>
+        <p class="small mt-1">Gestión y seguimiento de informes médicos del sistema.</p>
+    </div>
 
     <!-- Filtros -->
     <div class="card shadow-sm border-0 mb-4">
