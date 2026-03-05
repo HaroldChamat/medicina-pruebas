@@ -39,14 +39,14 @@ class DatabaseSeeder extends Seeder
             $this->command->info('─────────────────────────────────────────────');
             $this->command->info('✅ Todos los seeders ejecutados correctamente');
             $this->command->info('');
-            $this->command->info('👤 Credenciales de acceso (login por RUT):');
-            $this->command->info('   Administrador → RUT: 11111111');
-            $this->command->info('   Médico 1      → RUT: 12345678  (Medicina General)');
-            $this->command->info('   Médico 2      → RUT: 12345679  (Cardiología)');
-            $this->command->info('   Médico 3      → RUT: 12345680  (Pediatría)');
-            $this->command->info('   Médico 4      → RUT: 12345681  (Traumatología)');
-            $this->command->info('   Paciente 1    → RUT: 20000001');
-            $this->command->info('   Paciente 2    → RUT: 20000002');
+            $this->command->info('👤 Credenciales de acceso:');
+            $this->command->info('   Administrador → RUT: 11111111-1  / pass: admin123');
+            $this->command->info('   Médico 1      → RUT: 12345678-9  / pass: medico123');
+            $this->command->info('   Médico 2      → RUT: 12345679-0  / pass: medico123');
+            $this->command->info('   Médico 3      → RUT: 12345680-1  / pass: medico123');
+            $this->command->info('   Médico 4      → RUT: 12345681-2  / pass: medico123');
+            $this->command->info('   Paciente 1    → RUT: 20000001-1  / pass: paciente123');
+            $this->command->info('   Paciente 2    → RUT: 20000002-2  / pass: paciente123');
             $this->command->info('');
     }
 }

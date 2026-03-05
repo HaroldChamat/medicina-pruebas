@@ -25,13 +25,18 @@
         <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     </head>
 
-    <body style="background-image: url('{{ asset('img/descarga1.jpg') }}');
-                 background-size: cover;
-                 background-repeat: no-repeat;
-                 background-attachment: fixed;">
+    <body class="position-relative">
+
+        {{-- Corazones decorativos de fondo --}}
+        <div class="position-fixed top-0 end-0 p-5 d-none d-lg-block" style="opacity: 0.05; z-index: 0; pointer-events: none;">
+            <i class="bi bi-heart-pulse-fill" style="font-size: 18rem; color: white;"></i>
+        </div>
+        <div class="position-fixed top-0 start-0 p-5 d-none d-lg-block" style="opacity: 0.05; z-index: 0; pointer-events: none;">
+            <i class="bi bi-heart-pulse-fill" style="font-size: 18rem; color: white; transform: scaleX(-1);"></i>
+        </div>
 
         {{-- Navbar global por rol --}}
-        @if(!Request::is('/'))
+        @if(!Request::is('/') && !(Request::is('login') && !session()->has('cargo')))
         @include('partials.navbar')
         @endif
 

@@ -42,6 +42,16 @@
                                         placeholder="example@gmail.com">
                                 </div>
 
+                               <div class="mb-3">
+                                    <label for="passwordField" class="form-label small fw-semibold">Contraseña</label>
+                                    <input type="password" 
+                                        class="form-control" 
+                                        id="passwordField" 
+                                        name="password" 
+                                        placeholder="Ingrese su contraseña" 
+                                        required>
+                                </div>
+
                                 <div class="mb-3">
                                 <label for="Rut" class="form-label fw-semibold">Rut</label>
                                 <input type="text"
@@ -135,13 +145,14 @@ $(document).ready(function () {
         const Rut       = $('#Rut').val().trim();
         const telefono  = $('#telefono').val().trim();
         const id_cargo  = $('#id_cargo').val() || $('input[name="id_cargo"]').val();
+        const password  = $('#passwordField').val().trim();
 
         // Validación básica
-        if (!name || !Apellidos || !email || !Rut || !telefono || !id_cargo) {
+        if (!name || !Apellidos || !email || !Rut || !telefono || !id_cargo || !password) {
             mostrarToast('Por favor completa todos los campos obligatorios.', 'warning');
             // Marcar campos vacíos
             [['#name', name], ['#Apellidos', Apellidos], ['#email', email],
-             ['#Rut', Rut], ['#telefono', telefono]].forEach(([id, val]) => {
+                ['#Rut', Rut], ['#telefono', telefono], ['#passwordField', password]].forEach(([id, val]) => {
                 if (!val) $(id).addClass('is-invalid');
             });
             return;
@@ -160,7 +171,7 @@ $(document).ready(function () {
             url: '/usuario/store',
             type: 'POST',
             dataType: 'json',
-            data: { name, Apellidos, email, Rut, telefono, id_cargo, admin: 0 },
+            data: { name, Apellidos, email, Rut, telefono, id_cargo, password, admin: 0 },
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (response) {
                 mostrarToast('✅ Usuario registrado correctamente', 'success');

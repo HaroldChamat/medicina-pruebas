@@ -1,32 +1,105 @@
 @extends('layouts.app')
 @section('content')
-
     @if(!session()->has('cargo'))
-        <div class="container mt-4">
+    <div class="d-flex align-items-center justify-content-center"
+    style="background: linear-gradient(135deg, #0d3b6e 0%, #1a6fa8 60%, #2196b0 100%); 
+           min-height: 100vh; 
+           margin-top: -1px;">
+
+        {{-- Ícono decorativo derecha --}}
+        <div class="position-absolute top-0 end-0 p-5 d-none d-lg-block" style="opacity: 0.08;">
+            <i class="bi bi-heart-pulse-fill" style="font-size: 18rem; color: white;"></i>
+        </div>
+
+        {{-- Ícono decorativo izquierda --}}
+        <div class="position-absolute top-0 start-0 p-5 d-none d-lg-block" style="opacity: 0.08;">
+            <i class="bi bi-heart-pulse-fill" style="font-size: 18rem; color: white; transform: scaleX(-1);"></i>
+        </div>
+
+        <div class="container">
             <div class="row justify-content-center">
-                <div class="col-md-4">
-                    <div class="card shadow">
-                        <div class="card-body">
-                            <h5 class="card-title text-center mb-3 fw-semibold">Acceso al sistema</h5>
+                <div class="col-md-5 col-lg-4">
+
+                    {{-- Logo --}}
+                    <div class="text-center mb-4">
+                        <i class="bi bi-hospital-fill text-white" style="font-size: 2.5rem;"></i>
+                        <h4 class="text-white fw-bold mt-2">Centro Médico</h4>
+                        <p class="text-white opacity-75 small">Sistema de gestión médica</p>
+                    </div>
+
+                    <div class="card border-0 shadow-lg" style="border-radius: 16px;">
+                        <div class="card-body p-4">
+
+                            <h5 class="fw-bold mb-1 text-center" style="color: #0d3b6e;">
+                                Acceso al sistema
+                            </h5>
+                            <p class="text-muted small text-center mb-4">
+                                Ingresa tus credenciales para continuar
+                            </p>
+
                             <form method="POST" action="{{ route('login') }}">
                                 @csrf
+
                                 <div class="mb-3">
-                                    <input type="text" name="rut" class="form-control"
-                                        placeholder="Ingrese RUT" required>
+                                    <label class="form-label small fw-semibold">
+                                        <i class="bi bi-person me-1"></i> RUT
+                                    </label>
+                                    <input type="text" name="rut"
+                                        class="form-control @error('rut') is-invalid @enderror"
+                                        placeholder="12345678-9"
+                                        value="{{ old('rut') }}" required>
+                                    @error('rut')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                                @error('rut')
-                                    <div class="text-danger small mb-2">{{ $message }}</div>
-                                @enderror
 
-                                <p class="mb-1">¿Eres nuevo? <a href="/C_usuario">Crear cuenta</a></p>  {{-- ← AGREGA ESTA LÍNEA --}}
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">
+                                        <i class="bi bi-lock me-1"></i> Contraseña
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" name="password" id="passwordField"
+                                            class="form-control"
+                                            placeholder="Ingrese su contraseña" required>
+                                        <button class="btn btn-outline-secondary" type="button"
+                                                id="togglePassword">
+                                            <i class="bi bi-eye-fill" id="eyeIcon"></i>
+                                        </button>
+                                    </div>
+                                </div>
 
-                                <button type="submit" class="btn btn-primary w-100 mt-3">Ingresar</button>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="form-check p-0 d-flex align-items-center gap-2">
+                                        <input class="form-check-input mt-0" type="checkbox"
+                                            name="remember" id="rememberMe">
+                                        <label class="form-check-label small text-muted"
+                                            for="rememberMe">Recordar sesión</label>
+                                    </div>
+                                </div>
+
+                                <button type="submit"
+                                        class="btn w-100 fw-bold py-2 text-white"
+                                        style="background-color: #0d3b6e; border-radius: 8px;">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i> Ingresar
+                                </button>
                             </form>
+
+                            <p class="text-center small mt-4 mb-0 text-muted">
+                                ¿Eres nuevo?
+                                <a href="/C_usuario" class="fw-bold text-decoration-none"
+                                style="color: #0d3b6e;">Crear cuenta</a>
+                            </p>
+
                         </div>
                     </div>
+
+                    <p class="text-center text-white opacity-50 small mt-3">
+                        © {{ date('Y') }} Centro Médico
+                    </p>
                 </div>
             </div>
         </div>
+    </div>
     @endif
 
     {{-- ══ ADMIN ══ --}}
@@ -489,6 +562,22 @@ $(document).ready(function () {
 </script>
 @endif
 
+<script>
+// Toggle contraseña login
+const passwordField = document.getElementById('passwordField');
+const togglePassword = document.getElementById('togglePassword');
+const eyeIcon = document.getElementById('eyeIcon');
+
+if (togglePassword) {
+    togglePassword.addEventListener('click', function () {
+        const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordField.setAttribute('type', type);
+        eyeIcon.classList.toggle('bi-eye-fill');
+        eyeIcon.classList.toggle('bi-eye-slash-fill');
+    });
+}
+</script>
+
 <style>
     .card-dashboard {
         border-radius: 14px;
@@ -509,6 +598,7 @@ $(document).ready(function () {
     .bg-warning-soft   { background-color: #fff8e1; }
     .bg-danger-soft    { background-color: #fdecea; }
     .bg-secondary-soft { background-color: #f0f0f0; }
+
 </style>
 
 @endsection
