@@ -1,16 +1,19 @@
-.card {
-    border-radius: 16px;
+body {
+    background: linear-gradient(135deg, #0d3b6e 0%, #1a6fa8 60%, #2196b0 100%) !important;
+    min-height: 100vh;
+    background-attachment: fixed !important;
 }
 
-
-.btn {
-    border-radius: 10px;
+main {
+    background-color: transparent;
 }
 
-header {
-    background-color: #f8f9fa;
-    text-align: center;
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
+.container, .container-fluid {
+    background-color: transparent;
+}
+
+/* Asegura que el contenido quede por encima de los corazones */
+main, .navbar {
+    position: relative;
+    z-index: 1;
 }

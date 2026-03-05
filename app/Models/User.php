@@ -27,6 +27,7 @@ class User extends Authenticatable
         'telefono',
         'id_cargo',
         'admin',
+        'password',
     ];
 
     /**
@@ -37,7 +38,11 @@ class User extends Authenticatable
     protected $casts = [
         'admin' => 'integer',
     ];
-
+    
+    protected $hidden = [
+        'password', // ← AGREGA ESTE BLOQUE
+    ];
+    
     public function cargo()
     {
         return $this->belongsTo(Cargo::class, 'id_cargo');

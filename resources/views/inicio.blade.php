@@ -59,7 +59,7 @@
             </div>
             <div class="col-lg-5 d-none d-lg-flex justify-content-center">
                 <div class="hero-icon-box">
-                    <i class="bi bi-heart-pulse-fill" style="font-size: 9rem; color: rgba(255,255,255,0.15);"></i>
+                    <i class="bi bi-heart-pulse-fill" style="font-size: 15rem; color: rgba(255,255,255,0.15);"></i>
                 </div>
             </div>
         </div>

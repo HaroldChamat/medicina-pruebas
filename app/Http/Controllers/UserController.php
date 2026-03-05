@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Cargo;
 use App\Models\User;
 use App\Models\Especialidad;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -63,6 +64,7 @@ class UserController extends Controller
             'Rut'       => 'required|string|unique:users,Rut',
             'telefono'  => 'required|string|max:20',
             'id_cargo'  => 'required|exists:cargos,id',
+            'password'  => 'required|string|min:6',
             'admin'     => 'required|integer|in:0,1',
         ]);
 
@@ -87,6 +89,7 @@ class UserController extends Controller
         $user->email      = $request->email;
         $user->Rut        = $request->Rut;
         $user->telefono   = $request->telefono;
+        $user->password   = Hash::make($request->password);
         $user->save();
 
         return response()->json(['success' => true, 'message' => 'Usuario creado exitosamente']);
