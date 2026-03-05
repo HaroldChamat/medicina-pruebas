@@ -25,10 +25,7 @@
         <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     </head>
 
-    <body style="background-image: url('{{ asset('img/descarga1.jpg') }}');
-                 background-size: cover;
-                 background-repeat: no-repeat;
-                 background-attachment: fixed;">
+    <body style="background-color: #e6eaf0;">
 
         {{-- Navbar global por rol --}}
         @if(!Request::is('/'))

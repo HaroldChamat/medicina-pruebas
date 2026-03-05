@@ -1,27 +1,68 @@
 @extends('layouts.app')
 @section('content')
-
+g
     @if(!session()->has('cargo'))
-        <div class="container mt-4">
+        <div class="container" style="padding-top: px;">
             <div class="row justify-content-center">
                 <div class="col-md-4">
-                    <div class="card shadow">
-                        <div class="card-body">
-                            <h5 class="card-title text-center mb-3 fw-semibold">Acceso al sistema</h5>
+                    <div class="card shadow border-0" style="border-radius: 15px;">
+                        <div class="card-body p-4">
+                            <h5 class="card-title text-center mb-4 fw-bold text-primary">Acceso al sistema</h5>
+                            
                             <form method="POST" action="{{ route('login') }}">
                                 @csrf
                                 <div class="mb-3">
+                                    <label class="form-label small fw-semibold">RUT Usuario</label>
                                     <input type="text" name="rut" class="form-control"
                                         placeholder="Ingrese RUT" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">Contraseña</label>
+                                    <div class="input-group">
+                                        <input type="password" name="password" id="passwordField" class="form-control" 
+                                            placeholder="Ingrese su contraseña" required>
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="bi bi-eye-fill" id="eyeIcon"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="form-check form-check-reverse p-0">
+                                        <label class="form-check-label small fw-semibold text-muted me-2" for="rememberMe" style="cursor: pointer;">
+                                            Recordar
+                                        </label>
+                                        <input class="form-check-input" type="checkbox" name="remember" id="rememberMe" style="cursor: pointer;">
+                                    </div>
+
+                                    <a href="/password/reset" class="small text-decoration-none fw-bold">¿Olvidaste tu contraseña?</a>
                                 </div>
                                 @error('rut')
                                     <div class="text-danger small mb-2">{{ $message }}</div>
                                 @enderror
 
-                                <p class="mb-1">¿Eres nuevo? <a href="/C_usuario">Crear cuenta</a></p>  {{-- ← AGREGA ESTA LÍNEA --}}
-
-                                <button type="submit" class="btn btn-primary w-100 mt-3">Ingresar</button>
+                                <button type="submit" class="btn btn-primary w-100 mt-3 shadow-sm py-2 fw-bold">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i> Ingresar
+                                </button>
                             </form>
+
+                            <div class="d-flex align-items-center my-4">
+                                <hr class="flex-grow-1 text-muted">
+                                <span class="mx-3 text-muted small fw-bold">O</span>
+                                <hr class="flex-grow-1 text-muted">
+                            </div>
+
+                            <div class="text-center">
+                                <a href="/login-correo" class="btn btn-outline-secondary w-100 rounded-pill py-2 shadow-sm d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-envelope-fill me-2"></i>
+                                    <span class="small fw-bold">Iniciar con tu correo</span>
+                                </a>
+                            </div>
+                            
+                            <p class="mb-0 mt-4 small text-center">
+                                ¿Eres nuevo? <a href="/C_usuario" class="text-decoration-none fw-bold">Crear cuenta</a>
+                            </p>
+
                         </div>
                     </div>
                 </div>
@@ -509,6 +550,28 @@ $(document).ready(function () {
     .bg-warning-soft   { background-color: #fff8e1; }
     .bg-danger-soft    { background-color: #fdecea; }
     .bg-secondary-soft { background-color: #f0f0f0; }
+
 </style>
+
+@section('javascript')
+    <script>
+        const passwordField = document.getElementById('passwordField');
+        const togglePassword = document.getElementById('togglePassword');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        togglePassword.addEventListener('click', function () {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            
+            eyeIcon.classList.toggle('bi-eye-fill');
+            eyeIcon.classList.toggle('bi-eye-slash-fill');
+
+            this.classList.toggle('btn-primary');
+            this.classList.toggle('text-white');
+            this.classList.toggle('btn-outline-secondary');
+        });
+    </script>
+    
+@endsection
 
 @endsection

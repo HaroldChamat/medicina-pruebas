@@ -42,6 +42,16 @@
                                         placeholder="example@gmail.com">
                                 </div>
 
+                               <div class="mb-3">
+                                    <label for="passwordField" class="form-label small fw-semibold">Contraseña</label>
+                                    <input type="password" 
+                                        class="form-control" 
+                                        id="passwordField" 
+                                        name="password" 
+                                        placeholder="Ingrese su contraseña" 
+                                        required>
+                                </div>
+
                                 <div class="mb-3">
                                 <label for="Rut" class="form-label fw-semibold">Rut</label>
                                 <input type="text"
