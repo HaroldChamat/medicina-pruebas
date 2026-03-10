@@ -4,7 +4,10 @@
 
 <div class="container mt-4">
 
-    <h3 class="fw-bold mb-4">📋 Informes Médicos</h3>
+    <div class="page-header">
+        <h3 class="fw-bold">📋 Informes Médicos</h3>
+        <p class="small mt-1">Gestión y seguimiento de informes médicos del sistema.</p>
+    </div>
 
     <!-- Filtros -->
     <div class="card shadow-sm border-0 mb-4">
@@ -52,49 +55,38 @@
     </div>
 
     <!-- Tabla -->
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered mb-0 align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>ID Cita</th>
-                            <th>Médico</th>
-                            <th>Paciente</th>
-                            <th>Fecha</th>
-                            <th>Diagnóstico</th>
-                            <th>Tratamiento</th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($citas as $cita)
-                            <tr data-medico="{{ $cita->medico->id }}"
-                                data-cita="{{ $cita->id }}">
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ $cita->id }}</td>
-                                <td>{{ $cita->medico->name }} {{ $cita->medico->Apellidos }}</td>
-                                <td>{{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}</td>
-                                <td>{{ \Carbon\Carbon::parse($cita->Fecha_y_hora)->format('d/m/Y H:i') }}</td>
-                                <td>{{ Str::limit($cita->enfermedad->descripcion, 40) }}</td>
-                                <td>{{ Str::limit($cita->tratamiento->descripcion, 40) }}</td>
-                                <td class="text-center">
-                                    <button class="btn btn-outline-primary btn-sm btnVerInforme"
-                                        data-id="{{ $cita->id }}"
-                                        data-medico="{{ $cita->medico->name }} {{ $cita->medico->Apellidos }}"
-                                        data-paciente="{{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}"
-                                        data-fecha="{{ \Carbon\Carbon::parse($cita->Fecha_y_hora)->format('d/m/Y H:i') }}"
-                                        data-enfermedad="{{ $cita->enfermedad->descripcion }}"
-                                        data-tratamiento="{{ $cita->tratamiento->descripcion }}">
-                                        👁 Ver / Editar
-                                    </button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+    <div class="contenedor-tabla-ovalada shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered align-middle">
+                <thead class="table-azul-personalizada">
+                    <tr>
+                        <th>#</th>
+                        <th>ID Cita</th>
+                        <th>Médico</th>
+                        <th>Paciente</th>
+                        <th>Fecha</th>
+                        <th>Diagnóstico</th>
+                        <th>Tratamiento</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($citas as $cita)
+                    <tr>
+                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ $cita->id }}</td>
+                        <td>{{ $cita->medico->name }}</td>
+                        <td>{{ $cita->paciente->name }}</td>
+                        <td>{{ \Carbon\Carbon::parse($cita->Fecha_y_hora)->format('d/m/Y H:i') }}</td>
+                        <td>{{ Str::limit($cita->enfermedad->descripcion, 40) }}</td>
+                        <td>{{ Str::limit($cita->tratamiento->descripcion, 40) }}</td>
+                        <td class="text-center">
+                            <button class="btn btn-outline-primary btn-sm">👁 Ver / Editar</button>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -243,4 +235,78 @@ $(document).ready(function () {
 
 });
 </script>
+
+<style>
+    .table-container-rounded {
+        border: 1px solid #dee2e6; 
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+    }
+
+    .table-container-rounded table {
+        margin-bottom: 0;
+        border: none !important;
+    }
+
+    .table-container-rounded tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+    #btnLimpiarInformes:hover {
+        background-color: #ffc107 !important; 
+        border-color: #ffc107 !important;
+        color: #000 !important; 
+        transition: all 0.3s ease; 
+    }
+
+    .table-azul-personalizada th {
+        background-color: #007bff !important; 
+        color: white !important;            
+        border-color: #0069d9 !important;  
+    }
+    
+    .rounded-custom {
+        border-radius: 20px !important;
+        overflow: hidden;
+    }
+
+    .contenedor-tabla-ovalada {
+        border: 1px solid #dee2e6; 
+        border-radius: 15px !important;
+        overflow: hidden; 
+        background-color: white;
+    }
+
+    .contenedor-tabla-ovalada .table {
+        border: none !important;
+        margin-bottom: 0;
+    }
+
+    .contenedor-tabla-ovalada .table-bordered th,
+    .contenedor-tabla-ovalada .table-bordered td {
+        border: 1px solid #dee2e6 !important;
+    }
+
+    .contenedor-tabla-ovalada .table-bordered thead tr:first-child th {
+        border-top: none !important;
+    }
+    .contenedor-tabla-ovalada .table-bordered tr td:first-child,
+    .contenedor-tabla-ovalada .table-bordered tr th:first-child {
+        border-left: none !important;
+    }
+    .contenedor-tabla-ovalada .table-bordered tr td:last-child,
+    .contenedor-tabla-ovalada .table-bordered tr th:last-child {
+        border-right: none !important;
+    }
+    .contenedor-tabla-ovalada .table-bordered tbody tr:last-child td {
+        border-bottom: none !important;
+    }
+
+    .table-azul-personalizada th {
+        background-color: #007bff !important;
+        color: white !important;
+        border-color: #0069d9 !important;
+    }
+</style>
 @endsection

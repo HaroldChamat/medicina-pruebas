@@ -28,10 +28,10 @@
     <body class="position-relative">
 
         {{-- Corazones decorativos de fondo --}}
-        <div class="position-fixed top-0 end-0 p-5 d-none d-lg-block" style="opacity: 0.05; z-index: 0; pointer-events: none;">
+       <div class="position-fixed top-0 end-0 p-5 d-none d-lg-block" style="opacity: 0.05; z-index: -1; pointer-events: none;">
             <i class="bi bi-heart-pulse-fill" style="font-size: 18rem; color: white;"></i>
         </div>
-        <div class="position-fixed top-0 start-0 p-5 d-none d-lg-block" style="opacity: 0.05; z-index: 0; pointer-events: none;">
+        <div class="position-fixed top-0 start-0 p-5 d-none d-lg-block" style="opacity: 0.05; z-index: -1; pointer-events: none;">
             <i class="bi bi-heart-pulse-fill" style="font-size: 18rem; color: white; transform: scaleX(-1);"></i>
         </div>
 

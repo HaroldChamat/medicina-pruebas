@@ -4,18 +4,18 @@
 <div class="container mt-4">
 
     {{-- Encabezado --}}
-    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div class="page-header d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
         <div>
             <h4 class="fw-bold mb-1">
                 <i class="bi bi-clock-history me-2"></i>
                 Historial Médico
             </h4>
-            <p class="text-muted mb-0">
+            <p class="small mb-0" style="color: rgba(255,255,255,0.85);">
                 Paciente: <strong>{{ $paciente->name }} {{ $paciente->Apellidos }}</strong>
                 <span class="badge bg-secondary ms-2">{{ $paciente->Rut }}</span>
             </p>
         </div>
-        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm rounded-pill">
+        <a href="javascript:history.back()" class="btn btn-outline-light btn-sm rounded-pill">
             <i class="bi bi-arrow-left me-1"></i> Volver
         </a>
     </div>
@@ -59,7 +59,7 @@
         </div>
     @else
         {{-- Contador --}}
-        <p class="text-muted small mb-3" id="contadorResultados">
+        <p class="small mb-3 fw-semibold" style="color: rgba(255,255,255,0.85);" id="contadorResultados">
             Mostrando <strong>{{ $historial->count() }}</strong> registro(s)
         </p>
 

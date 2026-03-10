@@ -4,7 +4,7 @@
 <div class="container mt-4">
 
     {{-- Encabezado --}}
-    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div class="page-header d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
         <div>
             <h4 class="fw-bold mb-1">
                 @if($esAdmin)
@@ -13,15 +13,15 @@
                     <i class="bi bi-clock me-2"></i> Mi Horario de Atención
                 @endif
             </h4>
-            <p class="text-muted small mb-0">
+            <p class="small mb-0" style="color: rgba(255,255,255,0.75);">
                 @if($esAdmin)
                     Administra los horarios de atención de los médicos.
                 @else
                     Consulta tu horario de atención asignado.
                 @endif
             </p>
+            </div>
         </div>
-    </div>
 
     {{-- Vista MÉDICO: card visual --}}
     @if(!$esAdmin)

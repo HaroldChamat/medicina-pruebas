@@ -12,8 +12,44 @@ main {
     background-color: transparent;
 }
 
-/* Asegura que el contenido quede por encima de los corazones */
-main, .navbar {
+.navbar {
     position: relative;
-    z-index: 1;
+    z-index: 1030;
+}
+
+/* Títulos de página */
+h3.fw-bold, h4.fw-bold {
+    color: white !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Card de título de página */
+.page-header {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    color: white;
+}
+
+.page-header h3,
+.page-header h4 {
+    color: white !important;
+    margin-bottom: 0;
+}
+
+.page-header p {
+    color: rgba(255,255,255,0.75) !important;
+    margin-bottom: 0;
+}
+
+/* Excepción: títulos en fondo blanco */
+.card h3.fw-bold,
+.card h4.fw-bold,
+.card h5.fw-bold,
+.card h6.fw-bold {
+    color: #0d3b6e !important;
+    text-shadow: none !important;
 }
