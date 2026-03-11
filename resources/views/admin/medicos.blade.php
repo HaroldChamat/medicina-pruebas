@@ -51,10 +51,12 @@
                                 <td><span class="badge bg-secondary">{{ $medico->Rut }}</span></td>
                                 <td>{{ $medico->telefono }}</td>
                                 <td>
-                                    @if($medico->especialidad)
-                                        <span class="badge bg-light text-dark border">
-                                            {{ $medico->especialidad->Nombre_especialidad }}
-                                        </span>
+                                    @if($medico->especialidades->count() > 0)
+                                        @foreach($medico->especialidades as $esp)
+                                            <span class="badge bg-light text-dark border">
+                                                {{ $esp->Nombre_especialidad }}
+                                            </span>
+                                        @endforeach
                                     @else
                                         <span class="text-muted small">Sin especialidad</span>
                                     @endif

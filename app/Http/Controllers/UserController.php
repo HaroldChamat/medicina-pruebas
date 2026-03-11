@@ -59,7 +59,7 @@ class UserController extends Controller
     {
         if (session('admin') !== 1) abort(403);
 
-        $medicos = User::with(['cargo', 'especialidad'])
+        $medicos = User::with(['cargo', 'especialidades'])
             ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
             ->get();
 
