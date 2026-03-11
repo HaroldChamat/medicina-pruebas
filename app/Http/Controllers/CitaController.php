@@ -14,21 +14,21 @@ class CitaController extends Controller
 {
     $userId = session('user_id');
     $cargo  = session('cargo');
-    $perPage = 10; // citas por página
+    $perPage = 10; 
 
     if ($cargo === 'Admin') {
         $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
-            ->orderBy('Fecha_y_hora', 'desc')
+            ->orderBy('Fecha_y_hora', 'asc') 
             ->paginate($perPage);
     } elseif ($cargo === 'Medico') {
         $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
             ->where('medico_id', $userId)
-            ->orderBy('Fecha_y_hora', 'desc')
+            ->orderBy('Fecha_y_hora', 'asc') 
             ->paginate($perPage);
     } elseif ($cargo === 'Paciente') {
         $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
             ->where('paciente_id', $userId)
-            ->orderBy('Fecha_y_hora', 'desc')
+            ->orderBy('Fecha_y_hora', 'asc') 
             ->paginate($perPage);
     } else {
         $Citas = collect();

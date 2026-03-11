@@ -44,15 +44,15 @@ class UserController extends Controller
 
     public function index_especialidad()
     {
-        $medicos = User::with(['cargo', 'especialidad'])
+        $medicos = User::with(['cargo', 'especialidades']) 
             ->whereHas('cargo', function ($q) {
                 $q->where('Nombre_cargo', 'Medico');
             })
             ->get();
 
-        $especialidades = Especialidad::all();
+        $especialidades = \App\Models\Especialidad::all();
 
-        return view('Especialidad', compact('medicos', 'especialidades'));
+        return view('Especialidad', compact('medicos', 'especialidades')); 
     }
 
     public function index_medicos()

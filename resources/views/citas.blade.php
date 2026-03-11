@@ -48,7 +48,7 @@
                 <table class="table table-hover align-middle table-borderless">
                     <thead class="table-light text-uppercase small">
                         <tr>
-                            <th>ID</th>
+                            <th>#</th>
                             <th>Medico</th>
                             <th>Paciente</th>
                             <th>Fecha</th>
@@ -64,7 +64,7 @@
                             <tr data-medico="{{ $cita->medico->id }}"
                                 data-paciente="{{ $cita->paciente->id }}"
                                 data-paciente-texto="{{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}">
-                                <td>{{ $cita->id }}</td>
+                                <td>{{ ($Citas->currentPage() - 1) * $Citas->perPage() + $loop->iteration }}</td>
                                 <td>{{ $cita->medico->name }} {{ $cita->medico->Apellidos }}</td>
                                 <td>
                                     {{-- Solo Admin y Médico pueden ver el historial --}}
@@ -94,24 +94,22 @@
                                 @if(session('admin') === 1 || session('cargo') === 'Medico')
                                     <td>
                                         <a href="#" data-id="{{ $cita->id }}" class="btn btn-primary btn-sm editar">
-                                            Editar
+                                            Editar <i class="bi bi-eye ms-1"></i>
                                         </a>
 
-                                        {{-- Eliminar: solo Admin --}}
                                         @if(session('admin') === 1)
                                             <a href="#" data-id="{{ $cita->id }}" class="btn btn-danger btn-sm eliminar">
-                                                Eliminar
+                                                Eliminar <i class="bi bi-x-lg ms-1"></i>
                                             </a>
                                         @endif
 
-                                        {{-- Informe: Admin y Médico --}}
                                         @if(!$cita->enfermedad || !$cita->tratamiento)
                                             <a href="{{ route('informe.create', $cita->id) }}" class="btn btn-info btn-sm">
                                                 Informe
                                             </a>
                                         @else
-                                            <button class="btn btn-secondary btn-sm" disabled>
-                                                Informe enviado
+                                            <button class="btn btn-success btn-sm" disabled>
+                                                Informe enviado <i class="bi bi-check-lg ms-1"></i>
                                             </button>
                                         @endif
                                     </td>

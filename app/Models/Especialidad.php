@@ -1,27 +1,25 @@
 <?php
 
 namespace App\Models;
-use App\Models\User;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 class Especialidad extends Model
 {
-    //
+    protected $table = 'especialidads';
 
     protected $fillable = [
         'Nombre_especialidad'
     ];
 
-    public function medico()
+    public function medicos()
     {
-        return $this->belongsTo(User::class, 'medico_id');
+        return $this->belongsToMany(
+            User::class, 
+            'medico_especialidad', 
+            'especialidad_id', 
+            'medico_id'
+        );
     }
-
-    public function users()
-    {
-        return $this->hasMany(User::class);
-    }
-
-
 }
