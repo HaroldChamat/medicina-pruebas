@@ -4,7 +4,7 @@
         <div class="container">
             <div class="page-header">
                 <h3 class="fw-bold">🩺 Especialidades de Médicos</h3>
-                <p class="small mt-1">Gestión de especialidades asignadas a los médicos (Máximo 4 por médico).</p>
+                <p class="small mt-1">Gestión de especialidades asignadas a los médicos.</p>
             </div>
 
             <div class="card shadow-sm border-0">
@@ -80,7 +80,7 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
-                                Seleccione Especialidades (Máximo 4)
+                                Seleccione Especialidades
                             </label>
                             {{-- Cambio clave: nombre con [], atributo 'multiple' y ID para el JS --}}
                             <select
