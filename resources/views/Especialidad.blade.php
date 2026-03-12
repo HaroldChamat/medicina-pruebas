@@ -65,7 +65,7 @@
     {{-- Modal --}}
     <div class="modal fade" id="modalEspecialidad" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content">
+            <div class="modal-content shadow">
                 <form id="formEspecialidad">
                     @csrf
                     @method('PUT')
@@ -78,33 +78,49 @@
                     <div class="modal-body">
                         <input type="hidden" name="medico_id" id="medico_id">
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                Seleccione Especialidades
-                            </label>
-                            {{-- Cambio clave: nombre con [], atributo 'multiple' y ID para el JS --}}
-                            <select
-                                name="especialidad_id[]"
-                                id="especialidad_select"
-                                class="form-select"
-                                multiple
-                                style="height: 200px;"
-                                required>
+                        <div id="step-1">
+                            <label class="form-label fw-bold mb-3 text-primary">1. Seleccione la Especialidad Base</label>
+                            <div class="list-group">
                                 @foreach($especialidades as $especialidad)
-                                    <option value="{{ $especialidad->id }}">
+                                    <button type="button" 
+                                        class="list-group-item list-group-item-action select-main-espec" 
+                                        data-id="{{ $especialidad->id }}"
+                                        data-nombre="{{ $especialidad->Nombre_especialidad }}">
                                         {{ $especialidad->Nombre_especialidad }}
-                                    </option>
+                                    </button>
                                 @endforeach
-                            </select>
-                            <div class="form-text mt-2 text-muted">
-                                <i class="bi bi-info-circle"></i> Mantenga presionado <strong>Ctrl</strong> (o Cmd en Mac) para elegir varias.
+                            </div>
+                        </div>
+
+                        <div id="step-2" class="d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-label fw-bold mb-0 text-success">2. Añada Especialidades Adicionales</label>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnBack">Cambiar Principal</button>
+                            </div>
+                            
+                            <div class="row g-2">
+                                @foreach($especialidades as $especialidad)
+                                    <div class="col-6 espec-checkbox-item" id="item-{{ $especialidad->id }}" style="cursor: pointer;">
+                                        <div class="border rounded p-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                    name="especialidad_id[]" 
+                                                    value="{{ $especialidad->id }}" 
+                                                    id="check-{{ $especialidad->id }}">
+                                                <label class="form-check-label" for="check-{{ $especialidad->id }}">
+                                                    {{ $especialidad->Nombre_especialidad }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>
 
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        <button type="submit" class="btn btn-primary d-none" id="btnSubmit">Guardar Cambios</button>
                     </div>
                 </form>
             </div>
@@ -115,65 +131,97 @@
     @section('javascript')
     @parent
 
-       <script>
-            $(document).ready(function () {
-                // 1. Inicializamos el modal una sola vez
-                const modalElement = document.getElementById('modalEspecialidad');
-                const modalEspecialidad = new bootstrap.Modal(modalElement);
-                const selectEspecialidad = document.getElementById('especialidad_select');
+     <script>
+        $(document).ready(function () {
+            const modalElement = document.getElementById('modalEspecialidad');
+            const modalEspecialidad = new bootstrap.Modal(modalElement);
+            
+            // 1. Abrir Modal
+            $(document).on('click', '.btnEditarEspecialidad', function () {
+                const id = $(this).data('medico-id');
+                const nombre = $(this).data('medico-nombre');
+                const actuales = $(this).data('actuales') || []; 
 
-                // 2. Evento para abrir el modal
-                $(document).on('click', '.btnAsignarEspecialidad, .btnEditarEspecialidad', function () {
-                    const id = $(this).data('medico-id');
-                    const nombre = $(this).data('medico-nombre');
-                    const actuales = $(this).data('actuales') || []; 
+                $('#medico_id').val(id);
+                $('#tituloEspecialidad').text(`Gestionar especialidades de: ${nombre}`);
 
-                    $('#medico_id').val(id);
-                    $('#tituloEspecialidad').text(`Gestionar especialidades de: ${nombre}`);
+                // Reset visual
+                $('#step-1').removeClass('d-none');
+                $('#step-2').addClass('d-none');
+                $('#btnSubmit').addClass('d-none');
 
-                    Array.from(selectEspecialidad.options).forEach(option => {
-                        option.selected = actuales.includes(parseInt(option.value));
-                    });
-
-                    modalEspecialidad.show();
+                // Limpiar checkboxes
+                $('input[name="especialidad_id[]"]').prop('checked', false);
+                
+                // Marcar actuales
+                actuales.forEach(especId => {
+                    $(`#check-${especId}`).prop('checked', true);
                 });
 
-                // 3. Validación de máximo 4 especialidades
-                $(selectEspecialidad).on('change', function() {
-                    const seleccionadas = $(this).val();
-                    if (seleccionadas && seleccionadas.length > 4) {
-                        alert('Solo puedes asignar un máximo de 4 especialidades.');
-                        $(this).find('option:selected').last().prop('selected', false);
+                modalEspecialidad.show();
+            });
+
+            // 2. Paso 1: Seleccionar base
+            $(document).on('click', '.select-main-espec', function(e) {
+                e.preventDefault();
+                const id = $(this).data('id');
+                
+                // Marcamos la principal
+                $(`#check-${id}`).prop('checked', true);
+
+                // Pasamos al paso 2
+                $('#step-1').addClass('d-none');
+                $('#step-2').removeClass('d-none');
+                $('#btnSubmit').removeClass('d-none');
+            });
+
+            // 3. Paso 2: Lógica de Checkboxes (CORREGIDA)
+            $(document).on('click', '.espec-checkbox-item', function(e) {
+                // Detener que el clic se propague a otros elementos
+                e.stopPropagation();
+                
+                const checkbox = $(this).find('input[type="checkbox"]');
+                const isChecked = checkbox.prop('checked');
+                const totalChecked = $('input[name="especialidad_id[]"]:checked').length;
+
+                // Si ya hay 4 y queremos marcar uno nuevo, avisar
+                if (!isChecked && totalChecked >= 4) {
+                    alert('Solo puedes asignar un máximo de 4 especialidades.');
+                    return;
+                }
+
+                // Cambiar el estado manualmente para asegurar que funcione
+                checkbox.prop('checked', !isChecked);
+            });
+
+            // Evitar que el clic directo en el checkbox haga doble acción
+            $(document).on('click', 'input[name="especialidad_id[]"]', function(e) {
+                e.stopPropagation();
+            });
+
+            // 4. Botón Volver
+            $('#btnBack').on('click', function() {
+                $('#step-1').removeClass('d-none');
+                $('#step-2').addClass('d-none');
+                $('#btnSubmit').addClass('d-none');
+            });
+
+            // 5. Envío AJAX
+            $('#formEspecialidad').on('submit', function (e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '/asignar-especialidad-medico',
+                    method: 'POST', 
+                    data: $(this).serialize(), 
+                    success: function () {
+                        modalEspecialidad.hide();
+                        location.reload(); 
+                    },
+                    error: function () {
+                        alert('Hubo un error al guardar las especialidades.');
                     }
                 });
-
-                // 4. Envío del formulario por AJAX con la URL ÚNICA
-                $('#formEspecialidad').on('submit', function (e) {
-                    e.preventDefault();
-
-                    $.ajax({
-                        url: '/asignar-especialidad-medico', // URL actualizada para evitar conflictos
-                        method: 'POST', 
-                        data: $(this).serialize(), 
-                        success: function (response) {
-                            modalEspecialidad.hide();
-                            location.reload(); 
-                        },
-                        error: function (xhr) {
-                            if (xhr.status === 422) {
-                                let errores = xhr.responseJSON.errors;
-                                let mensaje = "Errores encontrados:\n";
-                                $.each(errores, function(campo, mensajes) {
-                                    mensaje += "- " + mensajes.join(", ") + "\n";
-                                });
-                                alert(mensaje);
-                            } else {
-                                alert('Error crítico: ' + (xhr.responseJSON?.message || 'Error desconocido'));
-                            }
-                            console.log("Error completo:", xhr.responseJSON);
-                        }
-                    });
-                });
             });
-        </script>
+        });
+    </script>
     @endsection
