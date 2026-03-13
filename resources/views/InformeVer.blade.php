@@ -15,10 +15,12 @@
             </p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('informe.edit', $cita->id) }}"
-               class="btn btn-warning btn-sm rounded-pill">
-                <i class="bi bi-pencil me-1"></i> Editar informe
-            </a>
+            @if(session('cargo') !== 'Paciente')
+                <a href="{{ route('informe.edit', $cita->id) }}"
+                   class="btn btn-warning btn-sm rounded-pill">
+                    <i class="bi bi-pencil me-1"></i> Editar informe
+                </a>
+            @endif
             <a href="{{ route('informe.pdf', $cita->id) }}"
                class="btn btn-danger btn-sm rounded-pill" target="_blank">
                 <i class="bi bi-file-earmark-pdf me-1"></i> Descargar PDF

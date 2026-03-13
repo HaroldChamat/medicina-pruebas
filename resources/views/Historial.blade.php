@@ -114,7 +114,13 @@
                             </p>
 
                         </div>
-                        <div class="card-footer bg-white border-0 text-end">
+                        <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2">
+                            @if($cita->enfermedad && $cita->tratamiento)
+                                <a href="{{ route('informe.show', $cita->id) }}"
+                                   class="btn btn-outline-success btn-sm rounded-pill">
+                                    <i class="bi bi-file-earmark-text me-1"></i> Ver informe
+                                </a>
+                            @endif
                             <a href="{{ route('informe.pdf', $cita->id) }}"
                                class="btn btn-outline-danger btn-sm rounded-pill"
                                target="_blank">

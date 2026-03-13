@@ -62,6 +62,11 @@ class InformeController extends Controller
 
     public function show(Cita $cita)
     {
+        // Paciente solo puede ver su propio informe
+        if (session('cargo') === 'Paciente' && $cita->paciente_id !== session('user_id')) {
+            abort(403, 'No autorizado');
+        }
+
         $cita->load(['medico.especialidades', 'paciente', 'enfermedad', 'tratamiento']);
         return view('InformeVer', compact('cita'));
     }
