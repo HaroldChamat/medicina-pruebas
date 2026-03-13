@@ -8,6 +8,23 @@ use Illuminate\Http\Request;
 class EspecialidadController extends Controller
 {
  
+    public function store(Request $request)
+    {
+        $request->validate([
+            'Nombre_especialidad' => 'required|string|max:100|unique:especialidads,Nombre_especialidad',
+        ]);
+
+        $especialidad = \App\Models\Especialidad::create([
+            'Nombre_especialidad' => ucwords(strtolower(trim($request->Nombre_especialidad))),
+        ]);
+
+        return response()->json([
+            'ok'   => true,
+            'id'   => $especialidad->id,
+            'nombre' => $especialidad->Nombre_especialidad,
+        ]);
+    }
+
     public function actualizarEspecialidad(Request $request)
     {
       

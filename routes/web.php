@@ -32,6 +32,7 @@ Route::middleware(['cargo:Admin'])->group(function () {
     
     // 1. RUTA DE ESPECIALIDADES (Prioritaria y única para evitar conflictos)
     Route::put('/asignar-especialidad-medico', [EspecialidadController::class, 'actualizarEspecialidad'])->name('especialidad.update');
+    Route::post('/especialidad', [EspecialidadController::class, 'store'])->name('especialidad.store');
 
     // 2. Gestión de usuarios y otros
     Route::put('/usuario/{id}', [UserController::class, 'update'])->name('User.update');
