@@ -243,10 +243,12 @@
                                         </div>
                                     </td>
                                     <td>
-                                        @if($medico->especialidad)
-                                            <span class="badge bg-light text-dark border">
-                                                {{ $medico->especialidad->Nombre_especialidad }}
-                                            </span>
+                                        @if($medico->especialidades->count() > 0)
+                                            @foreach($medico->especialidades as $esp)
+                                                <span class="badge bg-light text-dark border me-1">
+                                                    {{ $esp->Nombre_especialidad }}
+                                                </span>
+                                            @endforeach
                                         @else
                                             <span class="text-muted small">Sin especialidad</span>
                                         @endif

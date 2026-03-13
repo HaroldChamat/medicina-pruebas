@@ -21,10 +21,10 @@ class HorarioController extends Controller
         $finSemana = $inicioSemana->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
 
         if ($cargo === 'Medico') {
-            $medico  = User::with('horario')->find($userId);
+            $medico  = User::with(['horario', 'especialidades'])->find($userId);
             $medicos = collect([$medico]);
         } else {
-            $medicos = User::with('horario')
+            $medicos = User::with(['horario', 'especialidades'])
                 ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
                 ->get();
         }
