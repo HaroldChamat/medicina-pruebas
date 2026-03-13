@@ -78,21 +78,33 @@
                 {{-- Campana de notificaciones --}}
                 <div class="dropdown">
                     <button class="btn btn-outline-light btn-sm rounded-pill position-relative"
-                            id="btnNotificaciones" data-bs-toggle="dropdown">
+                            id="btnNotificaciones" data-bs-toggle="dropdown" data-bs-auto-close="outside">
                         <i class="bi bi-bell-fill"></i>
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                               id="badgeNotif" style="display:none; font-size: 0.6rem;">0</span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow"
-                        style="min-width: 300px; max-height: 350px; overflow-y: auto;" id="listaNotif">
-                        <li class="dropdown-header fw-bold text-muted px-3 py-2">
-                            <i class="bi bi-bell me-1"></i> Notificaciones
-                        </li>
-                        <li><hr class="dropdown-divider m-0"></li>
-                        <li class="px-3 py-3 text-muted small text-center" id="sinNotif">
-                            Sin notificaciones nuevas
-                        </li>
-                    </ul>
+                    <div class="dropdown-menu dropdown-menu-end shadow p-0"
+                         style="min-width: 320px; max-height: 420px; overflow: hidden;">
+
+                        {{-- Header --}}
+                        <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center"
+                             style="background: #f8f9fa;">
+                            <strong class="small"><i class="bi bi-bell me-1"></i> Notificaciones</strong>
+                            <button class="btn btn-link btn-sm p-0 text-muted text-decoration-none"
+                                    id="btnMarcarLeidas" style="font-size: 0.75rem;">
+                                Marcar leídas
+                            </button>
+                        </div>
+
+                        {{-- Lista scrollable --}}
+                        <ul class="list-unstyled mb-0" id="listaNotif"
+                            style="max-height: 340px; overflow-y: auto;">
+                            <li class="px-3 py-3 text-muted small text-center" id="sinNotif">
+                                <i class="bi bi-bell-slash me-1"></i> Sin notificaciones
+                            </li>
+                        </ul>
+
+                    </div>
                 </div>
 
                 {{-- Nombre del usuario --}}

@@ -9,6 +9,7 @@ use App\Models\Tratamiento;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Mail;
+use App\Helpers\NotificacionHelper;
 
 class InformeController extends Controller
 {
@@ -90,6 +91,16 @@ class InformeController extends Controller
 
         $cita->estado = 'Finalizada';
         $cita->save();
+        $cita->load(['medico', 'paciente']);
+
+        $nombreMedico = $cita->medico->name . ' ' . $cita->medico->Apellidos;
+        $urlVer = '/Informe/' . $cita->id . '/ver';
+
+        NotificacionHelper::enviar($cita, $cita->medico_id,
+            'Informe generado', 'El informe médico fue generado exitosamente', 'success', $urlVer);
+
+        NotificacionHelper::enviar($cita, $cita->paciente_id,
+            'Informe disponible', "El Dr. {$nombreMedico} generó tu informe médico", 'success', $urlVer);
 
         return redirect('/citas')->with('success', 'Informe guardado correctamente');
     }
@@ -113,6 +124,16 @@ class InformeController extends Controller
 
         $cita->estado = 'Finalizada';
         $cita->save();
+        $cita->load(['medico', 'paciente']);
+
+        $nombreMedico = $cita->medico->name . ' ' . $cita->medico->Apellidos;
+        $urlVer = '/Informe/' . $cita->id . '/ver';
+
+        NotificacionHelper::enviar($cita, $cita->medico_id,
+            'Informe actualizado', 'El informe médico fue actualizado', 'warning', $urlVer);
+
+        NotificacionHelper::enviar($cita, $cita->paciente_id,
+            'Informe actualizado', "El Dr. {$nombreMedico} actualizó tu informe médico", 'warning', $urlVer);
 
         return redirect('/citas')->with('success', 'Informe actualizado correctamente');
     }

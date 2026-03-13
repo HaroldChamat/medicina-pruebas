@@ -75,3 +75,23 @@ Route::middleware(['cargo:Admin,Medico,Paciente'])->group(function () {
     Route::post('/informe/email', [InformeController::class, 'enviarPorEmail']);
     Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
 });
+
+//---- Ruta para obtener notificaciones-----//
+
+Route::get('/notificaciones', function () {
+    $userId = session('user_id');
+    if (!$userId) return response()->json([]);
+
+    return \App\Models\Notificacion::where('user_id', $userId)
+        ->orderBy('created_at', 'desc')
+        ->take(20)
+        ->get();
+})->name('notificaciones.index');
+
+Route::post('/notificaciones/leer', function () {
+    $userId = session('user_id');
+    if (!$userId) return response()->json(['ok' => false]);
+
+    \App\Models\Notificacion::where('user_id', $userId)->update(['leida' => true]);
+    return response()->json(['ok' => true]);
+})->name('notificaciones.leer');

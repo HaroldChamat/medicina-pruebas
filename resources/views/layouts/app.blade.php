@@ -23,6 +23,9 @@
 
         <!-- Estilos propios -->
         <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+
+        <!-- Pusher -->
+        <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     </head>
 
     <body class="position-relative">
@@ -91,7 +94,8 @@
         }
 
         // ── FUNCIÓN GLOBAL DE NOTIFICACIONES ────────────────────────────────────────
-        function agregarNotificacion(mensaje, tipo = 'info') {
+        // ── FUNCIÓN GLOBAL DE NOTIFICACIONES ────────────────────────────────────────
+        function agregarNotificacion(mensaje, tipo = 'info', url = '', titulo = '') {
             const iconos = {
                 success: 'bi-check-circle-fill text-success',
                 danger:  'bi-x-circle-fill text-danger',
@@ -100,30 +104,94 @@
             };
 
             const hora = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+            const contenido = url
+                ? `<a href="${url}" class="text-decoration-none text-dark d-block">
+                        <div class="small fw-semibold">${titulo || mensaje}</div>
+                        ${titulo ? `<div class="small text-muted">${mensaje}</div>` : ''}
+                        <div class="text-muted" style="font-size:0.72rem;">${hora}</div>
+                   </a>`
+                : `<div class="small fw-semibold">${titulo || mensaje}</div>
+                   ${titulo ? `<div class="small text-muted">${mensaje}</div>` : ''}
+                   <div class="text-muted" style="font-size:0.72rem;">${hora}</div>`;
+
             const item = `
                 <li class="px-3 py-2 border-bottom notif-item">
                     <div class="d-flex align-items-start gap-2">
                         <i class="bi ${iconos[tipo]} mt-1"></i>
-                        <div>
-                            <div class="small fw-semibold">${mensaje}</div>
-                            <div class="text-muted" style="font-size: 0.72rem;">${hora}</div>
-                        </div>
+                        <div class="flex-grow-1">${contenido}</div>
                     </div>
                 </li>`;
 
             $('#sinNotif').hide();
-            $('#listaNotif').append(item);
+            $('#listaNotif').prepend(item);
 
-            // Actualiza badge
             const count = $('.notif-item').length;
             $('#badgeNotif').text(count).show();
         }
 
-        // Limpiar badge al abrir el dropdown
+        // ── CARGAR NOTIFICACIONES AL INICIO ─────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
+
+            // Cargar notificaciones desde BD
+            fetch('/notificaciones')
+                .then(r => r.json())
+                .then(notifs => {
+                    if (!notifs.length) return;
+
+                    notifs.forEach(n => {
+                        agregarNotificacion(n.mensaje, n.tipo, n.url, n.titulo);
+                    });
+
+                    const noLeidas = notifs.filter(n => !n.leida).length;
+                    if (noLeidas > 0) {
+                        $('#badgeNotif').text(noLeidas).show();
+                    }
+                })
+                .catch(() => {});
+
+            // Marcar como leídas al abrir el dropdown
             document.getElementById('btnNotificaciones')?.addEventListener('click', () => {
-                setTimeout(() => $('#badgeNotif').hide(), 300);
+                setTimeout(() => {
+                    $('#badgeNotif').hide();
+                    fetch('/notificaciones/leer', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                }, 300);
             });
+
+            // Marcar todas como leídas
+            document.getElementById('btnMarcarLeidas')?.addEventListener('click', () => {
+                $('#listaNotif').empty();
+                $('#sinNotif').show();
+                $('#badgeNotif').hide();
+                fetch('/notificaciones/leer', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            });
+
+            // ── PUSHER EN TIEMPO REAL ────────────────────────────────────────────────
+            @if(session('user_id'))
+            if (typeof Pusher !== 'undefined') {
+                const pusher = new Pusher('{{ env("PUSHER_APP_KEY") }}', {
+                    cluster: '{{ env("PUSHER_APP_CLUSTER") }}'
+                });
+
+                const canal = pusher.subscribe('notificaciones.{{ session("user_id") }}');
+
+                canal.bind('nueva-notificacion', function (data) {
+                    agregarNotificacion(data.mensaje, data.tipo, data.url, data.titulo);
+                    mostrarToast(data.titulo + ': ' + data.mensaje, data.tipo);
+                });
+            }
+            @endif
         });
         </script>
 
