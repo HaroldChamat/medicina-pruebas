@@ -49,10 +49,12 @@ Route::middleware(['cargo:Admin,Medico'])->group(function () {
     Route::get('/citas/{id}/edit', [CitaController::class, 'edit']);
     Route::put('/citas/{id}', [CitaController::class, 'update']);
     Route::get('/Informacion', [InformeController::class, 'index_paciente'])->name('informe.paciente');
+    Route::get('/Informe', [InformeController::class, 'index'])->name('informe.index');
+    Route::get('/Informe/{cita}/ver', [InformeController::class, 'show'])->name('informe.show');
+    Route::get('/Informe/{cita}/editar', [InformeController::class, 'edit'])->name('informe.edit');
     Route::get('/Informe/{cita}', [InformeController::class, 'create'])->name('informe.create');
     Route::post('/Informe/{cita}', [InformeController::class, 'store'])->name('informe.store');
     Route::put('/Informe/{cita}', [InformeController::class, 'update'])->name('informe.update');
-    Route::get('/Informe', [InformeController::class, 'index'])->name('informe.index');
     Route::get('/Horario', [HorarioController::class, 'index'])->name('Horario');
     Route::resource('horario', HorarioController::class)->only(['store', 'update']);
 }); 
