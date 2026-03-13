@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
-use App\Models\Paciente;
 
 class Horario extends Model
 {
@@ -14,7 +13,12 @@ class Horario extends Model
         'hora_fin',
         'almuerzo_inicio',
         'almuerzo_fin',
-        'hora_atencion'
+        'hora_atencion',
+        'dias_semana',
+    ];
+
+    protected $casts = [
+        'dias_semana' => 'array',
     ];
 
     public function users()

@@ -53,3 +53,53 @@ h3.fw-bold, h4.fw-bold {
     color: #0d3b6e !important;
     text-shadow: none !important;
 }
+
+/* Calendario semanal */
+.tabla-horario {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.tabla-horario th {
+    font-size: 0.82rem;
+    padding: 10px 6px;
+    letter-spacing: 0.5px;
+}
+
+.tabla-horario td {
+    height: 48px;
+    font-size: 0.8rem;
+    padding: 4px 6px;
+    vertical-align: middle;
+    transition: background-color 0.2s;
+}
+
+.tabla-horario tbody tr:hover td {
+    filter: brightness(0.95);
+}
+
+.tabla-horario .slot-hora {
+    font-weight: 600;
+    color: #0d3b6e;
+    background-color: #f0f4fb !important;
+    font-size: 0.78rem;
+    border-right: 2px solid #0d3b6e !important;
+}
+
+.slot-ocupado {
+    background-color: #fdecea !important;
+    border-left: 3px solid #dc3545 !important;
+}
+
+.slot-almuerzo {
+    background-color: #fff8e1 !important;
+    border-left: 3px solid #ffc107 !important;
+}
+
+.slot-libre {
+    background-color: #f0f7ff !important;
+}
+
+.slot-inactivo {
+    background-color: #f5f5f5 !important;
+}

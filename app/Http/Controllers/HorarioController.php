@@ -8,25 +8,32 @@ use App\Models\Horario;
 
 class HorarioController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $cargo  = session('cargo');
         $userId = session('user_id');
 
-        // Médico: solo ve su propio horario
+        // Calcular semana según parámetro ?semana=YYYY-MM-DD
+        $semanaParam  = $request->query('semana');
+        $inicioSemana = $semanaParam
+            ? \Carbon\Carbon::parse($semanaParam)->startOfWeek(\Carbon\Carbon::MONDAY)
+            : \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY);
+        $finSemana = $inicioSemana->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
+
         if ($cargo === 'Medico') {
             $medico  = User::with('horario')->find($userId);
-            $medicos = collect([$medico]); // colección de un solo elemento
+            $medicos = collect([$medico]);
         } else {
-            // Admin: ve todos los médicos y sus horarios
             $medicos = User::with('horario')
                 ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
                 ->get();
         }
 
         return view('Horario', [
-            'medicos' => $medicos,
-            'esAdmin' => session('admin') === 1,
+            'medicos'      => $medicos,
+            'esAdmin'      => session('admin') === 1,
+            'inicioSemana' => $inicioSemana,
+            'finSemana'    => $finSemana,
         ]);
     }
 
@@ -78,6 +85,7 @@ class HorarioController extends Controller
             'almuerzo_inicio'=> $request->almuerzo_inicio,
             'almuerzo_fin'   => $request->almuerzo_fin,
             'hora_atencion'  => $request->hora_atencion,
+            'dias_semana'    => $request->dias_semana ?? ['lunes','martes','miercoles','jueves','viernes'],
         ]);
 
         return response()->json(['ok' => true]);

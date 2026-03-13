@@ -53,7 +53,26 @@
                         </div>
                     </div>
                 </div>
-
+                <div class="col-12 mt-2">
+                    <label class="form-label fw-semibold small">
+                        <i class="bi bi-calendar-week me-1"></i> Días de atención
+                    </label>
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach(['lunes','martes','miercoles','jueves','viernes'] as $dia)
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                    name="dias_semana[]"
+                                    value="{{ $dia }}"
+                                    id="dia_crear_{{ $dia }}"
+                                    checked>
+                                <label class="form-check-label text-capitalize"
+                                    for="dia_crear_{{ $dia }}">
+                                    {{ ucfirst($dia) }}
+                                </label>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary rounded-pill"
                             data-bs-dismiss="modal">Cancelar</button>

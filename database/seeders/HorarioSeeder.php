@@ -6,7 +6,6 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Horario;
-use App\Models\Cargo;
 
 class HorarioSeeder extends Seeder
 {
@@ -18,35 +17,38 @@ class HorarioSeeder extends Seeder
             $q->where('Nombre_cargo', 'Medico');
         })->get();
 
-        // Configuraciones de horario variadas para hacer pruebas más realistas
         $configuraciones = [
             [
-                'hora_inicio'      => '08:00',
-                'hora_fin'         => '17:00',
-                'almuerzo_inicio'  => '13:00',
-                'almuerzo_fin'     => '14:00',
-                'hora_atencion'    => 30,   // minutos por cita
+                'hora_inicio'     => '08:00',
+                'hora_fin'        => '17:00',
+                'almuerzo_inicio' => '13:00',
+                'almuerzo_fin'    => '14:00',
+                'hora_atencion'   => 30,
+                'dias_semana'     => ['lunes','martes','miercoles','jueves','viernes'],
             ],
             [
-                'hora_inicio'      => '09:00',
-                'hora_fin'         => '18:00',
-                'almuerzo_inicio'  => '13:30',
-                'almuerzo_fin'     => '14:30',
-                'hora_atencion'    => 45,
+                'hora_inicio'     => '09:00',
+                'hora_fin'        => '18:00',
+                'almuerzo_inicio' => '13:30',
+                'almuerzo_fin'    => '14:30',
+                'hora_atencion'   => 45,
+                'dias_semana'     => ['lunes','martes','jueves','viernes'],
             ],
             [
-                'hora_inicio'      => '08:30',
-                'hora_fin'         => '16:30',
-                'almuerzo_inicio'  => '12:30',
-                'almuerzo_fin'     => '13:30',
-                'hora_atencion'    => 20,
+                'hora_inicio'     => '08:30',
+                'hora_fin'        => '16:30',
+                'almuerzo_inicio' => '12:30',
+                'almuerzo_fin'    => '13:30',
+                'hora_atencion'   => 20,
+                'dias_semana'     => ['lunes','miercoles','viernes'],
             ],
             [
-                'hora_inicio'      => '10:00',
-                'hora_fin'         => '19:00',
-                'almuerzo_inicio'  => '14:00',
-                'almuerzo_fin'     => '15:00',
-                'hora_atencion'    => 60,
+                'hora_inicio'     => '10:00',
+                'hora_fin'        => '19:00',
+                'almuerzo_inicio' => '14:00',
+                'almuerzo_fin'    => '15:00',
+                'hora_atencion'   => 60,
+                'dias_semana'     => ['martes','miercoles','jueves'],
             ],
         ];
 
@@ -54,12 +56,15 @@ class HorarioSeeder extends Seeder
             $config = $configuraciones[$index % count($configuraciones)];
 
             Horario::create(array_merge($config, [
-                'medico_id' => $medico->id,
+                'medico_id'   => $medico->id,
+                'dias_semana' => $config['dias_semana'],
             ]));
 
+            $dias = implode(', ', $config['dias_semana']);
             $this->command->info(
-                "   → Horario asignado a Dr. {$medico->name} {$medico->Apellidos}" .
-                " ({$config['hora_inicio']} - {$config['hora_fin']}, {$config['hora_atencion']} min/cita)"
+                "   → Dr. {$medico->name} {$medico->Apellidos}" .
+                " ({$config['hora_inicio']} - {$config['hora_fin']}," .
+                " {$config['hora_atencion']} min/cita, días: {$dias})"
             );
         }
 
