@@ -88,6 +88,9 @@ class InformeController extends Controller
             ['descripcion' => $request->tratamiento]
         );
 
+        $cita->estado = 'Finalizada';
+        $cita->save();
+
         return redirect('/citas')->with('success', 'Informe guardado correctamente');
     }
 
@@ -107,6 +110,9 @@ class InformeController extends Controller
             ['cita_id' => $cita->id],
             ['descripcion' => $request->tratamiento]
         );
+
+        $cita->estado = 'Finalizada';
+        $cita->save();
 
         return redirect('/citas')->with('success', 'Informe actualizado correctamente');
     }

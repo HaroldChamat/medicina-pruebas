@@ -109,12 +109,12 @@
 
                                         @if(!$cita->enfermedad || !$cita->tratamiento)
                                             <a href="{{ route('informe.create', $cita->id) }}" class="btn btn-info btn-sm">
-                                                Informe
+                                                Informe <i class="bi bi-file-earmark-plus ms-1"></i>
                                             </a>
                                         @else
-                                            <button class="btn btn-success btn-sm" disabled>
-                                                Informe enviado <i class="bi bi-check-lg ms-1"></i>
-                                            </button>
+                                            <a href="{{ route('informe.edit', $cita->id) }}" class="btn btn-warning btn-sm">
+                                                Editar informe <i class="bi bi-pencil ms-1"></i>
+                                            </a>
                                         @endif
                                     </td>
                                 @endif
@@ -213,6 +213,7 @@
                     <form id="formEditarCita">
                         @csrf
                         <input type="hidden" id="cita_id" name="id">
+                        <input type="hidden" id="editar_medico_id">
 
                         <div class="mb-2">
                             <label class="form-label">Médico</label>
@@ -223,8 +224,15 @@
                             <input id="paciente" class="form-control" disabled>
                         </div>
                         <div class="mb-2">
-                            <label class="form-label">Fecha y hora</label>
-                            <input id="fecha" name="Fecha_y_hora" type="datetime-local" class="form-control">
+                            <label class="form-label">Fecha</label>
+                            <input id="editar_fecha" type="date" class="form-control">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Hora de atención</label>
+                            <select id="editar_hora" class="form-select" disabled>
+                                <option value="">Seleccione una fecha primero</option>
+                            </select>
+                            <input type="hidden" id="fecha" name="Fecha_y_hora">
                         </div>
                         <div class="mb-2">
                             <label class="form-label">Estado</label>
@@ -495,6 +503,8 @@ $(document).ready(function () {
 
     let citaCancelarId = null;
     let modalConfirmar;
+    let modalEditar;
+    let modalCrear;
 
     $.ajaxSetup({
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
@@ -513,20 +523,17 @@ $(document).ready(function () {
                 _method: 'DELETE'
             },
             success: function () {
-            mostrarToast('Cita eliminada correctamente', 'success');
-            agregarNotificacion('Cita eliminada', 'danger');
-            setTimeout(() => location.reload(), 1500);
-        },
-        error: function (xhr) {
-            mostrarToast('Error al eliminar la cita', 'danger');
-        }
-
+                mostrarToast('Cita eliminada correctamente', 'success');
+                agregarNotificacion('Cita eliminada', 'danger');
+                setTimeout(() => location.reload(), 1500);
+            },
+            error: function () {
+                mostrarToast('Error al eliminar la cita', 'danger');
+            }
         });
     });
 
     // ─── EDITAR ──────────────────────────────────────────────────────────
-    let modalEditar;
-
     $('.editar').on('click', function () {
         let citaId = $(this).data('id');
 
@@ -535,16 +542,71 @@ $(document).ready(function () {
             type: 'GET',
             success: function (cita) {
                 $('#cita_id').val(cita.id);
-                // ✅ corregido: el campo es 'name' no 'Nombre'
+                $('#editar_medico_id').val(cita.medico_id);
                 $('#medico').val(cita.medico.name + ' ' + cita.medico.Apellidos);
                 $('#paciente').val(cita.paciente.name + ' ' + cita.paciente.Apellidos);
-                $('#fecha').val(cita.Fecha_y_hora.replace(' ', 'T'));
                 $('#estado').val(cita.estado);
+
+                console.log('Fecha_y_hora recibida:', cita.Fecha_y_hora);
+
+                const fechaHora = cita.Fecha_y_hora ? cita.Fecha_y_hora.replace('T', ' ') : '';
+                const partes    = fechaHora.split(' ');
+                const fechaSola = partes[0] ?? '';
+                const horaSola  = partes[1] ? partes[1].substring(0, 5) : '00:00';
+
+                $('#editar_fecha').val(fechaSola);
+                $('#editar_hora').html('<option value="">Cargando...</option>').prop('disabled', true);
 
                 modalEditar = new bootstrap.Modal(document.getElementById('exampledit'));
                 modalEditar.show();
+
+                fetch(`/citas/horas-disponibles?medico_id=${cita.medico_id}&fecha=${fechaSola}&excluir_cita=${cita.id}`)
+                    .then(r => r.json())
+                    .then(horas => {
+                        $('#editar_hora').html('<option value="">Seleccione una hora</option>');
+
+                        const horasConActual = horas.includes(horaSola)
+                            ? horas
+                            : [horaSola, ...horas];
+
+                        horasConActual.forEach(h => {
+                            const selected = h === horaSola ? 'selected' : '';
+                            $('#editar_hora').append(`<option value="${h}" ${selected}>${h}</option>`);
+                        });
+
+                        $('#editar_hora').prop('disabled', false);
+                    })
+                    .catch(() => {
+                        $('#editar_hora').html('<option value="">Error al cargar horas</option>');
+                        $('#editar_hora').prop('disabled', false);
+                    });
             }
         });
+    });
+
+    // ─── RECARGAR HORAS AL CAMBIAR FECHA EN EDITAR ───────────────────────
+    $(document).on('change', '#editar_fecha', function () {
+        const citaId   = $('#cita_id').val();
+        const medicoId = $('#editar_medico_id').val();
+        const fecha    = $(this).val();
+
+        if (!medicoId || !fecha) return;
+
+        $('#editar_hora').html('<option value="">Cargando...</option>').prop('disabled', true);
+
+        fetch(`/citas/horas-disponibles?medico_id=${medicoId}&fecha=${fecha}&excluir_cita=${citaId}`)
+            .then(r => r.json())
+            .then(horas => {
+                $('#editar_hora').html('<option value="">Seleccione una hora</option>');
+                horas.forEach(h => {
+                    $('#editar_hora').append(`<option value="${h}">${h}</option>`);
+                });
+                $('#editar_hora').prop('disabled', false);
+            })
+            .catch(() => {
+                $('#editar_hora').html('<option value="">Error al cargar horas</option>');
+                $('#editar_hora').prop('disabled', false);
+            });
     });
 
     // ─── GUARDAR EDICIÓN ─────────────────────────────────────────────────
@@ -552,29 +614,31 @@ $(document).ready(function () {
         e.preventDefault();
         let citaId = $('#cita_id').val();
 
+        const fechaVal = $('#editar_fecha').val();
+        const horaVal  = $('#editar_hora').val();
+        $('#fecha').val(fechaVal && horaVal ? `${fechaVal} ${horaVal}` : '');
+
         $.ajax({
             url: '/citas/' + citaId,
             method: 'POST',
             data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                _method: 'PUT',
+                _token:       $('meta[name="csrf-token"]').attr('content'),
+                _method:      'PUT',
                 Fecha_y_hora: $('#fecha').val(),
-                estado: $('#estado').val()
+                estado:       $('#estado').val()
             },
             success: function () {
-            mostrarToast('Cita actualizada correctamente', 'success');
-            agregarNotificacion('Cita #' + $('#cita_id').val() + ' actualizada', 'info');
-            setTimeout(() => { modalEditar.hide(); location.reload(); }, 1500);
-        },
-        error: function (xhr) {
-            mostrarToast(xhr.responseJSON?.message ?? 'Error al actualizar', 'danger');
-        }
+                mostrarToast('Cita actualizada correctamente', 'success');
+                agregarNotificacion('Cita actualizada', 'info');
+                setTimeout(() => { modalEditar.hide(); location.reload(); }, 1500);
+            },
+            error: function (xhr) {
+                mostrarToast(xhr.responseJSON?.message ?? 'Error al actualizar', 'danger');
+            }
         });
     });
 
     // ─── CREAR CITA ──────────────────────────────────────────────────────
-    let modalCrear;
-
     $('#btnAgregarCita').on('click', function () {
         modalCrear = new bootstrap.Modal(document.getElementById('modalCrear'));
         modalCrear.show();
@@ -588,13 +652,13 @@ $(document).ready(function () {
             type: 'POST',
             data: $(this).serialize(),
             success: function () {
-            mostrarToast('Cita creada correctamente', 'success');
-            agregarNotificacion('Nueva cita agendada', 'success');
-            setTimeout(() => { modalCrear.hide(); location.reload(); }, 1500);
-        },
-        error: function (xhr) {
-            mostrarToast(xhr.responseJSON?.message ?? 'Error al crear la cita', 'danger');
-        }
+                mostrarToast('Cita creada correctamente', 'success');
+                agregarNotificacion('Nueva cita agendada', 'success');
+                setTimeout(() => { modalCrear.hide(); location.reload(); }, 1500);
+            },
+            error: function (xhr) {
+                mostrarToast(xhr.responseJSON?.message ?? 'Error al crear la cita', 'danger');
+            }
         });
     });
 
@@ -622,7 +686,7 @@ $(document).ready(function () {
                 modalEditar.hide();
                 location.reload();
             },
-            error: function (xhr) {
+            error: function () {
                 alert('Error al cancelar la cita');
             }
         });
@@ -634,8 +698,8 @@ $(document).ready(function () {
         let pacientes = new Map();
 
         $('tbody tr').each(function () {
-            let medicoFila   = $(this).data('medico').toString();
-            let pacienteFila = $(this).data('paciente').toString();
+            let medicoFila    = $(this).data('medico').toString();
+            let pacienteFila  = $(this).data('paciente').toString();
             let textoPaciente = $(this).data('paciente-texto');
 
             if (!medicoSeleccionado || medicoFila === medicoSeleccionado) {
@@ -688,11 +752,11 @@ $(document).ready(function () {
     $('#selectCitaWhatsapp').on('change', function () {
         let option = $(this).find(':selected');
         dataWhatsapp = {
-            id: option.val(),
-            fecha: option.data('fecha'),
-            medico: option.data('medico'),
-            paciente: option.data('paciente'),
-            enfermedad: option.data('enfermedad'),
+            id:          option.val(),
+            fecha:       option.data('fecha'),
+            medico:      option.data('medico'),
+            paciente:    option.data('paciente'),
+            enfermedad:  option.data('enfermedad'),
             tratamiento: option.data('tratamiento')
         };
     });
@@ -763,23 +827,24 @@ ${dataWhatsapp.tratamiento || 'No registrado'}
             url: '/informe/email',
             type: 'POST',
             data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                cita_id: citaId,
-                correo: correo
+                _token:   $('meta[name="csrf-token"]').attr('content'),
+                cita_id:  citaId,
+                correo:   correo
             },
             success: function () {
-            mostrarToast('Correo enviado correctamente', 'success');
-            agregarNotificacion('Informe enviado por correo', 'info');
-            modalEmail.hide();
-        },
-        error: function () {
-            mostrarToast('Error al enviar el correo', 'danger');
-        }
+                mostrarToast('Correo enviado correctamente', 'success');
+                agregarNotificacion('Informe enviado por correo', 'info');
+                modalEmail.hide();
+            },
+            error: function () {
+                mostrarToast('Error al enviar el correo', 'danger');
+            }
         });
     });
 
 });
 </script>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
