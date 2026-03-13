@@ -18,7 +18,7 @@
 
     {{-- Info de la cita --}}
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm text-center p-3">
                 <div class="icon-dash mx-auto mb-2 bg-primary-soft">
                     <i class="bi bi-person-badge fs-4 text-primary"></i>
@@ -29,7 +29,7 @@
                 </p>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm text-center p-3">
                 <div class="icon-dash mx-auto mb-2 bg-success-soft">
                     <i class="bi bi-person fs-4 text-success"></i>
@@ -40,7 +40,7 @@
                 </p>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm text-center p-3">
                 <div class="icon-dash mx-auto mb-2 bg-warning-soft">
                     <i class="bi bi-calendar-event fs-4 text-warning"></i>
@@ -48,6 +48,17 @@
                 <p class="text-muted small mb-1">Fecha y hora</p>
                 <p class="fw-semibold mb-0">
                     {{ \Carbon\Carbon::parse($cita->Fecha_y_hora)->format('d/m/Y H:i') }}
+                </p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3">
+                <div class="icon-dash mx-auto mb-2 bg-danger-soft">
+                    <i class="bi bi-qr-code fs-4 text-danger"></i>
+                </div>
+                <p class="text-muted small mb-1">Código de cita</p>
+                <p class="fw-bold mb-0" style="letter-spacing: 1px; color: #0d3b6e;">
+                    {{ $cita->codigo_cita ?? 'CIT-' . $cita->id }}
                 </p>
             </div>
         </div>

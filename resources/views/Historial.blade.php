@@ -75,7 +75,8 @@
                         <div class="card-header d-flex justify-content-between align-items-center text-white"
                              style="background-color: #0d3b6e;">
                             <span class="fw-semibold">
-                                <i class="bi bi-file-earmark-medical me-1"></i> Cita #{{ $cita->id }}
+                                   <i class="bi bi-file-earmark-medical me-1"></i>
+                                    {{ $cita->codigo_cita ?? 'CIT-' . $cita->id }}
                             </span>
                             <small>
                                 <i class="bi bi-calendar me-1"></i>

@@ -48,7 +48,7 @@
                 <table class="table table-hover align-middle table-borderless">
                     <thead class="table-light text-uppercase small">
                         <tr>
-                            <th>#</th>
+                            <th>Código</th>
                             <th>Medico</th>
                             <th>Paciente</th>
                             <th>Fecha</th>
@@ -64,7 +64,11 @@
                             <tr data-medico="{{ $cita->medico->id }}"
                                 data-paciente="{{ $cita->paciente->id }}"
                                 data-paciente-texto="{{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}">
-                                <td>{{ ($Citas->currentPage() - 1) * $Citas->perPage() + $loop->iteration }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                        {{ $cita->codigo_cita ?? 'CIT-' . $cita->id }}
+                                    </span>
+                                </td>
                                 <td>{{ $cita->medico->name }} {{ $cita->medico->Apellidos }}</td>
                                 <td>
                                     {{-- Solo Admin y Médico pueden ver el historial --}}
