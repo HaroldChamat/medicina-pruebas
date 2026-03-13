@@ -1,10 +1,10 @@
 <?php
 
 namespace App\Models;
+
 use App\Models\Cargo;
 use App\Models\Especialidad;
-
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Horario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -40,9 +40,10 @@ class User extends Authenticatable
     ];
     
     protected $hidden = [
-        'password', // ← AGREGA ESTE BLOQUE
+        'password',
     ];
     
+
     public function cargo()
     {
         return $this->belongsTo(Cargo::class, 'id_cargo');
@@ -53,9 +54,13 @@ class User extends Authenticatable
         return $this->hasOne(Horario::class, 'medico_id');
     }
 
-    public function especialidad()
+    public function especialidades()
     {
-        return $this->belongsTo(Especialidad::class);
+        return $this->belongsToMany(
+            Especialidad::class, 
+            'medico_especialidad', 
+            'medico_id', 
+            'especialidad_id'
+        );
     }
-
 }

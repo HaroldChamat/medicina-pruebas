@@ -14,21 +14,21 @@ class CitaController extends Controller
 {
     $userId = session('user_id');
     $cargo  = session('cargo');
-    $perPage = 10; // citas por página
+    $perPage = 10; 
 
     if ($cargo === 'Admin') {
         $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
-            ->orderBy('Fecha_y_hora', 'desc')
+            ->orderBy('Fecha_y_hora', 'asc') 
             ->paginate($perPage);
     } elseif ($cargo === 'Medico') {
         $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
             ->where('medico_id', $userId)
-            ->orderBy('Fecha_y_hora', 'desc')
+            ->orderBy('Fecha_y_hora', 'asc') 
             ->paginate($perPage);
     } elseif ($cargo === 'Paciente') {
         $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
             ->where('paciente_id', $userId)
-            ->orderBy('Fecha_y_hora', 'desc')
+            ->orderBy('Fecha_y_hora', 'asc') 
             ->paginate($perPage);
     } else {
         $Citas = collect();
@@ -143,21 +143,42 @@ class CitaController extends Controller
         $horario = $medico->horario;
 
         if (!$horario) {
-            return 'El medico no tiene horario asignado';
+            return 'El médico no tiene horario asignado';
         }
 
+        // Validar día de semana
+        $diasMap = [
+            1 => 'lunes',
+            2 => 'martes',
+            3 => 'miercoles',
+            4 => 'jueves',
+            5 => 'viernes',
+            6 => 'sabado',
+            0 => 'domingo',
+        ];
+
+        $diaSemana = $diasMap[$fechaHora->dayOfWeek];
+        $diasPermitidos = $horario->dias_semana ?? [];
+
+        if (!in_array($diaSemana, $diasPermitidos)) {
+            $dias = implode(', ', $diasPermitidos);
+            return "El médico no atiende los días {$diaSemana}. Días disponibles: {$dias}";
+        }
+
+        // Validar hora
         $hora = $fechaHora->format('H:i');
 
-        if ($hora < $horario->hora_inicio || $hora > $horario->hora_fin) {
-            return 'La hora seleccionada esta fuera del horario de atencion';
+        if ($hora < $horario->hora_inicio || $hora >= $horario->hora_fin) {
+            return "La hora seleccionada está fuera del horario de atención ({$horario->hora_inicio} - {$horario->hora_fin})";
         }
 
+        // Validar almuerzo
         if (
             $horario->almuerzo_inicio &&
             $hora >= $horario->almuerzo_inicio &&
-            $hora <= $horario->almuerzo_fin
+            $hora < $horario->almuerzo_fin
         ) {
-            return 'El medico se encuentra en horario de almuerzo';
+            return "El médico se encuentra en horario de almuerzo ({$horario->almuerzo_inicio} - {$horario->almuerzo_fin})";
         }
 
         return null;
@@ -199,6 +220,20 @@ class CitaController extends Controller
             return response()->json([]);
         }
 
+        // Validar que la fecha sea un día que atiende el médico
+        $diasMap = [
+            1 => 'lunes', 2 => 'martes', 3 => 'miercoles',
+            4 => 'jueves', 5 => 'viernes', 6 => 'sabado', 0 => 'domingo',
+        ];
+
+        $fecha     = Carbon::parse($request->fecha);
+        $diaSemana = $diasMap[$fecha->dayOfWeek];
+        $diasPermitidos = $horario->dias_semana ?? [];
+
+        if (!in_array($diaSemana, $diasPermitidos)) {
+            return response()->json([]);
+        }
+
         $duracion = $horario->hora_atencion;
         $inicio   = Carbon::parse($request->fecha . ' ' . $horario->hora_inicio);
         $fin      = Carbon::parse($request->fecha . ' ' . $horario->hora_fin);
@@ -207,16 +242,18 @@ class CitaController extends Controller
         while ($inicio->copy()->addMinutes($duracion)->lte($fin)) {
             $bloqueFin = $inicio->copy()->addMinutes($duracion);
 
+            // Saltar almuerzo
             if ($horario->almuerzo_inicio && $horario->almuerzo_fin) {
                 $almuerzoInicio = Carbon::parse($request->fecha . ' ' . $horario->almuerzo_inicio);
                 $almuerzoFin    = Carbon::parse($request->fecha . ' ' . $horario->almuerzo_fin);
 
                 if ($inicio < $almuerzoFin && $bloqueFin > $almuerzoInicio) {
-                    $inicio->addMinutes($duracion);
+                    $inicio = $almuerzoFin->copy();
                     continue;
                 }
             }
 
+            // Verificar si ya está ocupada
             $ocupada = Cita::where('medico_id', $medico->id)
                 ->where('Fecha_y_hora', $inicio->format('Y-m-d H:i:s'))
                 ->exists();

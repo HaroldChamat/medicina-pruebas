@@ -14,8 +14,8 @@ class HistorialController extends Controller
             abort(403, 'No autorizado');
         }
 
-        $historial = Cita::with([
-                'medico.especialidad',
+            $historial = Cita::with([
+                'medico.especialidades',
                 'medico.cargo',
                 'enfermedad',
                 'tratamiento'

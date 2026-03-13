@@ -23,8 +23,20 @@ class Cita extends Model
         'Fecha_y_hora',
         'estado',
         'medico_id',
-        'paciente_id'
+        'paciente_id',
+        'codigo_cita',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($cita) {
+            do {
+                $codigo = 'CIT-' . strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
+            } while (self::where('codigo_cita', $codigo)->exists());
+
+            $cita->codigo_cita = $codigo;
+        });
+    }
 
     public function medico()
     {

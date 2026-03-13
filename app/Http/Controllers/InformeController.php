@@ -59,6 +59,18 @@ class InformeController extends Controller
         return view('Informe', compact('cita'));
     }
 
+    public function show(Cita $cita)
+    {
+        $cita->load(['medico.especialidades', 'paciente', 'enfermedad', 'tratamiento']);
+        return view('InformeVer', compact('cita'));
+    }
+
+    public function edit(Cita $cita)
+    {
+        $cita->load(['medico', 'paciente', 'enfermedad', 'tratamiento']);
+        return view('InformeEditar', compact('cita'));
+    }
+
     public function store(Request $request, Cita $cita)
     {
         $request->validate([
@@ -77,6 +89,26 @@ class InformeController extends Controller
         );
 
         return redirect('/citas')->with('success', 'Informe guardado correctamente');
+    }
+
+    public function update(Request $request, Cita $cita)
+    {
+        $request->validate([
+            'enfermedad'  => 'required|string',
+            'tratamiento' => 'required|string',
+        ]);
+
+        Enfermedad::updateOrCreate(
+            ['cita_id' => $cita->id],
+            ['descripcion' => $request->enfermedad]
+        );
+
+        Tratamiento::updateOrCreate(
+            ['cita_id' => $cita->id],
+            ['descripcion' => $request->tratamiento]
+        );
+
+        return redirect('/citas')->with('success', 'Informe actualizado correctamente');
     }
 
     public function pdf(Cita $cita)

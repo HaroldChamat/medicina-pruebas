@@ -27,7 +27,9 @@
     @if(!$esAdmin)
         @php $medico = $medicos->first(); @endphp
         @if($medico && $medico->horario)
-            <div class="row g-4">
+
+            {{-- Cards de resumen --}}
+            <div class="row g-4 mb-4">
                 <div class="col-md-3">
                     <div class="card border-0 shadow-sm text-center p-3">
                         <div class="icon-dash mx-auto mb-3 bg-primary-soft">
@@ -71,6 +73,135 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Calendario semanal --}}
+            @php
+                $diasSemana     = ['lunes','martes','miercoles','jueves','viernes'];
+                $diasPermitidos = $medico->horario->dias_semana ?? [];
+                $duracion       = $medico->horario->hora_atencion;
+                $horaInicio     = \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->hora_inicio);
+                $horaFin        = \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->hora_fin);
+                $almuerzoIni    = $medico->horario->almuerzo_inicio
+                    ? \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->almuerzo_inicio)
+                    : null;
+                $almuerzoFin    = $medico->horario->almuerzo_fin
+                    ? \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->almuerzo_fin)
+                    : null;
+
+                $slots = [];
+                $cursor = $horaInicio->copy();
+                while ($cursor->copy()->addMinutes($duracion)->lte($horaFin)) {
+                    $slots[] = $cursor->format('H:i');
+                    $cursor->addMinutes($duracion);
+                }
+
+                $citasSemana = \App\Models\Cita::with('paciente')
+                    ->where('medico_id', $medico->id)
+                    ->whereBetween('Fecha_y_hora', [$inicioSemana, $finSemana])
+                    ->get()
+                    ->groupBy(function($c) {
+                        return \Carbon\Carbon::parse($c->Fecha_y_hora)->format('N');
+                    });
+
+                $diaNumero      = ['lunes'=>1,'martes'=>2,'miercoles'=>3,'jueves'=>4,'viernes'=>5];
+                $semanaAnterior = $inicioSemana->copy()->subWeek()->format('Y-m-d');
+                $semanaSiguiente = $inicioSemana->copy()->addWeek()->format('Y-m-d');
+                $esActual       = $inicioSemana->isSameWeek(\Carbon\Carbon::now());
+            @endphp
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header text-white fw-semibold d-flex align-items-center justify-content-between"
+                style="background-color: #0d3b6e;">
+                <a href="{{ route('Horario') }}?semana={{ $semanaAnterior }}"
+                class="btn btn-sm btn-outline-light rounded-pill">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+
+                <span>
+                    <i class="bi bi-calendar-week me-2"></i>
+                    {{ $inicioSemana->format('d/m/Y') }} — {{ $finSemana->format('d/m/Y') }}
+                    @if($esActual)
+                        <span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem;">
+                            Semana actual
+                        </span>
+                    @endif
+                </span>
+
+                <a href="{{ route('Horario') }}?semana={{ $semanaSiguiente }}"
+                class="btn btn-sm btn-outline-light rounded-pill">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0 text-center align-middle tabla-horario"
+                               style="min-width: 700px;">
+                            <thead style="background-color: #0d3b6e; color: white;">
+                                <tr>
+                                    <th style="width: 80px;">Hora</th>
+                                    @foreach($diasSemana as $dia)
+                                        <th class="{{ !in_array($dia, $diasPermitidos) ? 'opacity-50' : '' }}">
+                                            {{ ucfirst($dia) }}
+                                            @if(in_array($dia, $diasPermitidos))
+                                                <br>
+                                                <small class="fw-normal opacity-75">
+                                                    {{ $inicioSemana->copy()->addDays($diaNumero[$dia]-1)->format('d/m') }}
+                                                </small>
+                                            @endif
+                                        </th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($slots as $slot)
+                                    @php
+                                        $slotCarbon = \Carbon\Carbon::createFromFormat('H:i', $slot);
+                                        $esAlmuerzo = $almuerzoIni && $almuerzoFin &&
+                                            $slotCarbon->gte($almuerzoIni) &&
+                                            $slotCarbon->lt($almuerzoFin);
+                                    @endphp
+                                    <tr>
+                                        <td class="slot-hora text-center">
+                                            {{ $slot }}
+                                        </td>
+                                        @foreach($diasSemana as $dia)
+                                            @php
+                                                $num   = $diaNumero[$dia];
+                                                $activo = in_array($dia, $diasPermitidos);
+                                                $cita  = null;
+                                                if ($activo && isset($citasSemana[$num])) {
+                                                    $cita = $citasSemana[$num]->first(function($c) use ($slot) {
+                                                        return \Carbon\Carbon::parse($c->Fecha_y_hora)->format('H:i') === $slot;
+                                                    });
+                                                }
+                                            @endphp
+                                            @if(!$activo)
+                                                <td class="slot-inactivo text-center">
+                                                    <span class="text-muted" style="font-size: 0.75rem;">—</span>
+                                                </td>
+                                            @elseif($esAlmuerzo)
+                                                <td class="slot-almuerzo text-center">
+                                                    <i class="bi bi-cup-hot text-warning"></i>
+                                                    <span class="text-muted small d-block" style="font-size: 0.7rem;">Almuerzo</span>
+                                                </td>
+                                            @elseif($cita)
+                                                <td class="slot-ocupado text-center">
+                                                    <i class="bi bi-person-fill text-danger" style="font-size: 0.8rem;"></i>
+                                                    <span class="d-block text-danger fw-semibold" style="font-size: 0.72rem; line-height: 1.2;">
+                                                        {{ $cita->paciente->name }}<br>{{ $cita->paciente->Apellidos }}
+                                                    </span>
+                                                </td>
+                                            @else
+                                                <td class="slot-libre"></td>
+                                            @endif
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         @else
             <div class="alert alert-warning d-flex align-items-center gap-2">
                 <i class="bi bi-exclamation-triangle-fill fs-5"></i>
@@ -91,6 +222,7 @@
                                 <th>Horario</th>
                                 <th>Duración por cita</th>
                                 <th>Almuerzo</th>
+                                <th>Días</th>
                                 <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -111,10 +243,12 @@
                                         </div>
                                     </td>
                                     <td>
-                                        @if($medico->especialidad)
-                                            <span class="badge bg-light text-dark border">
-                                                {{ $medico->especialidad->Nombre_especialidad }}
-                                            </span>
+                                        @if($medico->especialidades->count() > 0)
+                                            @foreach($medico->especialidades as $esp)
+                                                <span class="badge bg-light text-dark border me-1">
+                                                    {{ $esp->Nombre_especialidad }}
+                                                </span>
+                                            @endforeach
                                         @else
                                             <span class="text-muted small">Sin especialidad</span>
                                         @endif
@@ -149,6 +283,20 @@
                                             </span>
                                         @else
                                             <span class="text-muted small">Sin almuerzo</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($medico->horario && $medico->horario->dias_semana)
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @foreach($medico->horario->dias_semana as $dia)
+                                                    <span class="badge bg-primary text-capitalize"
+                                                          style="font-size: 0.7rem;">
+                                                        {{ ucfirst($dia) }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <span class="text-muted">—</span>
                                         @endif
                                     </td>
                                     <td class="text-center">
@@ -235,7 +383,25 @@
                                 </select>
                             </div>
                         </div>
-
+                        <div class="col-12 mt-2">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-calendar-week me-1"></i> Días de atención
+                            </label>
+                            <div class="d-flex flex-wrap gap-3">
+                                @foreach(['lunes','martes','miercoles','jueves','viernes'] as $dia)
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                            name="dias_semana[]"
+                                            value="{{ $dia }}"
+                                            id="dia_editar_{{ $dia }}">
+                                        <label class="form-check-label text-capitalize"
+                                            for="dia_editar_{{ $dia }}">
+                                            {{ ucfirst($dia) }}
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
                         <div class="d-flex justify-content-end gap-2 mt-4">
                             <button type="button" class="btn btn-secondary rounded-pill"
                                     data-bs-dismiss="modal">Cancelar</button>
@@ -298,6 +464,13 @@ $(document).ready(function () {
         $('#editar_almuerzo_inicio').val(horario.almuerzo_inicio);
         $('#editar_almuerzo_fin').val(horario.almuerzo_fin);
         $('#editar_hora_atencion').val(horario.hora_atencion);
+
+        // Marcar días del horario
+        let dias = horario.dias_semana || [];
+        $('input[name="dias_semana[]"]').each(function () {
+            $(this).prop('checked', dias.includes($(this).val()));
+        });
+
         modalEditar.show();
     });
 

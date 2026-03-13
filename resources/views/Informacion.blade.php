@@ -36,9 +36,10 @@
 
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">
-                        <i class="bi bi-hash me-1"></i> ID Cita
+                        <i class="bi bi-qr-code me-1"></i> Código de cita
                     </label>
-                    <input type="number" id="filtroCita" class="form-control" placeholder="Ej: 12">
+                    <input type="text" id="filtroCita" class="form-control"
+                        placeholder="Ej: CIT-A3F9B21C">
                 </div>
 
                 {{-- Botón limpiar --}}
@@ -61,7 +62,7 @@
                 <thead class="table-azul-personalizada">
                     <tr>
                         <th>#</th>
-                        <th>ID Cita</th>
+                        <th>Código</th>
                         <th>Médico</th>
                         <th>Paciente</th>
                         <th>Fecha</th>
@@ -72,18 +73,30 @@
                 </thead>
                 <tbody>
                     @foreach($citas as $cita)
-                    <tr>
-                        <td>{{ $loop->iteration }}</td>
-                        <td>{{ $cita->id }}</td>
-                        <td>{{ $cita->medico->name }}</td>
-                        <td>{{ $cita->paciente->name }}</td>
-                        <td>{{ \Carbon\Carbon::parse($cita->Fecha_y_hora)->format('d/m/Y H:i') }}</td>
-                        <td>{{ Str::limit($cita->enfermedad->descripcion, 40) }}</td>
-                        <td>{{ Str::limit($cita->tratamiento->descripcion, 40) }}</td>
-                        <td class="text-center">
-                            <button class="btn btn-outline-primary btn-sm">👁 Ver / Editar</button>
-                        </td>
-                    </tr>
+                        <tr data-medico="{{ $cita->medico->id }}" data-cita="{{ $cita->codigo_cita ?? $cita->id }}">
+                            <td>{{ $loop->iteration }}</td>
+                            <td>
+                                <span class="badge bg-light text-dark border"
+                                    style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                    {{ $cita->codigo_cita ?? 'CIT-' . $cita->id }}
+                                </span>
+                            </td>
+                            <td>{{ $cita->medico->name }} {{ $cita->medico->Apellidos }}</td>
+                            <td>{{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}</td>
+                            <td>{{ \Carbon\Carbon::parse($cita->Fecha_y_hora)->format('d/m/Y H:i') }}</td>
+                            <td>{{ Str::limit($cita->enfermedad->descripcion, 40) }}</td>
+                            <td>{{ Str::limit($cita->tratamiento->descripcion, 40) }}</td>
+                            <td class="text-center">
+                                <a href="{{ route('informe.show', $cita->id) }}"
+                                class="btn btn-success btn-sm rounded-pill">
+                                    <i class="bi bi-eye me-1"></i> Ver
+                                </a>
+                                <a href="{{ route('informe.edit', $cita->id) }}"
+                                class="btn btn-warning btn-sm rounded-pill">
+                                    <i class="bi bi-pencil me-1"></i> Editar
+                                </a>
+                            </td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>
@@ -91,67 +104,7 @@
     </div>
 </div>
 
-{{-- Modal Ver / Editar Informe --}}
-<div class="modal fade" id="modalInforme" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold">📋 Detalle del Informe</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
 
-                {{-- Info de la cita --}}
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <p class="mb-1 text-muted small">👨‍⚕️ Médico</p>
-                        <p class="fw-semibold" id="infoMedico"></p>
-                    </div>
-                    <div class="col-md-6">
-                        <p class="mb-1 text-muted small">🧑 Paciente</p>
-                        <p class="fw-semibold" id="infoPaciente"></p>
-                    </div>
-                    <div class="col-md-6">
-                        <p class="mb-1 text-muted small">📅 Fecha</p>
-                        <p class="fw-semibold" id="infoFecha"></p>
-                    </div>
-                </div>
-
-                <hr>
-
-                <form id="formEditarInforme">
-                    @csrf
-                    <input type="hidden" id="informe_cita_id">
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">🦠 Diagnóstico</label>
-                        <textarea id="campoEnfermedad" name="enfermedad"
-                                  class="form-control" rows="3"
-                                  {{ session('cargo') === 'Medico' ? '' : '' }}
-                                  required></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">💊 Tratamiento</label>
-                        <textarea id="campoTratamiento" name="tratamiento"
-                                  class="form-control" rows="3"
-                                  required></textarea>
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            Cerrar
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            💾 Guardar cambios
-                        </button>
-                    </div>
-                </form>
-
-            </div>
-        </div>
-    </div>
-</div>
 
 @endsection
 
@@ -190,48 +143,6 @@ $(document).ready(function () {
     @if(session('cargo') === 'Medico')
         filtrar();
     @endif
-    
-    // ─── ABRIR MODAL VER/EDITAR ──────────────────────────────────────
-    let modalInforme;
-
-    $(document).on('click', '.btnVerInforme', function () {
-        let btn = $(this);
-
-        $('#informe_cita_id').val(btn.data('id'));
-        $('#infoMedico').text(btn.data('medico'));
-        $('#infoPaciente').text(btn.data('paciente'));
-        $('#infoFecha').text(btn.data('fecha'));
-        $('#campoEnfermedad').val(btn.data('enfermedad'));
-        $('#campoTratamiento').val(btn.data('tratamiento'));
-
-        modalInforme = new bootstrap.Modal(document.getElementById('modalInforme'));
-        modalInforme.show();
-    });
-
-    // ─── GUARDAR CAMBIOS DEL INFORME ─────────────────────────────────
-    $('#formEditarInforme').on('submit', function (e) {
-        e.preventDefault();
-
-        let citaId = $('#informe_cita_id').val();
-
-        $.ajax({
-            url: '/Informe/' + citaId,
-            method: 'POST',
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                _method: 'PUT',
-                enfermedad:  $('#campoEnfermedad').val(),
-                tratamiento: $('#campoTratamiento').val(),
-            },
-            success: function () {
-                modalInforme.hide();
-                location.reload();
-            },
-            error: function (xhr) {
-                alert(xhr.responseJSON?.message ?? 'Error al guardar el informe');
-            }
-        });
-    });
 
 });
 </script>

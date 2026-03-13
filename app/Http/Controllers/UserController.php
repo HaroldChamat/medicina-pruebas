@@ -44,22 +44,22 @@ class UserController extends Controller
 
     public function index_especialidad()
     {
-        $medicos = User::with(['cargo', 'especialidad'])
+        $medicos = User::with(['cargo', 'especialidades']) 
             ->whereHas('cargo', function ($q) {
                 $q->where('Nombre_cargo', 'Medico');
             })
             ->get();
 
-        $especialidades = Especialidad::all();
+        $especialidades = \App\Models\Especialidad::all();
 
-        return view('Especialidad', compact('medicos', 'especialidades'));
+        return view('Especialidad', compact('medicos', 'especialidades')); 
     }
 
     public function index_medicos()
     {
         if (session('admin') !== 1) abort(403);
 
-        $medicos = User::with(['cargo', 'especialidad'])
+        $medicos = User::with(['cargo', 'especialidades'])
             ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
             ->get();
 
@@ -87,7 +87,7 @@ class UserController extends Controller
             'telefono'  => 'required|string|max:20',
             'id_cargo'  => 'required|exists:cargos,id',
             'password'  => 'required|string|min:6',
-            'admin'     => 'required|integer|in:0,1',
+            'admin'     => 'nullable|in:0,1',
         ]);
 
         $cargosProtegidos = Cargo::whereIn('Nombre_cargo', ['Otro', 'Medico'])
@@ -106,7 +106,7 @@ class UserController extends Controller
         $user = new User();
         $user->id_cargo   = $request->id_cargo;
         $user->name       = $request->name;
-        $user->admin      = $request->admin;
+        $user->admin = (int) ($request->admin ?? 0);
         $user->Apellidos  = $request->Apellidos;
         $user->email      = $request->email;
         $user->Rut        = $request->Rut;

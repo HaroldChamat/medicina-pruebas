@@ -75,7 +75,8 @@
                         <div class="card-header d-flex justify-content-between align-items-center text-white"
                              style="background-color: #0d3b6e;">
                             <span class="fw-semibold">
-                                <i class="bi bi-file-earmark-medical me-1"></i> Cita #{{ $cita->id }}
+                                   <i class="bi bi-file-earmark-medical me-1"></i>
+                                    {{ $cita->codigo_cita ?? 'CIT-' . $cita->id }}
                             </span>
                             <small>
                                 <i class="bi bi-calendar me-1"></i>
@@ -89,11 +90,11 @@
                                     <i class="bi bi-person-badge me-1"></i> Médico
                                 </span><br>
                                 <strong>{{ $cita->medico->name }} {{ $cita->medico->Apellidos }}</strong>
-                                @if($cita->medico->especialidad)
+                                @foreach($cita->medico->especialidades as $esp)
                                     <span class="badge bg-light text-dark ms-1 small">
-                                        {{ $cita->medico->especialidad->Nombre_especialidad }}
+                                        {{ $esp->Nombre_especialidad }}
                                     </span>
-                                @endif
+                                @endforeach
                             </p>
 
                             <hr class="my-2">
