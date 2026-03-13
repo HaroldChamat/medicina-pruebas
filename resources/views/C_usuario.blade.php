@@ -167,11 +167,13 @@ $(document).ready(function () {
         // Deshabilitar botón mientras se envía
         $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Guardando...');
 
+        const esAdmin = $('#id_cargo option:selected').text().trim() === 'Admin';
+
         $.ajax({
             url: '/usuario/store',
             type: 'POST',
             dataType: 'json',
-            data: { name, Apellidos, email, Rut, telefono, id_cargo, password, admin: 0 },
+            data: { name, Apellidos, email, Rut, telefono, id_cargo, password, admin: esAdmin ? 1 : 0 },
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (response) {
                 mostrarToast('✅ Usuario registrado correctamente', 'success');
