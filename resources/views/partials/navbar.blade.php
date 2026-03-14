@@ -37,9 +37,17 @@
                         <i class="bi bi-person-plus me-1"></i> Crear usuario
                     </a>
                 </li>
+                {{-- Tickets con badge para Admin --}}
                 <li class="nav-item">
                     <a class="nav-link text-white fw-semibold px-3" href="{{ route('tickets.index') }}">
-                        <i class="bi bi-ticket-detailed me-1"></i> Tickets
+                        <span class="position-relative">
+                            <i class="bi bi-ticket-detailed me-1"></i> Tickets
+                            <span id="navBadgeTickets"
+                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                                  style="font-size:0.6rem; min-width:18px; height:18px;
+                                         line-height:1; padding: 3px 5px;
+                                         border:2px solid #0d3b6e;">0</span>
+                        </span>
                     </a>
                 </li>
 
@@ -59,18 +67,30 @@
                         <i class="bi bi-clock me-1"></i> Mi horario
                     </a>
                 </li>
-                <li class="nav-item position-relative">
+                {{-- Mensajes con badge para Médico --}}
+                <li class="nav-item">
                     <a class="nav-link text-white fw-semibold px-3" href="{{ route('chat.index') }}">
-                        <i class="bi bi-chat-dots me-1"></i> Mensajes
-                        <span class="badge bg-danger rounded-pill badge-nav" id="badgeChat"
-                              style="display:none; font-size:0.6rem; position:absolute; top:4px; right:4px;">0</span>
+                        <span class="position-relative">
+                            <i class="bi bi-chat-dots me-1"></i> Mensajes
+                            <span id="navBadgeChat"
+                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                                  style="font-size:0.6rem; min-width:18px; height:18px;
+                                         line-height:1; padding: 3px 5px;
+                                         border:2px solid #0d3b6e;">0</span>
+                        </span>
                     </a>
                 </li>
-                <li class="nav-item position-relative">
+                {{-- Tickets con badge para Médico --}}
+                <li class="nav-item">
                     <a class="nav-link text-white fw-semibold px-3" href="{{ route('tickets.index') }}">
-                        <i class="bi bi-ticket-detailed me-1"></i> Tickets
-                        <span class="badge bg-danger rounded-pill badge-nav" id="badgeTickets"
-                              style="display:none; font-size:0.6rem; position:absolute; top:4px; right:4px;">0</span>
+                        <span class="position-relative">
+                            <i class="bi bi-ticket-detailed me-1"></i> Tickets
+                            <span id="navBadgeTickets"
+                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                                  style="font-size:0.6rem; min-width:18px; height:18px;
+                                         line-height:1; padding: 3px 5px;
+                                         border:2px solid #0d3b6e;">0</span>
+                        </span>
                     </a>
                 </li>
 
@@ -82,13 +102,21 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link text-white fw-semibold px-3"
-                    href="{{ route('historial.index', session('user_id')) }}">
+                       href="{{ route('historial.index', session('user_id')) }}">
                         <i class="bi bi-clock-history me-1"></i> Mi historial
                     </a>
                 </li>
+                {{-- Mensajes con badge para Paciente --}}
                 <li class="nav-item">
                     <a class="nav-link text-white fw-semibold px-3" href="{{ route('chat.index') }}">
-                        <i class="bi bi-chat-dots me-1"></i> Mensajes
+                        <span class="position-relative">
+                            <i class="bi bi-chat-dots me-1"></i> Mensajes
+                            <span id="navBadgeChat"
+                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                                  style="font-size:0.6rem; min-width:18px; height:18px;
+                                         line-height:1; padding: 3px 5px;
+                                         border:2px solid #0d3b6e;">0</span>
+                        </span>
                     </a>
                 </li>
             @endif
@@ -102,15 +130,17 @@
                 {{-- Campana de notificaciones --}}
                 <div class="dropdown">
                     <button class="btn btn-outline-light btn-sm rounded-pill position-relative"
-                            id="btnNotificaciones" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-                        <i class="bi bi-bell-fill"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                              id="badgeNotif" style="display:none; font-size: 0.6rem;">0</span>
+                            id="btnNotificaciones" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            style="width:38px; height:38px; padding:0; display:flex; align-items:center; justify-content:center;">
+                        <i class="bi bi-bell-fill fs-6"></i>
+                        <span id="badgeNotif"
+                              class="position-absolute badge rounded-pill bg-danger"
+                              style="display:none; font-size:0.6rem; min-width:18px; height:18px;
+                                     line-height:1; padding: 3px 5px;
+                                     top:-4px; right:-4px; border:2px solid #0d3b6e; z-index:10;">0</span>
                     </button>
                     <div class="dropdown-menu dropdown-menu-end shadow p-0"
                          style="min-width: 320px; max-height: 420px; overflow: hidden;">
-
-                        {{-- Header --}}
                         <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center"
                              style="background: #f8f9fa;">
                             <strong class="small"><i class="bi bi-bell me-1"></i> Notificaciones</strong>
@@ -119,15 +149,12 @@
                                 Marcar leídas
                             </button>
                         </div>
-
-                        {{-- Lista scrollable --}}
                         <ul class="list-unstyled mb-0" id="listaNotif"
                             style="max-height: 340px; overflow-y: auto;">
                             <li class="px-3 py-3 text-muted small text-center" id="sinNotif">
                                 <i class="bi bi-bell-slash me-1"></i> Sin notificaciones
                             </li>
                         </ul>
-
                     </div>
                 </div>
 

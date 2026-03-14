@@ -26,6 +26,21 @@
 
         <!-- Pusher -->
         <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+       
+       <style>
+            /* Badge animado estilo WhatsApp */
+            #navBadgeChat, #navBadgeTickets {
+                animation: pulse-badge 2s infinite;
+            }
+            #badgeNotif {
+                animation: pulse-badge 2s infinite;
+            }
+            @keyframes pulse-badge {
+                0%   { transform: scale(1); }
+                50%  { transform: scale(1.2); }
+                100% { transform: scale(1); }
+            }
+        </style>
     </head>
 
     <body class="position-relative">
@@ -186,6 +201,7 @@
                 });
             });
 
+            
             // ── PUSHER EN TIEMPO REAL ────────────────────────────────────────────────
             @if(session('user_id'))
             if (typeof Pusher !== 'undefined') {
@@ -193,15 +209,107 @@
                     cluster: '{{ env("PUSHER_APP_CLUSTER") }}'
                 });
 
-                const canal = pusher.subscribe('notificaciones.{{ session("user_id") }}');
+                // ── Canal de notificaciones generales ────────────────────────────────
+                const canalNotif = pusher.subscribe('notificaciones.{{ session("user_id") }}');
 
-                canal.bind('nueva-notificacion', function (data) {
+                canalNotif.bind('nueva-notificacion', function (data) {
                     agregarNotificacion(data.mensaje, data.tipo, data.url, data.titulo);
                     mostrarToast(data.titulo + ': ' + data.mensaje, data.tipo);
-                    // Actualizar contadores al recibir notificación
                     if (typeof actualizarContadores === 'function') actualizarContadores();
                 });
+
+                @if(session('cargo') === 'Medico' || session('cargo') === 'Paciente')
+                // ── Canal de mensajes chat (paciente-médico) ─────────────────────────
+                // Escucha el canal global del usuario para cualquier cita
+                canalNotif.bind('nueva-notificacion', function (data) {
+                    if (data.url && data.url.startsWith('/chat/')) {
+                        actualizarContadores();
+                    }
+                });
+                @endif
+
+                @if(session('cargo') === 'Medico' || session('admin') === 1)
+                // ── Canal de tickets ─────────────────────────────────────────────────
+                canalNotif.bind('nueva-notificacion', function (data) {
+                    if (data.url && data.url.startsWith('/tickets/')) {
+                        actualizarContadores();
+                    }
+                });
+                @endif
             }
+            @if(session('cargo') === 'Medico')
+                // ── Médico: escucha mensajes nuevos de sus citas activas ──────────────
+                // Se suscriben dinámicamente cuando llega una notificación de chat
+                canalNotif.bind('nueva-notificacion', function(data) {
+                    if (!data.url) return;
+
+                    // Si es un mensaje de chat, extraer cita_id y suscribirse
+                    if (data.url.startsWith('/chat/')) {
+                        const citaId = data.url.split('/chat/')[1];
+                        if (citaId) {
+                            const canalChat = pusher.subscribe('chat.cita.' + citaId);
+                            canalChat.bind('nuevo-mensaje', function(msg) {
+                                if (msg.emisor_id != {{ session('user_id') }}) {
+                                    actualizarContadores();
+                                    mostrarToast('Nuevo mensaje de ' + msg.emisor, 'info');
+                                }
+                            });
+                        }
+                    }
+
+                    // Si es un ticket
+                    if (data.url.startsWith('/tickets/')) {
+                        const ticketId = data.url.split('/tickets/')[1];
+                        if (ticketId) {
+                            const canalTicket = pusher.subscribe('ticket.' + ticketId);
+                            canalTicket.bind('nuevo-mensaje', function(msg) {
+                                if (msg.contenido !== '__tomado__' && msg.emisor_id != {{ session('user_id') }}) {
+                                    actualizarContadores();
+                                    mostrarToast('Nuevo mensaje en ticket', 'info');
+                                }
+                            });
+                        }
+                    }
+                });
+                @endif
+
+                @if(session('cargo') === 'Paciente')
+                // ── Paciente: escucha mensajes de chat ───────────────────────────────
+                canalNotif.bind('nueva-notificacion', function(data) {
+                    if (!data.url) return;
+                    if (data.url.startsWith('/chat/')) {
+                        const citaId = data.url.split('/chat/')[1];
+                        if (citaId) {
+                            const canalChat = pusher.subscribe('chat.cita.' + citaId);
+                            canalChat.bind('nuevo-mensaje', function(msg) {
+                                if (msg.emisor_id != {{ session('user_id') }}) {
+                                    actualizarContadores();
+                                    mostrarToast('Nuevo mensaje de ' + msg.emisor, 'info');
+                                }
+                            });
+                        }
+                    }
+                });
+                @endif
+
+                @if(session('admin') === 1)
+                // ── Admin: escucha mensajes de tickets asignados ─────────────────────
+                canalNotif.bind('nueva-notificacion', function(data) {
+                    if (!data.url) return;
+                    if (data.url.startsWith('/tickets/')) {
+                        const ticketId = data.url.split('/tickets/')[1];
+                        if (ticketId) {
+                            const canalTicket = pusher.subscribe('ticket.' + ticketId);
+                            canalTicket.bind('nuevo-mensaje', function(msg) {
+                                if (msg.contenido !== '__tomado__' && msg.emisor_id != {{ session('user_id') }}) {
+                                    actualizarContadores();
+                                    mostrarToast('Nuevo mensaje en ticket', 'info');
+                                }
+                            });
+                        }
+                    }
+                });
+                @endif
             @endif
 
             // ── CONTADORES DE MENSAJES Y TICKETS ────────────────────────────────────
@@ -212,16 +320,29 @@
                     .then(data => {
                         // Badge Chat
                         if (data.mensajes > 0) {
-                            $('#badgeChat').text(data.mensajes).show();
+                            $('#navBadgeChat').text(data.mensajes).removeClass('d-none');
                         } else {
-                            $('#badgeChat').hide();
+                            $('#navBadgeChat').addClass('d-none');
                         }
 
                         // Badge Tickets
                         if (data.tickets > 0) {
-                            $('#badgeTickets').text(data.tickets).show();
+                            $('#navBadgeTickets').text(data.tickets).removeClass('d-none');
                         } else {
-                            $('#badgeTickets').hide();
+                            $('#navBadgeTickets').addClass('d-none');
+                        }
+
+                        // Badge campana: suma total
+                        const total = (data.mensajes || 0) + (data.tickets || 0);
+                        if (total > 0) {
+                            $('#badgeNotif').text(total).show();
+                        }
+
+                        // Badge Notificaciones
+                        const totalNuevos = (data.mensajes || 0) + (data.tickets || 0);
+                        if (totalNuevos > 0) {
+                            $('#badgeNotif').text(totalNuevos)
+                                .css('display', 'flex !important');
                         }
                     })
                     .catch(() => {});
