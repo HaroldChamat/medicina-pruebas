@@ -8,6 +8,7 @@ use App\Models\Cita;
 use Carbon\Carbon;
 use App\Models\Horario;
 use App\Helpers\NotificacionHelper;
+use App\Helpers\CorreoHelper;
 
 class CitaController extends Controller
 {
@@ -126,6 +127,14 @@ class CitaController extends Controller
                 $urlCita
             );
         }
+        
+        if ($request->estado === 'Programada' && $estadoAnterior !== 'Programada') {
+            CorreoHelper::citaProgramada($cita);
+        }
+
+        if ($request->estado === 'Cancelada' && $estadoAnterior !== 'Cancelada') {
+            CorreoHelper::citaCancelada($cita);
+        }
 
         return response()->json(['ok' => true]);
     }
@@ -192,6 +201,7 @@ class CitaController extends Controller
             );
         }
 
+        CorreoHelper::citaCreada($cita);
         return response()->json(['success' => true]);
     }
 

@@ -10,6 +10,7 @@ use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Mail;
 use App\Helpers\NotificacionHelper;
+use App\Helpers\CorreoHelper;
 
 class InformeController extends Controller
 {
@@ -107,6 +108,7 @@ class InformeController extends Controller
         NotificacionHelper::enviar($cita, $cita->paciente_id,
             'Informe disponible', "El Dr. {$nombreMedico} generó tu informe médico", 'success', $urlVer);
 
+        CorreoHelper::informeGenerado($cita, false);
         return redirect('/citas')->with('success', 'Informe guardado correctamente');
     }
 
@@ -140,7 +142,8 @@ class InformeController extends Controller
         NotificacionHelper::enviar($cita, $cita->paciente_id,
             'Informe actualizado', "El Dr. {$nombreMedico} actualizó tu informe médico", 'warning', $urlVer);
 
-        return redirect('/citas')->with('success', 'Informe actualizado correctamente');
+        CorreoHelper::informeGenerado($cita, true);
+            return redirect('/citas')->with('success', 'Informe actualizado correctamente');
     }
 
     public function pdf(Cita $cita)

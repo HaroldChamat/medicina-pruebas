@@ -7,6 +7,7 @@ use App\Models\Cita;
 use App\Models\Mensaje;
 use App\Events\NuevoMensaje;
 use Carbon\Carbon;
+use App\Helpers\CorreoHelper;
 
 class ChatController extends Controller
 {
@@ -119,6 +120,7 @@ class ChatController extends Controller
 
         broadcast(new NuevoMensaje($mensaje))->toOthers();
 
+        CorreoHelper::nuevoMensajeChat($mensaje);
         return response()->json([
             'ok'      => true,
             'mensaje' => [

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Events\NuevoTicketMensaje;
 use App\Helpers\NotificacionHelper;
 use Carbon\Carbon;
+use App\Helpers\CorreoHelper;
 
 class TicketController extends Controller
 {
@@ -100,6 +101,7 @@ class TicketController extends Controller
             );
         }
 
+        CorreoHelper::ticketNuevo($ticket);
         return response()->json(['ok' => true, 'ticket_id' => $ticket->id]);
     }
 
@@ -155,6 +157,7 @@ class TicketController extends Controller
             new TicketMensaje(['ticket_id' => $ticket->id, 'emisor_id' => session('user_id'), 'contenido' => '__tomado__'])
         ));
 
+        CorreoHelper::ticketTomado($ticket);
         return response()->json(['ok' => true, 'admin' => $ticket->admin->name . ' ' . $ticket->admin->Apellidos]);
     }
 
@@ -175,6 +178,7 @@ class TicketController extends Controller
             '/tickets/' . $ticket->id
         );
 
+        CorreoHelper::ticketCerrado($ticket);
         return response()->json(['ok' => true]);
     }
 
@@ -215,6 +219,13 @@ class TicketController extends Controller
             );
         }
 
+        if ($receptorId) {
+            $receptor = \App\Models\User::find($receptorId);
+            if ($receptor) {
+                CorreoHelper::nuevoMensajeTicket($msg, $receptor);
+            }
+        }
+        
         return response()->json([
             'ok'      => true,
             'mensaje' => [
