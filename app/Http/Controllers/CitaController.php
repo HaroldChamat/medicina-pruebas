@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\Cita;
 use Carbon\Carbon;
 use App\Models\Horario;
+use App\Helpers\NotificacionHelper;
+use App\Helpers\CorreoHelper;
 
 class CitaController extends Controller
 {
@@ -93,10 +95,46 @@ class CitaController extends Controller
             return response()->json(['message' => $error], 422);
         }
 
+        $estadoAnterior = $cita->estado;
+
         $cita->update([
             'Fecha_y_hora' => Carbon::parse($request->Fecha_y_hora),
             'estado'       => $request->estado,
         ]);
+
+        $cita->load(['medico', 'paciente']);
+        $urlCita = '/citas';
+        $fechaFormateada = Carbon::parse($request->Fecha_y_hora)->format('d/m/Y H:i');
+        $nombreMedico    = $cita->medico->name . ' ' . $cita->medico->Apellidos;
+
+        // Si la cita fue programada, notificar al médico y paciente
+        if ($request->estado === 'Programada' && $estadoAnterior !== 'Programada') {
+            NotificacionHelper::enviar(
+                $cita,
+                $cita->medico_id,
+                'Cita programada',
+                "Tu cita del {$fechaFormateada} ha sido programada exitosamente",
+                'success',
+                $urlCita
+            );
+
+            NotificacionHelper::enviar(
+                $cita,
+                $cita->paciente_id,
+                'Cita programada',
+                "Tu cita con el Dr. {$nombreMedico} del {$fechaFormateada} fue programada exitosamente",
+                'success',
+                $urlCita
+            );
+        }
+        
+        if ($request->estado === 'Programada' && $estadoAnterior !== 'Programada') {
+            CorreoHelper::citaProgramada($cita);
+        }
+
+        if ($request->estado === 'Cancelada' && $estadoAnterior !== 'Cancelada') {
+            CorreoHelper::citaCancelada($cita);
+        }
 
         return response()->json(['ok' => true]);
     }
@@ -128,13 +166,42 @@ class CitaController extends Controller
             return response()->json(['message' => $error], 422);
         }
 
-        Cita::create([
+        $cita = Cita::create([
             'medico_id'    => $request->medico_id,
             'paciente_id'  => $request->paciente_id,
             'Fecha_y_hora' => $fechaHora,
             'estado'       => $request->estado,
         ]);
 
+        $cita->load(['medico', 'paciente']);
+        $urlCita = '/citas';
+        $fechaFormateada = $fechaHora->format('d/m/Y H:i');
+        $nombrePaciente  = $cita->paciente->name . ' ' . $cita->paciente->Apellidos;
+        $nombreMedico    = $cita->medico->name . ' ' . $cita->medico->Apellidos;
+
+        // Notificar al médico
+        NotificacionHelper::enviar(
+            $cita,
+            $cita->medico_id,
+            'Nueva cita asignada',
+            "Se agendó una cita con {$nombrePaciente} el {$fechaFormateada}",
+            'info',
+            $urlCita
+        );
+
+        // Notificar a todos los admins
+        foreach (NotificacionHelper::getAdmins() as $admin) {
+            NotificacionHelper::enviar(
+                $cita,
+                $admin->id,
+                'Nueva cita creada',
+                "El Dr. {$nombreMedico} tiene una cita con {$nombrePaciente} el {$fechaFormateada}",
+                'info',
+                $urlCita
+            );
+        }
+
+        CorreoHelper::citaCreada($cita);
         return response()->json(['success' => true]);
     }
 

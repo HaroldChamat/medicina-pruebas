@@ -9,6 +9,8 @@ use App\Models\Tratamiento;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Mail;
+use App\Helpers\NotificacionHelper;
+use App\Helpers\CorreoHelper;
 
 class InformeController extends Controller
 {
@@ -61,6 +63,11 @@ class InformeController extends Controller
 
     public function show(Cita $cita)
     {
+        // Paciente solo puede ver su propio informe
+        if (session('cargo') === 'Paciente' && $cita->paciente_id !== session('user_id')) {
+            abort(403, 'No autorizado');
+        }
+
         $cita->load(['medico.especialidades', 'paciente', 'enfermedad', 'tratamiento']);
         return view('InformeVer', compact('cita'));
     }
@@ -88,6 +95,20 @@ class InformeController extends Controller
             ['descripcion' => $request->tratamiento]
         );
 
+        $cita->estado = 'Finalizada';
+        $cita->save();
+        $cita->load(['medico', 'paciente']);
+
+        $nombreMedico = $cita->medico->name . ' ' . $cita->medico->Apellidos;
+        $urlVer = '/Informe/' . $cita->id . '/ver';
+
+        NotificacionHelper::enviar($cita, $cita->medico_id,
+            'Informe generado', 'El informe médico fue generado exitosamente', 'success', $urlVer);
+
+        NotificacionHelper::enviar($cita, $cita->paciente_id,
+            'Informe disponible', "El Dr. {$nombreMedico} generó tu informe médico", 'success', $urlVer);
+
+        CorreoHelper::informeGenerado($cita, false);
         return redirect('/citas')->with('success', 'Informe guardado correctamente');
     }
 
@@ -108,7 +129,21 @@ class InformeController extends Controller
             ['descripcion' => $request->tratamiento]
         );
 
-        return redirect('/citas')->with('success', 'Informe actualizado correctamente');
+        $cita->estado = 'Finalizada';
+        $cita->save();
+        $cita->load(['medico', 'paciente']);
+
+        $nombreMedico = $cita->medico->name . ' ' . $cita->medico->Apellidos;
+        $urlVer = '/Informe/' . $cita->id . '/ver';
+
+        NotificacionHelper::enviar($cita, $cita->medico_id,
+            'Informe actualizado', 'El informe médico fue actualizado', 'warning', $urlVer);
+
+        NotificacionHelper::enviar($cita, $cita->paciente_id,
+            'Informe actualizado', "El Dr. {$nombreMedico} actualizó tu informe médico", 'warning', $urlVer);
+
+        CorreoHelper::informeGenerado($cita, true);
+            return redirect('/citas')->with('success', 'Informe actualizado correctamente');
     }
 
     public function pdf(Cita $cita)

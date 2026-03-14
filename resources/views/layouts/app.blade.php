@@ -23,6 +23,24 @@
 
         <!-- Estilos propios -->
         <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+
+        <!-- Pusher -->
+        <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+       
+       <style>
+            /* Badge animado estilo WhatsApp */
+            #navBadgeChat, #navBadgeTickets {
+                animation: pulse-badge 2s infinite;
+            }
+            #badgeNotif {
+                animation: pulse-badge 2s infinite;
+            }
+            @keyframes pulse-badge {
+                0%   { transform: scale(1); }
+                50%  { transform: scale(1.2); }
+                100% { transform: scale(1); }
+            }
+        </style>
     </head>
 
     <body class="position-relative">
@@ -91,7 +109,8 @@
         }
 
         // ── FUNCIÓN GLOBAL DE NOTIFICACIONES ────────────────────────────────────────
-        function agregarNotificacion(mensaje, tipo = 'info') {
+        // ── FUNCIÓN GLOBAL DE NOTIFICACIONES ────────────────────────────────────────
+        function agregarNotificacion(mensaje, tipo = 'info', url = '', titulo = '') {
             const iconos = {
                 success: 'bi-check-circle-fill text-success',
                 danger:  'bi-x-circle-fill text-danger',
@@ -100,30 +119,239 @@
             };
 
             const hora = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+            const contenido = url
+                ? `<a href="${url}" class="text-decoration-none text-dark d-block">
+                        <div class="small fw-semibold">${titulo || mensaje}</div>
+                        ${titulo ? `<div class="small text-muted">${mensaje}</div>` : ''}
+                        <div class="text-muted" style="font-size:0.72rem;">${hora}</div>
+                   </a>`
+                : `<div class="small fw-semibold">${titulo || mensaje}</div>
+                   ${titulo ? `<div class="small text-muted">${mensaje}</div>` : ''}
+                   <div class="text-muted" style="font-size:0.72rem;">${hora}</div>`;
+
             const item = `
                 <li class="px-3 py-2 border-bottom notif-item">
                     <div class="d-flex align-items-start gap-2">
                         <i class="bi ${iconos[tipo]} mt-1"></i>
-                        <div>
-                            <div class="small fw-semibold">${mensaje}</div>
-                            <div class="text-muted" style="font-size: 0.72rem;">${hora}</div>
-                        </div>
+                        <div class="flex-grow-1">${contenido}</div>
                     </div>
                 </li>`;
 
             $('#sinNotif').hide();
-            $('#listaNotif').append(item);
+            $('#listaNotif').prepend(item);
 
-            // Actualiza badge
             const count = $('.notif-item').length;
             $('#badgeNotif').text(count).show();
         }
 
-        // Limpiar badge al abrir el dropdown
+        // ── CARGAR NOTIFICACIONES AL INICIO ─────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
+
+            let dropdownAbierto = false;
+
+            // Cargar notificaciones desde BD — solo badge, no llenar lista aún
+            fetch('/notificaciones')
+                .then(r => r.json())
+                .then(notifs => {
+                    if (!notifs.length) return;
+
+                    const noLeidas = notifs.filter(n => !n.leida).length;
+                    if (noLeidas > 0) {
+                        $('#badgeNotif').text(noLeidas).show();
+                    }
+
+                    // Llenar la lista solo cuando el usuario abre el dropdown
+                    document.getElementById('btnNotificaciones')?.addEventListener('show.bs.dropdown', function () {
+                        if (dropdownAbierto) return;
+                        dropdownAbierto = true;
+
+                        $('#sinNotif').hide();
+                        notifs.forEach(n => {
+                            agregarNotificacion(n.mensaje, n.tipo, n.url, n.titulo);
+                        });
+                    }, { once: false });
+                })
+                .catch(() => {});
+
+            // Marcar como leídas al abrir el dropdown
             document.getElementById('btnNotificaciones')?.addEventListener('click', () => {
-                setTimeout(() => $('#badgeNotif').hide(), 300);
+                setTimeout(() => {
+                    $('#badgeNotif').hide();
+                    fetch('/notificaciones/leer', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                }, 300);
             });
+
+            // Marcar todas como leídas
+            document.getElementById('btnMarcarLeidas')?.addEventListener('click', () => {
+                $('#listaNotif').empty();
+                $('#sinNotif').show();
+                $('#badgeNotif').hide();
+                fetch('/notificaciones/leer', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            });
+
+            
+            // ── PUSHER EN TIEMPO REAL ────────────────────────────────────────────────
+            @if(session('user_id'))
+            if (typeof Pusher !== 'undefined') {
+                const pusher = new Pusher('{{ env("PUSHER_APP_KEY") }}', {
+                    cluster: '{{ env("PUSHER_APP_CLUSTER") }}'
+                });
+
+                // ── Canal de notificaciones generales ────────────────────────────────
+                const canalNotif = pusher.subscribe('notificaciones.{{ session("user_id") }}');
+
+                canalNotif.bind('nueva-notificacion', function (data) {
+                    agregarNotificacion(data.mensaje, data.tipo, data.url, data.titulo);
+                    mostrarToast(data.titulo + ': ' + data.mensaje, data.tipo);
+                    if (typeof actualizarContadores === 'function') actualizarContadores();
+                });
+
+                @if(session('cargo') === 'Medico' || session('cargo') === 'Paciente')
+                // ── Canal de mensajes chat (paciente-médico) ─────────────────────────
+                // Escucha el canal global del usuario para cualquier cita
+                canalNotif.bind('nueva-notificacion', function (data) {
+                    if (data.url && data.url.startsWith('/chat/')) {
+                        actualizarContadores();
+                    }
+                });
+                @endif
+
+                @if(session('cargo') === 'Medico' || session('admin') === 1)
+                // ── Canal de tickets ─────────────────────────────────────────────────
+                canalNotif.bind('nueva-notificacion', function (data) {
+                    if (data.url && data.url.startsWith('/tickets/')) {
+                        actualizarContadores();
+                    }
+                });
+                @endif
+            }
+            @if(session('cargo') === 'Medico')
+                // ── Médico: escucha mensajes nuevos de sus citas activas ──────────────
+                // Se suscriben dinámicamente cuando llega una notificación de chat
+                canalNotif.bind('nueva-notificacion', function(data) {
+                    if (!data.url) return;
+
+                    // Si es un mensaje de chat, extraer cita_id y suscribirse
+                    if (data.url.startsWith('/chat/')) {
+                        const citaId = data.url.split('/chat/')[1];
+                        if (citaId) {
+                            const canalChat = pusher.subscribe('chat.cita.' + citaId);
+                            canalChat.bind('nuevo-mensaje', function(msg) {
+                                if (msg.emisor_id != {{ session('user_id') }}) {
+                                    actualizarContadores();
+                                    mostrarToast('Nuevo mensaje de ' + msg.emisor, 'info');
+                                }
+                            });
+                        }
+                    }
+
+                    // Si es un ticket
+                    if (data.url.startsWith('/tickets/')) {
+                        const ticketId = data.url.split('/tickets/')[1];
+                        if (ticketId) {
+                            const canalTicket = pusher.subscribe('ticket.' + ticketId);
+                            canalTicket.bind('nuevo-mensaje', function(msg) {
+                                if (msg.contenido !== '__tomado__' && msg.emisor_id != {{ session('user_id') }}) {
+                                    actualizarContadores();
+                                    mostrarToast('Nuevo mensaje en ticket', 'info');
+                                }
+                            });
+                        }
+                    }
+                });
+                @endif
+
+                @if(session('cargo') === 'Paciente')
+                // ── Paciente: escucha mensajes de chat ───────────────────────────────
+                canalNotif.bind('nueva-notificacion', function(data) {
+                    if (!data.url) return;
+                    if (data.url.startsWith('/chat/')) {
+                        const citaId = data.url.split('/chat/')[1];
+                        if (citaId) {
+                            const canalChat = pusher.subscribe('chat.cita.' + citaId);
+                            canalChat.bind('nuevo-mensaje', function(msg) {
+                                if (msg.emisor_id != {{ session('user_id') }}) {
+                                    actualizarContadores();
+                                    mostrarToast('Nuevo mensaje de ' + msg.emisor, 'info');
+                                }
+                            });
+                        }
+                    }
+                });
+                @endif
+
+                @if(session('admin') === 1)
+                // ── Admin: escucha mensajes de tickets asignados ─────────────────────
+                canalNotif.bind('nueva-notificacion', function(data) {
+                    if (!data.url) return;
+                    if (data.url.startsWith('/tickets/')) {
+                        const ticketId = data.url.split('/tickets/')[1];
+                        if (ticketId) {
+                            const canalTicket = pusher.subscribe('ticket.' + ticketId);
+                            canalTicket.bind('nuevo-mensaje', function(msg) {
+                                if (msg.contenido !== '__tomado__' && msg.emisor_id != {{ session('user_id') }}) {
+                                    actualizarContadores();
+                                    mostrarToast('Nuevo mensaje en ticket', 'info');
+                                }
+                            });
+                        }
+                    }
+                });
+                @endif
+            @endif
+
+            // ── CONTADORES DE MENSAJES Y TICKETS ────────────────────────────────────
+            @if(session('user_id'))
+            function actualizarContadores() {
+                fetch('/contadores')
+                    .then(r => r.json())
+                    .then(data => {
+                        // Badge Chat
+                        if (data.mensajes > 0) {
+                            $('#navBadgeChat').text(data.mensajes).removeClass('d-none');
+                        } else {
+                            $('#navBadgeChat').addClass('d-none');
+                        }
+
+                        // Badge Tickets
+                        if (data.tickets > 0) {
+                            $('#navBadgeTickets').text(data.tickets).removeClass('d-none');
+                        } else {
+                            $('#navBadgeTickets').addClass('d-none');
+                        }
+
+                        // Badge campana: suma total
+                        const total = (data.mensajes || 0) + (data.tickets || 0);
+                        if (total > 0) {
+                            $('#badgeNotif').text(total).show();
+                        }
+
+                        // Badge Notificaciones
+                        const totalNuevos = (data.mensajes || 0) + (data.tickets || 0);
+                        if (totalNuevos > 0) {
+                            $('#badgeNotif').text(totalNuevos)
+                                .css('display', 'flex !important');
+                        }
+                    })
+                    .catch(() => {});
+            }
+
+            // Cargar al inicio y cada 30 segundos
+            actualizarContadores();
+            setInterval(actualizarContadores, 30000);
+            @endif
         });
         </script>
 
