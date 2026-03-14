@@ -8,6 +8,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\EspecialidadController;
 use App\Http\Controllers\InformeController;
 use App\Http\Controllers\HistorialController;
+use App\Http\Controllers\ChatController;
 
 // ── Rutas públicas ──────────────────────────────────────────────────────────
 Route::get('/', function () {
@@ -72,12 +73,26 @@ Route::middleware(['cargo:Admin,Paciente'])->group(function () {
 // ── Todos los roles autenticados ─────────────────────────────────────────────
 Route::middleware(['cargo:Admin,Medico,Paciente'])->group(function () {
     Route::get('/citas', [CitaController::class, 'index'])->name('citas');
+    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/{cita}', [ChatController::class, 'show'])->name('chat.show');
+    Route::post('/chat/{cita}', [ChatController::class, 'store'])->name('chat.store');
+
     // ... resto de rutas (horas-disponibles, pdf, email, historial)
     Route::get('/citas/horas-disponibles', [CitaController::class, 'horasDisponibles']);
     Route::get('/informe/pdf/{cita}', [InformeController::class, 'pdf'])->name('informe.pdf');
     // Mantenemos la lógica de historial e informes
     Route::post('/informe/email', [InformeController::class, 'enviarPorEmail']);
     Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
+    
+    // Ruta para marcar leídos
+    Route::post('/chat/{cita}/leer', function (\App\Models\Cita $cita) 
+    {
+        \App\Models\Mensaje::where('cita_id', $cita->id)
+            ->where('receptor_id', session('user_id'))
+            ->where('leido', false)
+            ->update(['leido' => true]);
+        return response()->json(['ok' => true]);
+    });
 });
 
 //---- Ruta para obtener notificaciones-----//

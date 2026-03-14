@@ -54,6 +54,11 @@
                         <i class="bi bi-clock me-1"></i> Mi horario
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white fw-semibold px-3" href="{{ route('chat.index') }}">
+                        <i class="bi bi-chat-dots me-1"></i> Mensajes
+                    </a>
+                </li>
 
             @elseif(session('cargo') === 'Paciente')
                 <li class="nav-item">
@@ -65,6 +70,11 @@
                     <a class="nav-link text-white fw-semibold px-3"
                     href="{{ route('historial.index', session('user_id')) }}">
                         <i class="bi bi-clock-history me-1"></i> Mi historial
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white fw-semibold px-3" href="{{ route('chat.index') }}">
+                        <i class="bi bi-chat-dots me-1"></i> Mensajes
                     </a>
                 </li>
             @endif
