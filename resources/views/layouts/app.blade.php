@@ -132,20 +132,29 @@
         // ── CARGAR NOTIFICACIONES AL INICIO ─────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
 
-            // Cargar notificaciones desde BD
+            let dropdownAbierto = false;
+
+            // Cargar notificaciones desde BD — solo badge, no llenar lista aún
             fetch('/notificaciones')
                 .then(r => r.json())
                 .then(notifs => {
                     if (!notifs.length) return;
 
-                    notifs.forEach(n => {
-                        agregarNotificacion(n.mensaje, n.tipo, n.url, n.titulo);
-                    });
-
                     const noLeidas = notifs.filter(n => !n.leida).length;
                     if (noLeidas > 0) {
                         $('#badgeNotif').text(noLeidas).show();
                     }
+
+                    // Llenar la lista solo cuando el usuario abre el dropdown
+                    document.getElementById('btnNotificaciones')?.addEventListener('show.bs.dropdown', function () {
+                        if (dropdownAbierto) return;
+                        dropdownAbierto = true;
+
+                        $('#sinNotif').hide();
+                        notifs.forEach(n => {
+                            agregarNotificacion(n.mensaje, n.tipo, n.url, n.titulo);
+                        });
+                    }, { once: false });
                 })
                 .catch(() => {});
 
@@ -189,8 +198,38 @@
                 canal.bind('nueva-notificacion', function (data) {
                     agregarNotificacion(data.mensaje, data.tipo, data.url, data.titulo);
                     mostrarToast(data.titulo + ': ' + data.mensaje, data.tipo);
+                    // Actualizar contadores al recibir notificación
+                    if (typeof actualizarContadores === 'function') actualizarContadores();
                 });
             }
+            @endif
+
+            // ── CONTADORES DE MENSAJES Y TICKETS ────────────────────────────────────
+            @if(session('user_id'))
+            function actualizarContadores() {
+                fetch('/contadores')
+                    .then(r => r.json())
+                    .then(data => {
+                        // Badge Chat
+                        if (data.mensajes > 0) {
+                            $('#badgeChat').text(data.mensajes).show();
+                        } else {
+                            $('#badgeChat').hide();
+                        }
+
+                        // Badge Tickets
+                        if (data.tickets > 0) {
+                            $('#badgeTickets').text(data.tickets).show();
+                        } else {
+                            $('#badgeTickets').hide();
+                        }
+                    })
+                    .catch(() => {});
+            }
+
+            // Cargar al inicio y cada 30 segundos
+            actualizarContadores();
+            setInterval(actualizarContadores, 30000);
             @endif
         });
         </script>

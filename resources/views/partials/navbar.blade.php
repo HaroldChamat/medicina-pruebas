@@ -37,6 +37,11 @@
                         <i class="bi bi-person-plus me-1"></i> Crear usuario
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white fw-semibold px-3" href="{{ route('tickets.index') }}">
+                        <i class="bi bi-ticket-detailed me-1"></i> Tickets
+                    </a>
+                </li>
 
             @elseif(session('cargo') === 'Medico')
                 <li class="nav-item">
@@ -54,9 +59,18 @@
                         <i class="bi bi-clock me-1"></i> Mi horario
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item position-relative">
                     <a class="nav-link text-white fw-semibold px-3" href="{{ route('chat.index') }}">
                         <i class="bi bi-chat-dots me-1"></i> Mensajes
+                        <span class="badge bg-danger rounded-pill badge-nav" id="badgeChat"
+                              style="display:none; font-size:0.6rem; position:absolute; top:4px; right:4px;">0</span>
+                    </a>
+                </li>
+                <li class="nav-item position-relative">
+                    <a class="nav-link text-white fw-semibold px-3" href="{{ route('tickets.index') }}">
+                        <i class="bi bi-ticket-detailed me-1"></i> Tickets
+                        <span class="badge bg-danger rounded-pill badge-nav" id="badgeTickets"
+                              style="display:none; font-size:0.6rem; position:absolute; top:4px; right:4px;">0</span>
                     </a>
                 </li>
 
