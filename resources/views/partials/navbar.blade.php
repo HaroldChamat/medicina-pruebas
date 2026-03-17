@@ -37,6 +37,21 @@
                         <i class="bi bi-person-plus me-1"></i> Crear usuario
                     </a>
                 </li>
+
+                {{-- Mensajes con badge para Admin --}}
+                <li class="nav-item">
+                    <a class="nav-link text-white fw-semibold px-3" href="{{ route('chat.index') }}">
+                        <span class="position-relative">
+                            <i class="bi bi-chat-dots me-1"></i> Mensajes
+                            <span id="navBadgeChat"
+                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                                  style="font-size:0.6rem; min-width:18px; height:18px;
+                                         line-height:1; padding: 3px 5px;
+                                         border:2px solid #0d3b6e;">0</span>
+                        </span>
+                    </a>
+                </li>
+
                 {{-- Tickets con badge para Admin --}}
                 <li class="nav-item">
                     <a class="nav-link text-white fw-semibold px-3" href="{{ route('tickets.index') }}">
@@ -67,19 +82,7 @@
                         <i class="bi bi-clock me-1"></i> Mi horario
                     </a>
                 </li>
-                {{-- Mensajes con badge para Médico --}}
-                <li class="nav-item">
-                    <a class="nav-link text-white fw-semibold px-3" href="{{ route('chat.index') }}">
-                        <span class="position-relative">
-                            <i class="bi bi-chat-dots me-1"></i> Mensajes
-                            <span id="navBadgeChat"
-                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
-                                  style="font-size:0.6rem; min-width:18px; height:18px;
-                                         line-height:1; padding: 3px 5px;
-                                         border:2px solid #0d3b6e;">0</span>
-                        </span>
-                    </a>
-                </li>
+                
                 {{-- Tickets con badge para Médico --}}
                 <li class="nav-item">
                     <a class="nav-link text-white fw-semibold px-3" href="{{ route('tickets.index') }}">

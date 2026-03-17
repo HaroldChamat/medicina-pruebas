@@ -12,12 +12,15 @@
             </div>
             <div>
                 <h5 class="fw-bold mb-0">
-                    @if(session('cargo') === 'Paciente') Dr. @endif
+                    @if(session('cargo') === 'Paciente') Admin. @endif
                     {{ $otroUsuario->name }} {{ $otroUsuario->Apellidos }}
                 </h5>
                 <small style="color: rgba(255,255,255,0.85);">
                     Cita: {{ $cita->codigo_cita ?? 'CIT-'.$cita->id }}
                     · {{ \Carbon\Carbon::parse($cita->Fecha_y_hora)->format('d/m/Y H:i') }}
+                    @if(session('admin') === 1)
+                        · <i class="bi bi-person-badge me-1"></i>Dr. {{ $cita->medico->name }} {{ $cita->medico->Apellidos }}
+                    @endif
                     @if($cita->estado === 'Finalizada')
                         @php
                             $cierre = \Carbon\Carbon::parse($cita->Fecha_y_hora)->addDays(2);
@@ -92,8 +95,8 @@
             </div>
             <small class="text-muted mt-1 d-block">
                 <i class="bi bi-shield-check me-1"></i>
-                Conversación privada · Solo visible para ti y
-                @if(session('cargo') === 'Paciente') tu médico @else el paciente @endif
+                Solo visible para ti y
+                @if(session('cargo') === 'Paciente') el administrador @else el paciente @endif
             </small>
         </div>
     </div>

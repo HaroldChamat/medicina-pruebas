@@ -10,8 +10,8 @@
             </h4>
             <p class="small mb-0" style="color: rgba(255,255,255,0.85);">
                 Conversaciones activas con
-                @if(session('cargo') === 'Paciente') tu médico
-                @else tus pacientes
+                @if(session('cargo') === 'Paciente') el equipo administrativo
+                @else los pacientes
                 @endif
             </p>
         </div>
@@ -66,6 +66,9 @@
                                             <small class="text-muted">
                                                 Cita: {{ $cita->codigo_cita ?? 'CIT-'.$cita->id }}
                                                 · {{ \Carbon\Carbon::parse($cita->Fecha_y_hora)->format('d/m/Y H:i') }}
+                                                @if(session('admin') === 1)
+                                                    · <i class="bi bi-person-badge me-1"></i>Dr. {{ $cita->medico->name }} {{ $cita->medico->Apellidos }}
+                                                @endif
                                             </small>
                                         </div>
                                         <div class="text-end flex-shrink-0 ms-2">
