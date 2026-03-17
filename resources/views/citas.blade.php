@@ -97,9 +97,11 @@
 
                                 @if(session('admin') === 1 || session('cargo') === 'Medico')
                                     <td>
-                                        <a href="#" data-id="{{ $cita->id }}" class="btn btn-primary btn-sm editar">
-                                            Editar <i class="bi bi-eye ms-1"></i>
-                                        </a>
+                                        @if(session('admin') === 1)
+                                            <a href="#" data-id="{{ $cita->id }}" class="btn btn-primary btn-sm editar">
+                                                Editar <i class="bi bi-eye ms-1"></i>
+                                            </a>
+                                        @endif
 
                                         @if(session('admin') === 1)
                                             <a href="#" data-id="{{ $cita->id }}" class="btn btn-danger btn-sm eliminar">

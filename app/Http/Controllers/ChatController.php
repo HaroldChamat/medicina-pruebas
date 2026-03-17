@@ -5,22 +5,20 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Cita;
 use App\Models\Mensaje;
+use App\Models\User;
 use App\Events\NuevoMensaje;
 use Carbon\Carbon;
-use App\Helpers\CorreoHelper;
 
 class ChatController extends Controller
 {
-    /**
-     * Lista de chats disponibles para el usuario actual
-     */
     public function index()
     {
-        $userId = session('user_id');
-        $cargo  = session('cargo');
+        $userId  = session('user_id');
+        $cargo   = session('cargo');
+        $esAdmin = session('admin') === 1;
 
         if ($cargo === 'Paciente') {
-            // Paciente ve sus citas programadas o finalizadas (con 2 días de gracia)
+            // Paciente ve sus citas programadas o finalizadas recientes
             $citas = Cita::with(['medico', 'paciente'])
                 ->where('paciente_id', $userId)
                 ->where(function ($q) {
@@ -33,10 +31,9 @@ class ChatController extends Controller
                 ->orderBy('Fecha_y_hora', 'desc')
                 ->get();
 
-        } elseif ($cargo === 'Medico') {
-            // Médico ve sus citas programadas o finalizadas (con 2 días de gracia)
+        } elseif ($esAdmin) {
+            // Admin ve todas las citas programadas o finalizadas recientes
             $citas = Cita::with(['medico', 'paciente'])
-                ->where('medico_id', $userId)
                 ->where(function ($q) {
                     $q->where('estado', 'Programada')
                       ->orWhere(function ($q2) {
@@ -47,25 +44,22 @@ class ChatController extends Controller
                 ->orderBy('Fecha_y_hora', 'desc')
                 ->get();
         } else {
-            $citas = collect();
+            abort(403);
         }
 
         return view('Chat', compact('citas'));
     }
 
-    /**
-     * Abre el chat de una cita específica
-     */
     public function show(Cita $cita)
     {
-        $userId = session('user_id');
-        $cargo  = session('cargo');
+        $userId  = session('user_id');
+        $cargo   = session('cargo');
+        $esAdmin = session('admin') === 1;
 
-        // Verificar que el usuario pertenece a esta cita
+        // Solo admin y el paciente de esa cita pueden acceder
         if ($cargo === 'Paciente' && $cita->paciente_id !== $userId) abort(403);
-        if ($cargo === 'Medico'   && $cita->medico_id   !== $userId) abort(403);
+        if (!$esAdmin && $cargo !== 'Paciente') abort(403);
 
-        // Verificar que el chat está activo
         if (!$this->chatActivo($cita)) {
             return redirect()->route('chat.index')
                 ->with('error', 'Este chat ya no está disponible.');
@@ -84,22 +78,22 @@ class ChatController extends Controller
 
         $cita->load(['medico', 'paciente']);
 
-        // Determinar con quién está hablando
-        $otroUsuario = $cargo === 'Paciente' ? $cita->medico : $cita->paciente;
+        // El "otro usuario" depende del rol
+        $otroUsuario = $cargo === 'Paciente'
+            ? User::where('admin', 1)->first()  // paciente habla con admin
+            : $cita->paciente;                   // admin habla con paciente
 
         return view('ChatConversacion', compact('cita', 'mensajes', 'otroUsuario'));
     }
 
-    /**
-     * Enviar mensaje
-     */
     public function store(Request $request, Cita $cita)
     {
-        $userId = session('user_id');
-        $cargo  = session('cargo');
+        $userId  = session('user_id');
+        $cargo   = session('cargo');
+        $esAdmin = session('admin') === 1;
 
         if ($cargo === 'Paciente' && $cita->paciente_id !== $userId) abort(403);
-        if ($cargo === 'Medico'   && $cita->medico_id   !== $userId) abort(403);
+        if (!$esAdmin && $cargo !== 'Paciente') abort(403);
 
         if (!$this->chatActivo($cita)) {
             return response()->json(['error' => 'Chat cerrado'], 403);
@@ -107,7 +101,13 @@ class ChatController extends Controller
 
         $request->validate(['contenido' => 'required|string|max:1000']);
 
-        $receptorId = $cargo === 'Paciente' ? $cita->medico_id : $cita->paciente_id;
+        // Receptor: si es paciente → admin, si es admin → paciente
+        if ($cargo === 'Paciente') {
+            $receptor = User::where('admin', 1)->first();
+            $receptorId = $receptor->id;
+        } else {
+            $receptorId = $cita->paciente_id;
+        }
 
         $mensaje = Mensaje::create([
             'cita_id'    => $cita->id,
@@ -117,10 +117,8 @@ class ChatController extends Controller
         ]);
 
         $mensaje->load('emisor');
-
         broadcast(new NuevoMensaje($mensaje))->toOthers();
 
-        CorreoHelper::nuevoMensajeChat($mensaje);
         return response()->json([
             'ok'      => true,
             'mensaje' => [
@@ -133,9 +131,6 @@ class ChatController extends Controller
         ]);
     }
 
-    /**
-     * Verifica si el chat está activo
-     */
     private function chatActivo(Cita $cita): bool
     {
         if ($cita->estado === 'Programada') return true;

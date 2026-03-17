@@ -37,6 +37,8 @@ Route::middleware(['cargo:Admin'])->group(function () {
     Route::delete('/usuario/{id}', [UserController::class, 'destroy'])->name('User.destroy');
     Route::get('/Especialidad', [UserController::class, 'index_especialidad'])->name('Especialidad');
     Route::post('/citas', [CitaController::class, 'store']);
+    Route::get('/citas/{id}/edit', [CitaController::class, 'edit']);
+    Route::put('/citas/{id}', [CitaController::class, 'update']);
     Route::delete('/citas/{id}', [CitaController::class, 'destroy']);
     Route::get('/admin/medicos', [UserController::class, 'index_medicos'])->name('admin.medicos');
     Route::get('/admin/pacientes', [UserController::class, 'index_pacientes'])->name('admin.pacientes');
@@ -54,8 +56,6 @@ Route::middleware(['cargo:Medico'])->group(function () {
 
 // ── Admin y Médico ───────────────────────────────────────────────────────────
 Route::middleware(['cargo:Admin,Medico'])->group(function () {
-    Route::get('/citas/{id}/edit', [CitaController::class, 'edit']);
-    Route::put('/citas/{id}', [CitaController::class, 'update']);
     Route::get('/Informacion', [InformeController::class, 'index_paciente'])->name('informe.paciente');
     Route::get('/Informe', [InformeController::class, 'index'])->name('informe.index');
     Route::get('/Informe/{cita}/editar', [InformeController::class, 'edit'])->name('informe.edit');
@@ -89,8 +89,10 @@ Route::middleware(['cargo:Admin,Medico,Paciente'])->group(function () {
     Route::get('/informe/pdf/{cita}', [InformeController::class, 'pdf'])->name('informe.pdf');
     Route::post('/informe/email', [InformeController::class, 'enviarPorEmail']);
     Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
+});
 
-    // Chat
+// ── Chat: solo Admin y Paciente ──────────────────────────────────────────────
+Route::middleware(['cargo:Admin,Paciente'])->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
     Route::get('/chat/{cita}', [ChatController::class, 'show'])->name('chat.show');
     Route::post('/chat/{cita}', [ChatController::class, 'store'])->name('chat.store');
