@@ -307,7 +307,8 @@
                                             </button>
                                         @else
                                             <button class="btn btn-primary btn-sm rounded-pill btnEditarHorario"
-                                                    data-horario='@json($medico->horario)'>
+                                                    data-horario='@json($medico->horario)'
+                                                    data-medico-id="{{ $medico->id }}">
                                                 <i class="bi bi-pencil me-1"></i> Editar
                                             </button>
                                         @endif
@@ -339,6 +340,7 @@
                     <form id="formEditarhorario">
                         @csrf
                         <input type="hidden" id="horario_id" name="horario_id">
+                        <input type="hidden" id="editar_medico_id_hidden" name="medico_id">
 
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -448,6 +450,7 @@ $(document).ready(function () {
     let modalHorario = new bootstrap.Modal(document.getElementById('modalHorario'));
     let modalEditar  = new bootstrap.Modal(document.getElementById('exampledit'));
 
+    // ─── ABRIR MODAL CREAR ───────────────────────────────────────────────
     $(document).on('click', '.btnCrearHorario', function () {
         let medico = $(this).data('medico');
         $('#medico_id').val(medico.id);
@@ -456,16 +459,19 @@ $(document).ready(function () {
         modalHorario.show();
     });
 
+    // ─── ABRIR MODAL EDITAR ──────────────────────────────────────────────
     $(document).on('click', '.btnEditarHorario', function () {
-        let horario = $(this).data('horario');
+        let horario   = $(this).data('horario');
+        let medicoId  = $(this).data('medico-id');
         $('#horario_id').val(horario.id);
+        $('#editar_medico_id_hidden').val(medicoId);
         $('#editar_hora_inicio').val(horario.hora_inicio);
         $('#editar_hora_fin').val(horario.hora_fin);
         $('#editar_almuerzo_inicio').val(horario.almuerzo_inicio);
         $('#editar_almuerzo_fin').val(horario.almuerzo_fin);
         $('#editar_hora_atencion').val(horario.hora_atencion);
 
-        // Marcar días del horario
+        // Marcar días guardados
         let dias = horario.dias_semana || [];
         $('input[name="dias_semana[]"]').each(function () {
             $(this).prop('checked', dias.includes($(this).val()));
@@ -474,8 +480,13 @@ $(document).ready(function () {
         modalEditar.show();
     });
 
-    $('#formHorario').on('submit', function (e) {
+    // ─── CREAR HORARIO ───────────────────────────────────────────────────
+    $('#formHorario').off('submit').on('submit', function (e) {
         e.preventDefault();
+        const $btn = $(this).find('button[type="submit"]');
+        if ($btn.prop('disabled')) return;
+        $btn.prop('disabled', true);
+
         $.ajax({
             url: '/horario',
             type: 'POST',
@@ -487,24 +498,40 @@ $(document).ready(function () {
             },
             error: function (xhr) {
                 mostrarToast(xhr.responseJSON?.message ?? 'Error al guardar', 'danger');
+            },
+            complete: function () {
+                $btn.prop('disabled', false);
             }
         });
     });
 
-    $('#formEditarhorario').on('submit', function (e) {
+    // ─── EDITAR HORARIO ──────────────────────────────────────────────────
+    $('#formEditarhorario').off('submit').on('submit', function (e) {
         e.preventDefault();
         let horarioId = $('#horario_id').val();
+        const $btn = $(this).find('button[type="submit"]');
+        if ($btn.prop('disabled')) return;
+        $btn.prop('disabled', true);
+
+        // Recoger días marcados
+        let diasSeleccionados = [];
+        $('input[name="dias_semana[]"]:checked').each(function () {
+            diasSeleccionados.push($(this).val());
+        });
+
         $.ajax({
             url: '/horario/' + horarioId,
             method: 'POST',
             data: {
                 _token:          $('meta[name="csrf-token"]').attr('content'),
                 _method:         'PUT',
+                medico_id:       $('#editar_medico_id_hidden').val(),
                 hora_inicio:     $('#editar_hora_inicio').val(),
                 hora_fin:        $('#editar_hora_fin').val(),
                 almuerzo_inicio: $('#editar_almuerzo_inicio').val(),
                 almuerzo_fin:    $('#editar_almuerzo_fin').val(),
                 hora_atencion:   $('#editar_hora_atencion').val(),
+                'dias_semana[]': diasSeleccionados,
             },
             success: function () {
                 mostrarToast('Horario actualizado correctamente', 'success');
@@ -513,6 +540,9 @@ $(document).ready(function () {
             },
             error: function (xhr) {
                 mostrarToast(xhr.responseJSON?.message ?? 'Error al actualizar', 'danger');
+            },
+            complete: function () {
+                $btn.prop('disabled', false);
             }
         });
     });

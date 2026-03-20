@@ -53,13 +53,23 @@ class HorarioController extends Controller
             'hora_atencion'  => 'required|integer|min:10|max:120',
         ]);
 
-        if (Horario::where('medico_id', $request->medico_id)->exists()) {
-            return response()->json([
-                'message' => 'Este médico ya tiene un horario definido'
-            ], 422);
-        }
+        // Si ya tiene horario, actualizar en lugar de crear
+        $horarioExistente = Horario::where('medico_id', $request->medico_id)->first();
 
-        Horario::create($request->all());
+        if ($horarioExistente) {
+            $horarioExistente->update([
+                'hora_inicio'     => $request->hora_inicio,
+                'hora_fin'        => $request->hora_fin,
+                'almuerzo_inicio' => $request->almuerzo_inicio,
+                'almuerzo_fin'    => $request->almuerzo_fin,
+                'hora_atencion'   => $request->hora_atencion,
+                'dias_semana'     => $request->dias_semana ?? ['lunes','martes','miercoles','jueves','viernes'],
+            ]);
+        } else {
+            Horario::create(array_merge($request->all(), [
+                'dias_semana' => $request->dias_semana ?? ['lunes','martes','miercoles','jueves','viernes'],
+            ]));
+        }
 
         return response()->json(['ok' => true]);
     }
@@ -71,6 +81,13 @@ class HorarioController extends Controller
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
+        // Si por alguna razón el horario no coincide, buscar por medico_id
+        if ($request->has('medico_id')) {
+            $horario = Horario::where('medico_id', $request->medico_id)
+                ->orderBy('id', 'desc')
+                ->firstOrFail();
+        }
+        
         $request->validate([
             'hora_inicio'    => 'required',
             'hora_fin'       => 'required',
@@ -90,4 +107,5 @@ class HorarioController extends Controller
 
         return response()->json(['ok' => true]);
     }
+    
 }
