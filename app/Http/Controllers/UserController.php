@@ -143,12 +143,10 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        // Solo admins pueden eliminar usuarios
         if (session('admin') !== 1) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
-        // Evitar que el admin se elimine a sí mismo
         if ($id == session('user_id')) {
             return response()->json(['message' => 'No puedes eliminarte a ti mismo'], 422);
         }
@@ -156,45 +154,59 @@ class UserController extends Controller
         $user = User::with('cargo')->findOrFail($id);
         $cargo = $user->cargo?->Nombre_cargo;
 
-        if ($cargo === 'Medico') {
-            // Obtener IDs de citas del médico
-            $citaIds = \App\Models\Cita::where('medico_id', $id)->pluck('id');
+        \DB::transaction(function () use ($user, $id, $cargo) {
 
-            // Eliminar mensajes de chat de esas citas
-            \App\Models\Mensaje::whereIn('cita_id', $citaIds)->delete();
+            if ($cargo === 'Medico') {
+                $citaIds = \App\Models\Cita::where('medico_id', $id)->pluck('id');
 
-            // Eliminar tickets del médico (con sus mensajes y archivos)
-            \App\Models\Ticket::where('medico_id', $id)->each(function ($ticket) {
-                $ticket->mensajes()->delete();
-                $ticket->archivos()->delete();
-                $ticket->delete();
-            });
+                // Mensajes de chat de esas citas
+                \App\Models\Mensaje::whereIn('cita_id', $citaIds)->delete();
 
-            // Eliminar citas (enfermedades y tratamientos caen en cascada por FK)
-            \App\Models\Cita::where('medico_id', $id)->delete();
+                // Tickets del médico (con mensajes y archivos)
+                \App\Models\Ticket::where('medico_id', $id)->each(function ($ticket) {
+                    $ticket->mensajes()->delete();
+                    $ticket->archivos()->delete();
+                    $ticket->delete();
+                });
 
-            // Eliminar horario y desvincular especialidades
-            \App\Models\Horario::where('medico_id', $id)->delete();
-            $user->especialidades()->detach();
+                // Desligar citas del médico: reasignar medico_id a null
+                // no se puede porque tiene FK NOT NULL — en cambio anonimizamos
+                // dejando los informes intactos pero desvinculando el médico:
+                // Primero guardamos un "usuario fantasma" o simplemente
+                // ponemos medico_id = admin actual
+                $adminId = \App\Models\User::where('admin', 1)->value('id');
 
-            // Eliminar notificaciones
-            \App\Models\Notificacion::where('user_id', $id)->delete();
+                // Preservar informes: actualizar medico_id de las citas que tienen informe
+                \App\Models\Cita::where('medico_id', $id)
+                    ->whereHas('enfermedad')
+                    ->update(['medico_id' => $adminId]);
 
-        } elseif ($cargo === 'Paciente') {
-            // Obtener IDs de citas del paciente
-            $citaIds = \App\Models\Cita::where('paciente_id', $id)->pluck('id');
+                // Borrar citas SIN informe (se van con sus mensajes ya eliminados)
+                \App\Models\Cita::where('medico_id', $id)->delete();
 
-            // Eliminar mensajes de chat de esas citas
-            \App\Models\Mensaje::whereIn('cita_id', $citaIds)->delete();
+                \App\Models\Horario::where('medico_id', $id)->delete();
+                $user->especialidades()->detach();
+                \App\Models\Notificacion::where('user_id', $id)->delete();
 
-            // Eliminar citas del paciente (enfermedades y tratamientos en cascada)
-            \App\Models\Cita::where('paciente_id', $id)->delete();
+            } elseif ($cargo === 'Paciente') {
+                $citaIds = \App\Models\Cita::where('paciente_id', $id)->pluck('id');
+                \App\Models\Mensaje::whereIn('cita_id', $citaIds)->delete();
 
-            // Eliminar notificaciones
-            \App\Models\Notificacion::where('user_id', $id)->delete();
-        }
+                $adminId = \App\Models\User::where('admin', 1)->value('id');
 
-        $user->delete();
+                // Preservar citas con informe reasignando paciente a admin
+                \App\Models\Cita::where('paciente_id', $id)
+                    ->whereHas('enfermedad')
+                    ->update(['paciente_id' => $adminId]);
+
+                // Borrar citas sin informe
+                \App\Models\Cita::where('paciente_id', $id)->delete();
+
+                \App\Models\Notificacion::where('user_id', $id)->delete();
+            }
+
+            $user->delete();
+        });
 
         return response()->json(['success' => true, 'message' => 'Usuario eliminado correctamente']);
     }
