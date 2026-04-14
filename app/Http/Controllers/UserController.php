@@ -153,7 +153,47 @@ class UserController extends Controller
             return response()->json(['message' => 'No puedes eliminarte a ti mismo'], 422);
         }
 
-        $user = User::findOrFail($id);
+        $user = User::with('cargo')->findOrFail($id);
+        $cargo = $user->cargo?->Nombre_cargo;
+
+        if ($cargo === 'Medico') {
+            // Obtener IDs de citas del médico
+            $citaIds = \App\Models\Cita::where('medico_id', $id)->pluck('id');
+
+            // Eliminar mensajes de chat de esas citas
+            \App\Models\Mensaje::whereIn('cita_id', $citaIds)->delete();
+
+            // Eliminar tickets del médico (con sus mensajes y archivos)
+            \App\Models\Ticket::where('medico_id', $id)->each(function ($ticket) {
+                $ticket->mensajes()->delete();
+                $ticket->archivos()->delete();
+                $ticket->delete();
+            });
+
+            // Eliminar citas (enfermedades y tratamientos caen en cascada por FK)
+            \App\Models\Cita::where('medico_id', $id)->delete();
+
+            // Eliminar horario y desvincular especialidades
+            \App\Models\Horario::where('medico_id', $id)->delete();
+            $user->especialidades()->detach();
+
+            // Eliminar notificaciones
+            \App\Models\Notificacion::where('user_id', $id)->delete();
+
+        } elseif ($cargo === 'Paciente') {
+            // Obtener IDs de citas del paciente
+            $citaIds = \App\Models\Cita::where('paciente_id', $id)->pluck('id');
+
+            // Eliminar mensajes de chat de esas citas
+            \App\Models\Mensaje::whereIn('cita_id', $citaIds)->delete();
+
+            // Eliminar citas del paciente (enfermedades y tratamientos en cascada)
+            \App\Models\Cita::where('paciente_id', $id)->delete();
+
+            // Eliminar notificaciones
+            \App\Models\Notificacion::where('user_id', $id)->delete();
+        }
+
         $user->delete();
 
         return response()->json(['success' => true, 'message' => 'Usuario eliminado correctamente']);

@@ -53,14 +53,17 @@
                                 </div>
 
                                 <div class="mb-3">
-                                <label for="Rut" class="form-label fw-semibold">Rut</label>
-                                <input type="text"
-                                    class="form-control"
-                                    id="Rut"
-                                    name="Rut"
-                                    placeholder="12345678-9">
-                                <div class="invalid-feedback" id="rutFeedback">Formato inválido</div>
-                            </div>
+                                    <label for="Rut" class="form-label fw-semibold">RUT</label>
+                                    <input type="text"
+                                        class="form-control"
+                                        id="Rut"
+                                        name="Rut"
+                                        placeholder="12345678-9"
+                                        maxlength="12"
+                                        autocomplete="off">
+                                    <div class="invalid-feedback" id="rutFeedback">Formato inválido. Ej: 12345678-9</div>
+                                    <small class="text-muted">El guión se agrega automáticamente</small>
+                                </div>
 
                                 <div class="mb-3">
                                     <label for="telefono" class="form-label fw-semibold">Teléfono</label>
@@ -107,21 +110,33 @@
 <script>
 $(document).ready(function () {
 
+    // ── FORMATO AUTOMÁTICO DE RUT ────────────────────────────────────────
+    function formatearRut(rut) {
+        var limpio = rut.replace(/[^0-9kK]/g, '');
+        if (limpio.length < 2) return limpio;
+        var cuerpo = limpio.slice(0, -1);
+        var dv     = limpio.slice(-1).toUpperCase();
+        return cuerpo + '-' + dv;
+    }
+
+    $('#Rut').on('input', function () {
+        var formatted = formatearRut(this.value);
+        this.value = formatted;
+
+        // Validar formato
+        if (formatted && !/^\d{7,8}-[\dkK]$/.test(formatted)) {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+        } else if (formatted) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else {
+            $(this).removeClass('is-valid is-invalid');
+        }
+    });
+
     // ── VALIDACIÓN EN TIEMPO REAL ────────────────────────────────────────
     function validarRut(rut) {
         return /^\d{7,8}-[\dkK]$/.test(rut);
     }
-
-    $('#Rut').on('input', function () {
-        const val = $(this).val();
-        if (val && !validarRut(val)) {
-            $(this).removeClass('is-valid').addClass('is-invalid');
-            $('#rutFeedback').text('Formato inválido. Ej: 12345678-9');
-        } else if (val) {
-            $(this).removeClass('is-invalid').addClass('is-valid');
-            $('#rutFeedback').text('');
-        }
-    });
 
     $('#email').on('input', function () {
         const val = $(this).val();
@@ -150,7 +165,6 @@ $(document).ready(function () {
         // Validación básica
         if (!name || !Apellidos || !email || !Rut || !telefono || !id_cargo || !password) {
             mostrarToast('Por favor completa todos los campos obligatorios.', 'warning');
-            // Marcar campos vacíos
             [['#name', name], ['#Apellidos', Apellidos], ['#email', email],
                 ['#Rut', Rut], ['#telefono', telefono], ['#passwordField', password]].forEach(([id, val]) => {
                 if (!val) $(id).addClass('is-invalid');
@@ -159,7 +173,7 @@ $(document).ready(function () {
         }
 
         if (!validarRut(Rut)) {
-            mostrarToast('El RUT ingresado no tiene formato válido.', 'danger');
+            mostrarToast('El RUT ingresado no tiene formato válido. Ej: 12345678-9', 'danger');
             $('#Rut').addClass('is-invalid');
             return;
         }
@@ -177,7 +191,6 @@ $(document).ready(function () {
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (response) {
                 mostrarToast('✅ Usuario registrado correctamente', 'success');
-                agregarNotificacion('Nuevo usuario registrado: ' + name + ' ' + Apellidos, 'success');
                 setTimeout(() => window.location.href = '/login', 1800);
             },
             error: function (xhr) {
@@ -195,7 +208,9 @@ $(document).ready(function () {
 
     // Quitar clase inválida al escribir
     $('input, select').on('input change', function () {
-        $(this).removeClass('is-invalid');
+        if ($(this).attr('id') !== 'Rut') {
+            $(this).removeClass('is-invalid');
+        }
     });
 });
 </script>
