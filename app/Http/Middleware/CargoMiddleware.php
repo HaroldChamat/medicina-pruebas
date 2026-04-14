@@ -9,8 +9,13 @@ class CargoMiddleware
 {
     public function handle(Request $request, Closure $next, ...$cargos)
     {
-        if (!session()->has('cargo')) {
+        if (!session()->has('cargo') && session('admin') !== 1) {
             return redirect('/');
+        }
+
+        // Si es admin (flag admin=1), tiene acceso a todo
+        if (session('admin') === 1) {
+            return $next($request);
         }
 
         $cargoUsuario = session('cargo');

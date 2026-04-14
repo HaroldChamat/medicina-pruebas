@@ -44,10 +44,14 @@
                                     <label class="form-label small fw-semibold">
                                         <i class="bi bi-person me-1"></i> RUT
                                     </label>
-                                    <input type="text" name="rut"
+                                    <<input type="text" name="rut" id="rutLogin"
                                         class="form-control @error('rut') is-invalid @enderror"
                                         placeholder="12345678-9"
-                                        value="{{ old('rut') }}" required>
+                                        value="{{ old('rut') }}"
+                                        maxlength="12"
+                                        autocomplete="off"
+                                        required>
+                                    <div class="invalid-feedback" id="rutLoginFeedback"></div>
                                     @error('rut')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -591,7 +595,22 @@ $(document).ready(function () {
 @endif
 
 <script>
-// Toggle contraseña login
+// ── FORMATO AUTOMÁTICO DE RUT ────────────────────────────────────────────────
+function formatearRut(rut) {
+    var limpio = rut.replace(/[^0-9kK]/g, '');
+    if (limpio.length < 2) return limpio;
+
+    var cuerpo = limpio.slice(0, -1);
+    var dv     = limpio.slice(-1).toUpperCase();
+    return cuerpo + '-' + dv;
+}
+
+document.getElementById('rutLogin')?.addEventListener('input', function () {
+    var val = formatearRut(this.value);
+    this.value = val;
+});
+
+// Toggle contraseña login 
 const passwordField = document.getElementById('passwordField');
 const togglePassword = document.getElementById('togglePassword');
 const eyeIcon = document.getElementById('eyeIcon');

@@ -20,7 +20,6 @@
         <!-- Bootstrap Icons -->  
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-
         <!-- Estilos propios -->
         <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 
@@ -108,7 +107,6 @@
             setTimeout(() => $('#' + id).remove(), 4000);
         }
 
-        // ── FUNCIÓN GLOBAL DE NOTIFICACIONES ────────────────────────────────────────
         // ── FUNCIÓN GLOBAL DE NOTIFICACIONES ────────────────────────────────────────
         function agregarNotificacion(mensaje, tipo = 'info', url = '', titulo = '') {
             const iconos = {
@@ -201,119 +199,77 @@
                 });
             });
 
-            
             // ── PUSHER EN TIEMPO REAL ────────────────────────────────────────────────
             @if(session('user_id'))
+            // Inicializar Pusher solo si está disponible
+            var canalNotif = null;
+
             if (typeof Pusher !== 'undefined') {
-                const pusher = new Pusher('{{ env("PUSHER_APP_KEY") }}', {
+                var pusherInstance = new Pusher('{{ env("PUSHER_APP_KEY") }}', {
                     cluster: '{{ env("PUSHER_APP_CLUSTER") }}'
                 });
 
                 // ── Canal de notificaciones generales ────────────────────────────────
-                const canalNotif = pusher.subscribe('notificaciones.{{ session("user_id") }}');
+                canalNotif = pusherInstance.subscribe('notificaciones.{{ session("user_id") }}');
 
                 canalNotif.bind('nueva-notificacion', function (data) {
                     agregarNotificacion(data.mensaje, data.tipo, data.url, data.titulo);
                     mostrarToast(data.titulo + ': ' + data.mensaje, data.tipo);
                     if (typeof actualizarContadores === 'function') actualizarContadores();
-                });
 
-                @if(session('cargo') === 'Medico' || session('cargo') === 'Paciente')
-                // ── Canal de mensajes chat (paciente-médico) ─────────────────────────
-                // Escucha el canal global del usuario para cualquier cita
-                canalNotif.bind('nueva-notificacion', function (data) {
-                    if (data.url && data.url.startsWith('/chat/')) {
-                        actualizarContadores();
-                    }
-                });
-                @endif
-
-                @if(session('cargo') === 'Medico' || session('admin') === 1)
-                // ── Canal de tickets ─────────────────────────────────────────────────
-                canalNotif.bind('nueva-notificacion', function (data) {
-                    if (data.url && data.url.startsWith('/tickets/')) {
-                        actualizarContadores();
-                    }
-                });
-                @endif
-            }
-            @if(session('cargo') === 'Medico')
-                // ── Médico: escucha mensajes nuevos de sus citas activas ──────────────
-                // Se suscriben dinámicamente cuando llega una notificación de chat
-                canalNotif.bind('nueva-notificacion', function(data) {
+                    // Manejar suscripciones dinámicas según la URL de la notificación
                     if (!data.url) return;
 
-                    // Si es un mensaje de chat, extraer cita_id y suscribirse
+                    // Suscripción dinámica a canal de chat
                     if (data.url.startsWith('/chat/')) {
-                        const citaId = data.url.split('/chat/')[1];
+                        var citaId = data.url.split('/chat/')[1];
                         if (citaId) {
-                            const canalChat = pusher.subscribe('chat.cita.' + citaId);
+                            var canalChat = pusherInstance.subscribe('chat.cita.' + citaId);
                             canalChat.bind('nuevo-mensaje', function(msg) {
                                 if (msg.emisor_id != {{ session('user_id') }}) {
-                                    actualizarContadores();
+                                    if (typeof actualizarContadores === 'function') actualizarContadores();
                                     mostrarToast('Nuevo mensaje de ' + msg.emisor, 'info');
                                 }
                             });
                         }
                     }
 
-                    // Si es un ticket
+                    // Suscripción dinámica a canal de ticket
                     if (data.url.startsWith('/tickets/')) {
-                        const ticketId = data.url.split('/tickets/')[1];
+                        var ticketId = data.url.split('/tickets/')[1];
                         if (ticketId) {
-                            const canalTicket = pusher.subscribe('ticket.' + ticketId);
+                            var canalTicket = pusherInstance.subscribe('ticket.' + ticketId);
                             canalTicket.bind('nuevo-mensaje', function(msg) {
                                 if (msg.contenido !== '__tomado__' && msg.emisor_id != {{ session('user_id') }}) {
-                                    actualizarContadores();
+                                    if (typeof actualizarContadores === 'function') actualizarContadores();
                                     mostrarToast('Nuevo mensaje en ticket', 'info');
                                 }
                             });
                         }
                     }
                 });
-                @endif
-
-                @if(session('cargo') === 'Paciente')
-                // ── Paciente: escucha mensajes de chat ───────────────────────────────
-                canalNotif.bind('nueva-notificacion', function(data) {
-                    if (!data.url) return;
-                    if (data.url.startsWith('/chat/')) {
-                        const citaId = data.url.split('/chat/')[1];
-                        if (citaId) {
-                            const canalChat = pusher.subscribe('chat.cita.' + citaId);
-                            canalChat.bind('nuevo-mensaje', function(msg) {
-                                if (msg.emisor_id != {{ session('user_id') }}) {
-                                    actualizarContadores();
-                                    mostrarToast('Nuevo mensaje de ' + msg.emisor, 'info');
-                                }
-                            });
-                        }
-                    }
-                });
-                @endif
 
                 @if(session('admin') === 1)
-                // ── Admin: escucha mensajes de tickets asignados ─────────────────────
-                canalNotif.bind('nueva-notificacion', function(data) {
-                    if (!data.url) return;
-                    if (data.url.startsWith('/tickets/')) {
-                        const ticketId = data.url.split('/tickets/')[1];
-                        if (ticketId) {
-                            const canalTicket = pusher.subscribe('ticket.' + ticketId);
-                            canalTicket.bind('nuevo-mensaje', function(msg) {
-                                if (msg.contenido !== '__tomado__' && msg.emisor_id != {{ session('user_id') }}) {
-                                    actualizarContadores();
-                                    mostrarToast('Nuevo mensaje en ticket', 'info');
-                                }
-                            });
+                // ── Admin: escucha tickets abiertos existentes ────────────────────────
+                @foreach(\App\Models\Ticket::where('estado', 'abierto')->get() as $t)
+                (function() {
+                    var canalT = pusherInstance.subscribe('ticket.{{ $t->id }}');
+                    canalT.bind('nuevo-mensaje', function (data) {
+                        if (data.contenido === '__tomado__') {
+                            var btn = $('.btn-tomar[data-id="{{ $t->id }}"]');
+                            btn.prop('disabled', true)
+                               .removeClass('btn-success')
+                               .addClass('btn-secondary')
+                               .html('<i class="bi bi-lock me-1"></i> Tomado');
                         }
-                    }
-                });
+                    });
+                })();
+                @endforeach
                 @endif
-            @endif
+
+            } // end if Pusher
 
             // ── CONTADORES DE MENSAJES Y TICKETS ────────────────────────────────────
-            @if(session('user_id'))
             function actualizarContadores() {
                 fetch('/contadores')
                     .then(r => r.json())
@@ -337,13 +293,6 @@
                         if (total > 0) {
                             $('#badgeNotif').text(total).show();
                         }
-
-                        // Badge Notificaciones
-                        const totalNuevos = (data.mensajes || 0) + (data.tickets || 0);
-                        if (totalNuevos > 0) {
-                            $('#badgeNotif').text(totalNuevos)
-                                .css('display', 'flex !important');
-                        }
                     })
                     .catch(() => {});
             }
@@ -352,7 +301,8 @@
             actualizarContadores();
             setInterval(actualizarContadores, 30000);
             @endif
-        });
+
+        }); // end DOMContentLoaded
         </script>
 
     </body>
