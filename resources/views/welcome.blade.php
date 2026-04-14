@@ -44,7 +44,7 @@
                                     <label class="form-label small fw-semibold">
                                         <i class="bi bi-person me-1"></i> RUT
                                     </label>
-                                    <<input type="text" name="rut" id="rutLogin"
+                                    <input type="text" name="rut" id="rutLogin"
                                         class="form-control @error('rut') is-invalid @enderror"
                                         placeholder="12345678-9"
                                         value="{{ old('rut') }}"
