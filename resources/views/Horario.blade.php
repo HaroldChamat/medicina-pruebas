@@ -393,7 +393,7 @@
                                 @foreach(['lunes','martes','miercoles','jueves','viernes'] as $dia)
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox"
-                                            name="dias_semana[]"
+                                            name="dias_semana_editar[]"
                                             value="{{ $dia }}"
                                             id="dia_editar_{{ $dia }}">
                                         <label class="form-check-label text-capitalize"
@@ -471,16 +471,16 @@ $(document).ready(function () {
         $('#editar_almuerzo_fin').val(horario.almuerzo_fin);
         $('#editar_hora_atencion').val(horario.hora_atencion);
 
-        // Marcar días guardados
+        // Marcar días guardados — usar selector específico del modal editar
         let dias = horario.dias_semana || [];
-        $('input[name="dias_semana[]"]').each(function () {
+        $('#exampledit input[name="dias_semana_editar[]"]').each(function () {
             $(this).prop('checked', dias.includes($(this).val()));
         });
 
         modalEditar.show();
-    });
+    });   
 
-    // ─── CREAR HORARIO ───────────────────────────────────────────────────
+     // ─── CREAR HORARIO ───────────────────────────────────────────────────
     $('#formHorario').off('submit').on('submit', function (e) {
         e.preventDefault();
         const $btn = $(this).find('button[type="submit"]');
@@ -513,9 +513,9 @@ $(document).ready(function () {
         if ($btn.prop('disabled')) return;
         $btn.prop('disabled', true);
 
-        // Recoger días marcados
+        // Recoger días marcados del modal editar específicamente
         let diasSeleccionados = [];
-        $('input[name="dias_semana[]"]:checked').each(function () {
+        $('#exampledit input[name="dias_semana_editar[]"]:checked').each(function () {
             diasSeleccionados.push($(this).val());
         });
 
