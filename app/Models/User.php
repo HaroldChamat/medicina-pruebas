@@ -27,6 +27,7 @@ class User extends Authenticatable
         'telefono',
         'id_cargo',
         'admin',
+        'activo',
         'password',
     ];
 
@@ -37,6 +38,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'admin' => 'integer',
+        'activo' => 'integer',
     ];
     
     protected $hidden = [
@@ -62,5 +64,10 @@ class User extends Authenticatable
             'medico_id', 
             'especialidad_id'
         );
+    }
+
+    public function scopeActivos($query)
+    {
+        return $query->where('activo', 1);
     }
 }

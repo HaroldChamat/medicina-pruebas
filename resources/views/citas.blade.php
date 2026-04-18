@@ -13,21 +13,41 @@
                         <h5 class="mb-0">Filtros de búsqueda</h5>
                     </div>
                     <div class="row g-3 align-items-end">
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">👨‍⚕️ Médico</label>
                             <select id="filtroMedico" class="form-select">
                                 <option value="">Todos los médicos</option>
-                                @foreach($medicos as $medico)
-                                    <option value="{{ $medico->id }}">
-                                        {{ $medico->name }} {{ $medico->Apellidos }}
-                                    </option>
-                                @endforeach
+                                <optgroup label="Activos">
+                                    @foreach($todosMedicos->where('activo', 1) as $medico)
+                                        <option value="{{ $medico->id }}">
+                                            {{ $medico->name }} {{ $medico->Apellidos }}
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                                <optgroup label="Inactivos">
+                                    @foreach($todosMedicos->where('activo', 0) as $medico)
+                                        <option value="{{ $medico->id }}">
+                                            ⚫ {{ $medico->name }} {{ $medico->Apellidos }} (inactivo)
+                                        </option>
+                                    @endforeach
+                                </optgroup>
                             </select>
                         </div>
-                        <div class="col-md-5">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold">🧑 Paciente</label>
                             <select id="filtroPaciente" class="form-select" disabled>
                                 <option value="">Todos los pacientes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-circle-fill me-1 text-success" style="font-size:0.6rem;"></i>
+                                Estado del médico
+                            </label>
+                            <select id="filtroEstadoMedico" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="1">Solo activos</option>
+                                <option value="0">Solo inactivos</option>
                             </select>
                         </div>
                         <div class="col-md-2 d-grid">
@@ -62,14 +82,20 @@
                     <tbody>
                         @foreach($Citas as $cita)
                             <tr data-medico="{{ $cita->medico->id }}"
-                                data-paciente="{{ $cita->paciente->id }}"
-                                data-paciente-texto="{{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}">
+                                    data-paciente="{{ $cita->paciente->id }}"
+                                    data-paciente-texto="{{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}"
+                                    data-activo-medico="{{ $cita->medico->activo }}">
                                 <td>
                                     <span class="badge bg-light text-dark border" style="font-size: 0.72rem; letter-spacing: 0.5px;">
                                         {{ $cita->codigo_cita ?? 'CIT-' . $cita->id }}
                                     </span>
                                 </td>
-                                <td>{{ $cita->medico->name }} {{ $cita->medico->Apellidos }}</td>
+                                <td>
+                                    {{ $cita->medico->name }} {{ $cita->medico->Apellidos }}
+                                    @if(session('admin') === 1 && !$cita->medico->activo)
+                                        <span class="badge bg-secondary ms-1" style="font-size:0.65rem;">inactivo</span>
+                                    @endif
+                                </td>
                                 <td>
                                     {{-- Solo Admin y Médico pueden ver el historial --}}
                                     @if(session('admin') === 1 || session('cargo') === 'Medico')
@@ -695,50 +721,65 @@ $(document).ready(function () {
     });
 
     // ─── FILTROS (solo Admin) ────────────────────────────────────────────
+    // Mapa de medicoId → activo (1 o 0) para filtrar por estado
+    const estadoMedicos = {
+        @foreach($todosMedicos as $m)
+        {{ $m->id }}: {{ $m->activo }},
+        @endforeach
+    };
+ 
+    function aplicarFiltrosCitas() {
+        const medicoSel  = $('#filtroMedico').val();
+        const pacienteSel = $('#filtroPaciente').val();
+        const estadoSel  = $('#filtroEstadoMedico').val();
+ 
+        $('tbody tr').each(function () {
+            const medicoFila   = $(this).data('medico')?.toString();
+            const pacienteFila = $(this).data('paciente')?.toString();
+            const activoMedico = estadoMedicos[medicoFila] !== undefined
+                ? estadoMedicos[medicoFila].toString()
+                : '1';
+ 
+            const ok =
+                (!medicoSel  || medicoFila   === medicoSel) &&
+                (!pacienteSel || pacienteFila === pacienteSel) &&
+                (!estadoSel  || activoMedico  === estadoSel);
+ 
+            $(this).toggle(ok);
+        });
+    }
+ 
     $('#filtroMedico').on('change', function () {
         let medicoSeleccionado = $(this).val();
         let pacientes = new Map();
-
+ 
         $('tbody tr').each(function () {
             let medicoFila    = $(this).data('medico').toString();
             let pacienteFila  = $(this).data('paciente').toString();
             let textoPaciente = $(this).data('paciente-texto');
-
+ 
             if (!medicoSeleccionado || medicoFila === medicoSeleccionado) {
-                $(this).show();
                 pacientes.set(pacienteFila, textoPaciente);
-            } else {
-                $(this).hide();
             }
         });
-
+ 
         let selectPaciente = $('#filtroPaciente');
         selectPaciente.empty().append('<option value="">Todos los pacientes</option>');
         pacientes.forEach((nombre, id) => {
             selectPaciente.append(`<option value="${id}">${nombre}</option>`);
         });
         selectPaciente.prop('disabled', pacientes.size === 0).val('');
+ 
+        aplicarFiltrosCitas();
     });
-
-    $('#filtroPaciente').on('change', function () {
-        let pacienteSeleccionado = $(this).val();
-        let medicoSeleccionado   = $('#filtroMedico').val();
-
-        $('tbody tr').each(function () {
-            let medicoFila   = $(this).data('medico').toString();
-            let pacienteFila = $(this).data('paciente').toString();
-
-            let mostrar =
-                (!medicoSeleccionado || medicoFila === medicoSeleccionado) &&
-                (!pacienteSeleccionado || pacienteFila === pacienteSeleccionado);
-
-            $(this).toggle(mostrar);
-        });
-    });
-
+ 
+    $('#filtroPaciente').on('change', aplicarFiltrosCitas);
+    $('#filtroEstadoMedico').on('change', aplicarFiltrosCitas);
+ 
     $('#btnLimpiarFiltros').on('click', function () {
         $('#filtroMedico').val('');
         $('#filtroPaciente').val('').prop('disabled', true);
+        $('#filtroEstadoMedico').val('');
         $('tbody tr').show();
     });
 

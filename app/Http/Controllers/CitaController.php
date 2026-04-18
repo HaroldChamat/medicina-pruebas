@@ -12,40 +12,47 @@ use App\Helpers\CorreoHelper;
 
 class CitaController extends Controller
 {
-    public function index()
-{
-    $userId = session('user_id');
-    $cargo  = session('cargo');
-    $perPage = 10; 
-
-    if ($cargo === 'Admin') {
-        $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
-            ->orderBy('Fecha_y_hora', 'asc') 
-            ->paginate($perPage);
-    } elseif ($cargo === 'Medico') {
-        $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
-            ->where('medico_id', $userId)
-            ->orderBy('Fecha_y_hora', 'asc') 
-            ->paginate($perPage);
-    } elseif ($cargo === 'Paciente') {
-        $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
-            ->where('paciente_id', $userId)
-            ->orderBy('Fecha_y_hora', 'asc') 
-            ->paginate($perPage);
-    } else {
-        $Citas = collect();
+  public function index()
+    {
+        $userId = session('user_id');
+        $cargo  = session('cargo');
+        $perPage = 10;
+ 
+        if ($cargo === 'Admin') {
+            $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
+                ->orderBy('Fecha_y_hora', 'asc')
+                ->paginate($perPage);
+        } elseif ($cargo === 'Medico') {
+            $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
+                ->where('medico_id', $userId)
+                ->orderBy('Fecha_y_hora', 'asc')
+                ->paginate($perPage);
+        } elseif ($cargo === 'Paciente') {
+            $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento'])
+                ->where('paciente_id', $userId)
+                ->orderBy('Fecha_y_hora', 'asc')
+                ->paginate($perPage);
+        } else {
+            $Citas = collect();
+        }
+ 
+        // Solo médicos ACTIVOS para el select de nueva cita
+        $medicos = User::whereHas('cargo', fn($q) =>
+            $q->where('Nombre_cargo', 'Medico')
+        )->where('activo', 1)->get();
+ 
+        $pacientes = User::whereHas('cargo', fn($q) =>
+            $q->where('Nombre_cargo', 'Paciente')
+        )->get();
+ 
+        // Para el filtro de admin: todos los médicos (activos e inactivos)
+        $todosMedicos = User::whereHas('cargo', fn($q) =>
+            $q->where('Nombre_cargo', 'Medico')
+        )->get();
+ 
+        return view('citas', compact('Citas', 'medicos', 'pacientes', 'todosMedicos'));
     }
-
-    $medicos = User::whereHas('cargo', fn($q) =>
-        $q->where('Nombre_cargo', 'Medico')
-    )->get();
-
-    $pacientes = User::whereHas('cargo', fn($q) =>
-        $q->where('Nombre_cargo', 'Paciente')
-    )->get();
-
-    return view('citas', compact('Citas', 'medicos', 'pacientes'));
-}
+ 
 
     public function edit($id)
     {

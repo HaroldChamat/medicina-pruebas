@@ -12,23 +12,24 @@ class HorarioController extends Controller
     {
         $cargo  = session('cargo');
         $userId = session('user_id');
-
-        // Calcular semana según parámetro ?semana=YYYY-MM-DD
+ 
         $semanaParam  = $request->query('semana');
         $inicioSemana = $semanaParam
             ? \Carbon\Carbon::parse($semanaParam)->startOfWeek(\Carbon\Carbon::MONDAY)
             : \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY);
         $finSemana = $inicioSemana->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
-
+ 
         if ($cargo === 'Medico') {
             $medico  = User::with(['horario', 'especialidades'])->find($userId);
             $medicos = collect([$medico]);
         } else {
+            // Admin: solo médicos ACTIVOS para gestionar horarios
             $medicos = User::with(['horario', 'especialidades'])
                 ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
+                ->where('activo', 1)
                 ->get();
         }
-
+ 
         return view('Horario', [
             'medicos'      => $medicos,
             'esAdmin'      => session('admin') === 1,
@@ -36,6 +37,7 @@ class HorarioController extends Controller
             'finSemana'    => $finSemana,
         ]);
     }
+ 
 
     public function store(Request $request)
     {

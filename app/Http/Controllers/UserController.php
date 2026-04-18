@@ -44,21 +44,24 @@ class UserController extends Controller
 
     public function index_especialidad()
     {
-        $medicos = User::with(['cargo', 'especialidades']) 
+        // Solo médicos ACTIVOS para asignar especialidades
+        $medicos = User::with(['cargo', 'especialidades'])
             ->whereHas('cargo', function ($q) {
                 $q->where('Nombre_cargo', 'Medico');
             })
+            ->where('activo', 1)
             ->get();
 
         $especialidades = \App\Models\Especialidad::all();
 
-        return view('Especialidad', compact('medicos', 'especialidades')); 
+        return view('Especialidad', compact('medicos', 'especialidades'));
     }
 
     public function index_medicos()
     {
         if (session('admin') !== 1) abort(403);
 
+        // Todos los médicos (activos e inactivos) para gestión
         $medicos = User::with(['cargo', 'especialidades'])
             ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
             ->get();
@@ -76,7 +79,7 @@ class UserController extends Controller
 
         return view('admin.pacientes', compact('pacientes'));
     }
-    
+
     public function store(Request $request)
     {
         $request->validate([
@@ -106,7 +109,8 @@ class UserController extends Controller
         $user = new User();
         $user->id_cargo   = $request->id_cargo;
         $user->name       = $request->name;
-        $user->admin = (int) ($request->admin ?? 0);
+        $user->admin      = (int) ($request->admin ?? 0);
+        $user->activo     = 1;
         $user->Apellidos  = $request->Apellidos;
         $user->email      = $request->email;
         $user->Rut        = $request->Rut;
@@ -119,7 +123,6 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Solo admins pueden editar usuarios
         if (session('admin') !== 1) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
@@ -141,6 +144,46 @@ class UserController extends Controller
         return response()->json(['success' => true, 'message' => 'Usuario actualizado correctamente']);
     }
 
+    /**
+     * Desactiva un médico (soft-disable).
+     * Sus informes de citas quedan intactos y su nombre sigue visible en ellos.
+     */
+    public function desactivar($id)
+    {
+        if (session('admin') !== 1) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        if ($id == session('user_id')) {
+            return response()->json(['message' => 'No puedes desactivarte a ti mismo'], 422);
+        }
+
+        $user = User::findOrFail($id);
+        $user->activo = 0;
+        $user->save();
+
+        return response()->json(['success' => true, 'message' => 'Médico desactivado correctamente']);
+    }
+
+    /**
+     * Reactiva un médico desactivado.
+     */
+    public function activar($id)
+    {
+        if (session('admin') !== 1) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        $user = User::findOrFail($id);
+        $user->activo = 1;
+        $user->save();
+
+        return response()->json(['success' => true, 'message' => 'Médico reactivado correctamente']);
+    }
+
+    /**
+     * Eliminar pacientes (sigue siendo eliminación real, solo para pacientes).
+     */
     public function destroy($id)
     {
         if (session('admin') !== 1) {
@@ -157,44 +200,20 @@ class UserController extends Controller
         \DB::transaction(function () use ($user, $id, $cargo) {
 
             if ($cargo === 'Medico') {
-                $citaIds = \App\Models\Cita::where('medico_id', $id)->pluck('id');
+                // Para médicos usamos desactivar, no eliminar
+                // Pero por si acaso se llama este endpoint:
+                $user->activo = 0;
+                $user->save();
+                return;
+            }
 
-                // Mensajes de chat de esas citas
-                \App\Models\Mensaje::whereIn('cita_id', $citaIds)->delete();
-
-                // Tickets del médico (con mensajes y archivos)
-                \App\Models\Ticket::where('medico_id', $id)->each(function ($ticket) {
-                    $ticket->mensajes()->delete();
-                    $ticket->archivos()->delete();
-                    $ticket->delete();
-                });
-
-                // Desligar citas del médico: reasignar medico_id a null
-                // no se puede porque tiene FK NOT NULL — en cambio anonimizamos
-                // dejando los informes intactos pero desvinculando el médico:
-                // Primero guardamos un "usuario fantasma" o simplemente
-                // ponemos medico_id = admin actual
-                $adminId = \App\Models\User::where('admin', 1)->value('id');
-
-                // Preservar informes: actualizar medico_id de las citas que tienen informe
-                \App\Models\Cita::where('medico_id', $id)
-                    ->whereHas('enfermedad')
-                    ->update(['medico_id' => $adminId]);
-
-                // Borrar citas SIN informe (se van con sus mensajes ya eliminados)
-                \App\Models\Cita::where('medico_id', $id)->delete();
-
-                \App\Models\Horario::where('medico_id', $id)->delete();
-                $user->especialidades()->detach();
-                \App\Models\Notificacion::where('user_id', $id)->delete();
-
-            } elseif ($cargo === 'Paciente') {
+            if ($cargo === 'Paciente') {
                 $citaIds = \App\Models\Cita::where('paciente_id', $id)->pluck('id');
                 \App\Models\Mensaje::whereIn('cita_id', $citaIds)->delete();
 
-                $adminId = \App\Models\User::where('admin', 1)->value('id');
+                $adminId = User::where('admin', 1)->value('id');
 
-                // Preservar citas con informe reasignando paciente a admin
+                // Preservar citas con informe reasignando paciente al admin
                 \App\Models\Cita::where('paciente_id', $id)
                     ->whereHas('enfermedad')
                     ->update(['paciente_id' => $adminId]);

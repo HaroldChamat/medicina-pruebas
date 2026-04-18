@@ -46,6 +46,10 @@ Route::middleware(['cargo:Admin'])->group(function () {
     // Tickets: acciones exclusivas de Admin
     Route::post('/tickets/{ticket}/tomar', [TicketController::class, 'tomar'])->name('tickets.tomar');
     Route::post('/tickets/{ticket}/cerrar', [TicketController::class, 'cerrar'])->name('tickets.cerrar');
+    
+    //Desactivar o activar usuarios
+    Route::post('/usuario/{id}/desactivar', [UserController::class, 'desactivar'])->name('User.desactivar');
+    Route::post('/usuario/{id}/activar',    [UserController::class, 'activar'])->name('User.activar');
 });
 
 // ── Solo Médico ──────────────────────────────────────────────────────────────
