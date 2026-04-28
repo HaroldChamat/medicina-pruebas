@@ -261,7 +261,7 @@ class CitaController extends Controller
     private function validarSeparacionCitas(int $idMedico, Carbon $fechaHora, ?int $excluirCitaId = null)
     {
         $medico   = User::with('horario')->findOrFail($idMedico);
-        $duracion = $medico->horario->hora_atencion;
+        $duracion = (int) $medico->horario->hora_atencion;
 
         $query = Cita::where('medico_id', $idMedico)
             ->whereBetween('Fecha_y_hora', [
@@ -308,7 +308,7 @@ class CitaController extends Controller
             return response()->json([]);
         }
 
-        $duracion = $horario->hora_atencion;
+        $duracion = (int) $horario->hora_atencion;
         $inicio   = Carbon::parse($request->fecha . ' ' . $horario->hora_inicio);
         $fin      = Carbon::parse($request->fecha . ' ' . $horario->hora_fin);
         $horas    = [];
