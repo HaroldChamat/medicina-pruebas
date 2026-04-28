@@ -25,6 +25,34 @@ class EspecialidadController extends Controller
         ]);
     }
 
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'Nombre_especialidad' => 'required|string|max:100|unique:especialidads,Nombre_especialidad,' . $id,
+        ]);
+
+        $especialidad = \App\Models\Especialidad::findOrFail($id);
+        $especialidad->update([
+            'Nombre_especialidad' => ucwords(strtolower(trim($request->Nombre_especialidad))),
+        ]);
+
+        return response()->json(['ok' => true, 'nombre' => $especialidad->Nombre_especialidad]);
+    }
+
+    public function destroy($id)
+    {
+        $especialidad = \App\Models\Especialidad::findOrFail($id);
+
+        // Desasociar de todos los médicos que la tengan
+        $especialidad->medicos()->detach();
+
+        // Eliminar la especialidad
+        $especialidad->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
+    
     public function actualizarEspecialidad(Request $request)
     {
       
