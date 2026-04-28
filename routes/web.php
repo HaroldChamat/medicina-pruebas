@@ -33,6 +33,8 @@ Route::post('/usuario/store', [UserController::class, 'store'])->name('User.stor
 Route::middleware(['cargo:Admin'])->group(function () {
     Route::put('/asignar-especialidad-medico', [EspecialidadController::class, 'actualizarEspecialidad'])->name('especialidad.update');
     Route::post('/especialidad', [EspecialidadController::class, 'store'])->name('especialidad.store');
+    Route::put('/especialidad/{id}', [EspecialidadController::class, 'update'])->name('especialidad.updateNombre');
+    Route::delete('/especialidad/{id}', [EspecialidadController::class, 'destroy'])->name('especialidad.destroy');
     Route::put('/usuario/{id}', [UserController::class, 'update'])->name('User.update');
     Route::delete('/usuario/{id}', [UserController::class, 'destroy'])->name('User.destroy');
     Route::get('/Especialidad', [UserController::class, 'index_especialidad'])->name('Especialidad');
