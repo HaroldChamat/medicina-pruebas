@@ -72,8 +72,8 @@
                                     </div>
                                 </div>
 
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="form-check p-0 d-flex align-items-center gap-2">
+                                <div class="mb-3">
+                                    <div class="form-check d-flex align-items-center gap-2">
                                         <input class="form-check-input mt-0" type="checkbox"
                                             name="remember" id="rememberMe">
                                         <label class="form-check-label small text-muted"

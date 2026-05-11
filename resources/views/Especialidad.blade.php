@@ -9,9 +9,14 @@
                 Gestión de especialidades asignadas a los médicos.
             </p>
         </div>
-        <button class="btn btn-success rounded-pill" id="btnNuevaEspecialidad">
-            <i class="bi bi-plus-circle me-1"></i> Nueva especialidad
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-warning rounded-pill" id="btnGestionarEspecialidades">
+                <i class="bi bi-pencil-square me-1"></i> Gestionar especialidades
+            </button>
+            <button class="btn btn-success rounded-pill" id="btnNuevaEspecialidad">
+                <i class="bi bi-plus-circle me-1"></i> Nueva especialidad
+            </button>
+        </div>
     </div>
 
     <div class="card shadow-sm border-0">
@@ -39,10 +44,10 @@
                                 <td>
                                     @if($medico->especialidades && $medico->especialidades->count() > 0)
                                         @foreach($medico->especialidades as $esp)
-                                            <span class="badge bg-primary me-1">
-                                                {{ $esp->Nombre_especialidad }}
-                                            </span>
-                                        @endforeach
+                                        <span class="badge bg-primary me-1" data-esp-id="{{ $esp->id }}">
+                                            {{ $esp->Nombre_especialidad }}
+                                        </span>
+                                    @endforeach
                                     @else
                                         <span class="text-danger fw-semibold small">Sin especialidad</span>
                                     @endif
@@ -95,7 +100,7 @@
                                     class="list-group-item list-group-item-action d-flex justify-content-between align-items-center select-main-espec"
                                     data-id="{{ $esp->id }}"
                                     data-nombre="{{ $esp->Nombre_especialidad }}">
-                                    {{ $esp->Nombre_especialidad }}
+                                    <span class="esp-nombre-label">{{ $esp->Nombre_especialidad }}</span>
                                     <i class="bi bi-chevron-right text-muted"></i>
                                 </button>
                             @endforeach
@@ -161,6 +166,93 @@
         </div>
     </div>
 </div>
+
+{{-- ===== MODAL GESTIONAR ESPECIALIDADES ===== --}}
+<div class="modal fade" id="modalGestionarEsp" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow">
+            <div class="modal-header text-white" style="background-color: #0d3b6e;">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-pencil-square me-2"></i> Gestionar Especialidades
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background-color: #f8f9fa;">
+                        <tr>
+                            <th class="px-4 py-3">Especialidad</th>
+                            <th class="text-center py-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaGestionEsp">
+                        @foreach($especialidades as $esp)
+                            <tr id="fila-esp-{{ $esp->id }}">
+                                <td class="px-4">
+                                    <span id="nombre-esp-{{ $esp->id }}">{{ $esp->Nombre_especialidad }}</span>
+                                    <input type="text" id="input-esp-{{ $esp->id }}"
+                                           class="form-control form-control-sm d-none"
+                                           value="{{ $esp->Nombre_especialidad }}">
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill me-1 btnEditarEsp"
+                                            data-id="{{ $esp->id }}">
+                                        <i class="bi bi-pencil me-1"></i> Editar
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success rounded-pill me-1 btnGuardarEsp d-none"
+                                            data-id="{{ $esp->id }}">
+                                        <i class="bi bi-save me-1"></i> Guardar
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill me-1 btnCancelarEsp d-none"
+                                            data-id="{{ $esp->id }}">
+                                        <i class="bi bi-x me-1"></i> Cancelar
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger rounded-pill btnEliminarEsp"
+                                            data-id="{{ $esp->id }}"
+                                            data-nombre="{{ $esp->Nombre_especialidad }}">
+                                        <i class="bi bi-trash me-1"></i> Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill"
+                        data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ===== MODAL CONFIRMAR ELIMINAR ESPECIALIDAD ===== --}}
+<div class="modal fade" id="modalConfirmarEliminarEsp" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Confirmar eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de eliminar la especialidad <strong id="nombreEspEliminar"></strong>?</p>
+                <div class="alert alert-warning small mb-0">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    Se eliminará de todos los médicos que la tengan asignada.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-danger rounded-pill" id="btnConfirmarEliminarEsp">
+                    <i class="bi bi-trash me-1"></i> Sí, eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 {{-- ===== MODAL NUEVA ESPECIALIDAD ===== --}}
 <div class="modal fade" id="modalNuevaEsp" tabindex="-1">
@@ -230,7 +322,7 @@ $(document).ready(function () {
     $(document).on('click', '.select-main-espec', function () {
         principalId = $(this).data('id');
         $('#especialidad_principal_id').val(principalId);
-        $('#labelPrincipal').text($(this).data('nombre'));
+        $('#labelPrincipal').text($(this).attr('data-nombre'));
 
         // Marcar visualmente
         $('.select-main-espec').removeClass('active');
@@ -258,7 +350,7 @@ $(document).ready(function () {
         $('#step-2').removeClass('d-none');
         $('#btnSubmit').removeClass('d-none');
         $('#labelPrincipal').text(
-            $('#listaPrincipal').find(`[data-id="${principalId}"]`).data('nombre') ?? ''
+            $('#listaPrincipal').find(`[data-id="${principalId}"]`).attr('data-nombre') ?? ''
         );
     }
 
@@ -321,6 +413,132 @@ $(document).ready(function () {
             }
         });
     });
+
+
+    // ─── GESTIONAR ESPECIALIDADES ────────────────────────────────────────
+    $('#btnGestionarEspecialidades').on('click', function () {
+        new bootstrap.Modal(document.getElementById('modalGestionarEsp')).show();
+    });
+
+    let espIdEliminar = null;
+
+    // Editar nombre
+    $(document).on('click', '.btnEditarEsp', function () {
+        const id = $(this).data('id');
+        $(`#nombre-esp-${id}`).addClass('d-none');
+        $(`#input-esp-${id}`).removeClass('d-none').focus();
+        $(this).addClass('d-none');
+        $(`#fila-esp-${id} .btnGuardarEsp`).removeClass('d-none');
+        $(`#fila-esp-${id} .btnCancelarEsp`).removeClass('d-none');
+        $(`#fila-esp-${id} .btnEliminarEsp`).addClass('d-none');
+    });
+
+    // Cancelar edición
+    $(document).on('click', '.btnCancelarEsp', function () {
+        const id = $(this).data('id');
+        $(`#nombre-esp-${id}`).removeClass('d-none');
+        $(`#input-esp-${id}`).addClass('d-none');
+        $(`#fila-esp-${id} .btnEditarEsp`).removeClass('d-none');
+        $(this).addClass('d-none');
+        $(`#fila-esp-${id} .btnGuardarEsp`).addClass('d-none');
+        $(`#fila-esp-${id} .btnEliminarEsp`).removeClass('d-none');
+    });
+
+    // Guardar nombre editado
+    $(document).on('click', '.btnGuardarEsp', function () {
+        const id = $(this).data('id');
+        const nuevoNombre = $(`#input-esp-${id}`).val().trim();
+
+        if (!nuevoNombre) {
+            mostrarToast('El nombre no puede estar vacío', 'warning');
+            return;
+        }
+
+        $.ajax({
+            url: '/especialidad/' + id,
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                _method: 'PUT',
+                Nombre_especialidad: nuevoNombre,
+            },
+            success: function (res) {
+                const nombreFinal = res.nombre;
+
+                // Actualizar texto visible y valor del input
+                $(`#nombre-esp-${id}`).text(nombreFinal).removeClass('d-none');
+                $(`#input-esp-${id}`).val(nombreFinal).addClass('d-none');
+
+                // Actualizar data-nombre del botón eliminar
+                $(`#fila-esp-${id} .btnEliminarEsp`).attr('data-nombre', nombreFinal);
+
+                // Restaurar botones
+                $(`#fila-esp-${id} .btnEditarEsp`).removeClass('d-none');
+                $(`#fila-esp-${id} .btnGuardarEsp`).addClass('d-none');
+                $(`#fila-esp-${id} .btnCancelarEsp`).addClass('d-none');
+                $(`#fila-esp-${id} .btnEliminarEsp`).removeClass('d-none');
+
+                // Actualizar todos los badges en la tabla de médicos que tengan este id
+                $(`.badge[data-esp-id="${id}"]`).text(nombreFinal);
+
+                // Actualizar texto y data-nombre en el botón de la lista principal
+                const $btnPrincipal = $(`.select-main-espec[data-id="${id}"]`);
+                $btnPrincipal.attr('data-nombre', nombreFinal);
+                $btnPrincipal.find('.esp-nombre-label').text(nombreFinal);
+
+                // Actualizar label del checkbox adicional
+                $(`label[for="check-${id}"]`).text(nombreFinal);
+
+                // Si esta especialidad es la principal actualmente seleccionada, actualizar el label
+                if ($('#especialidad_principal_id').val() == id) {
+                    $('#labelPrincipal').text(nombreFinal);
+                }
+
+                // Actualizar también dentro del alert del paso 2 (el strong con el nombre)
+                const $labelAlert = $('#labelPrincipal');
+                if ($labelAlert.text() === $btnPrincipal.attr('data-nombre') || 
+                    $('#especialidad_principal_id').val() == id) {
+                    $labelAlert.text(nombreFinal);
+                }
+
+                mostrarToast('Especialidad actualizada correctamente', 'success');
+            },
+            error: function (xhr) {
+                mostrarToast(xhr.responseJSON?.message ?? 'Error al actualizar', 'danger');
+            }
+        });
+    });
+
+    // Abrir modal eliminar
+    $(document).on('click', '.btnEliminarEsp', function () {
+        espIdEliminar = $(this).data('id');
+        $('#nombreEspEliminar').text($(this).data('nombre'));
+        new bootstrap.Modal(document.getElementById('modalConfirmarEliminarEsp')).show();
+    });
+
+    // Confirmar eliminar
+    $('#btnConfirmarEliminarEsp').on('click', function () {
+        $.ajax({
+            url: '/especialidad/' + espIdEliminar,
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                _method: 'DELETE',
+            },
+            success: function () {
+                $(`#fila-esp-${espIdEliminar}`).remove();
+                bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarEsp')).hide();
+                mostrarToast('Especialidad eliminada correctamente', 'success');
+                espIdEliminar = null;
+                setTimeout(() => location.reload(), 1500);
+            },
+            error: function (xhr) {
+                mostrarToast(xhr.responseJSON?.message ?? 'Error al eliminar', 'danger');
+            }
+        });
+    });
+
+    
 
     // ─── NUEVA ESPECIALIDAD ──────────────────────────────────────────
     $('#btnNuevaEspecialidad').on('click', function () {
