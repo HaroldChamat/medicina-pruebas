@@ -44,7 +44,6 @@ class UserController extends Controller
 
     public function index_especialidad()
     {
-        // Solo médicos ACTIVOS para asignar especialidades
         $medicos = User::with(['cargo', 'especialidades'])
             ->whereHas('cargo', function ($q) {
                 $q->where('Nombre_cargo', 'Medico');
@@ -61,7 +60,6 @@ class UserController extends Controller
     {
         if (session('admin') !== 1) abort(403);
 
-        // Todos los médicos (activos e inactivos) para gestión
         $medicos = User::with(['cargo', 'especialidades'])
             ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
             ->get();
@@ -91,6 +89,20 @@ class UserController extends Controller
             'id_cargo'  => 'required|exists:cargos,id',
             'password'  => 'required|string|min:6',
             'admin'     => 'nullable|in:0,1',
+        ], [
+            'name.required'      => 'El nombre es obligatorio.',
+            'name.string'        => 'El nombre debe ser texto.',
+            'Apellidos.required' => 'Los apellidos son obligatorios.',
+            'email.required'     => 'El correo electrónico es obligatorio.',
+            'email.email'        => 'El formato del correo electrónico no es válido.',
+            'email.unique'       => 'Este correo electrónico ya está registrado. Por favor ingresa otro.',
+            'Rut.required'       => 'El RUT es obligatorio.',
+            'Rut.unique'         => 'Este RUT ya está registrado. Por favor ingresa otro RUT.',
+            'telefono.required'  => 'El teléfono es obligatorio.',
+            'id_cargo.required'  => 'Debes seleccionar un cargo.',
+            'id_cargo.exists'    => 'El cargo seleccionado no es válido.',
+            'password.required'  => 'La contraseña es obligatoria.',
+            'password.min'       => 'La contraseña debe tener al menos 6 caracteres.',
         ]);
 
         $cargosProtegidos = Cargo::whereIn('Nombre_cargo', ['Otro', 'Medico'])
@@ -102,7 +114,7 @@ class UserController extends Controller
             session('admin') !== 1
         ) {
             return response()->json([
-                'message' => 'No tienes permisos para asignar este cargo'
+                'message' => 'No tienes permisos para asignar este cargo.'
             ], 403);
         }
 
@@ -118,80 +130,97 @@ class UserController extends Controller
         $user->password   = Hash::make($request->password);
         $user->save();
 
-        return response()->json(['success' => true, 'message' => 'Usuario creado exitosamente']);
+        return response()->json(['success' => true, 'message' => 'Usuario creado exitosamente.']);
     }
 
     public function update(Request $request, $id)
     {
         if (session('admin') !== 1) {
-            return response()->json(['message' => 'No autorizado'], 403);
+            return response()->json(['message' => 'No autorizado.'], 403);
         }
 
-        $request->validate([
+        $rules = [
             'name'      => 'required|string|max:255',
             'Apellidos' => 'required|string|max:255',
             'email'     => 'required|email|unique:users,email,' . $id,
             'telefono'  => 'nullable|string|max:20',
-        ]);
+            'Rut'       => 'nullable|string|unique:users,Rut,' . $id,
+        ];
+
+        if ($request->filled('password')) {
+            $rules['password'] = 'string|min:6';
+        }
+
+        $messages = [
+            'name.required'      => 'El nombre es obligatorio.',
+            'Apellidos.required' => 'Los apellidos son obligatorios.',
+            'email.required'     => 'El correo electrónico es obligatorio.',
+            'email.email'        => 'El formato del correo electrónico no es válido.',
+            'email.unique'       => 'Este correo electrónico ya está en uso por otro usuario. Por favor ingresa otro.',
+            'Rut.unique'         => 'Este RUT ya está registrado en otro usuario. Por favor ingresa otro RUT.',
+            'telefono.max'       => 'El teléfono no puede tener más de 20 caracteres.',
+            'password.min'       => 'La contraseña debe tener al menos 6 caracteres.',
+        ];
+
+        $request->validate($rules, $messages);
 
         $user = User::findOrFail($id);
         $user->name      = $request->name;
         $user->Apellidos = $request->Apellidos;
         $user->email     = $request->email;
         $user->telefono  = $request->telefono;
+
+        if ($request->filled('Rut')) {
+            $user->Rut = $request->Rut;
+        }
+
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
         $user->save();
 
-        return response()->json(['success' => true, 'message' => 'Usuario actualizado correctamente']);
+        return response()->json(['success' => true, 'message' => 'Usuario actualizado correctamente.']);
     }
 
-    /**
-     * Desactiva un médico (soft-disable).
-     * Sus informes de citas quedan intactos y su nombre sigue visible en ellos.
-     */
     public function desactivar($id)
     {
         if (session('admin') !== 1) {
-            return response()->json(['message' => 'No autorizado'], 403);
+            return response()->json(['message' => 'No autorizado.'], 403);
         }
 
         if ($id == session('user_id')) {
-            return response()->json(['message' => 'No puedes desactivarte a ti mismo'], 422);
+            return response()->json(['message' => 'No puedes desactivarte a ti mismo.'], 422);
         }
 
         $user = User::findOrFail($id);
         $user->activo = 0;
         $user->save();
 
-        return response()->json(['success' => true, 'message' => 'Médico desactivado correctamente']);
+        return response()->json(['success' => true, 'message' => 'Médico desactivado correctamente.']);
     }
 
-    /**
-     * Reactiva un médico desactivado.
-     */
     public function activar($id)
     {
         if (session('admin') !== 1) {
-            return response()->json(['message' => 'No autorizado'], 403);
+            return response()->json(['message' => 'No autorizado.'], 403);
         }
 
         $user = User::findOrFail($id);
         $user->activo = 1;
         $user->save();
 
-        return response()->json(['success' => true, 'message' => 'Médico reactivado correctamente']);
+        return response()->json(['success' => true, 'message' => 'Médico reactivado correctamente.']);
     }
 
-    /**
-     * Eliminar pacientes (sigue siendo eliminación real, solo para pacientes).
-     */
     public function destroy($id)
     {
         if (session('admin') !== 1) {
-            return response()->json(['message' => 'No autorizado'], 403);
+            return response()->json(['message' => 'No autorizado.'], 403);
         }
 
         if ($id == session('user_id')) {
-            return response()->json(['message' => 'No puedes eliminarte a ti mismo'], 422);
+            return response()->json(['message' => 'No puedes eliminarte a ti mismo.'], 422);
         }
 
         $user = User::with('cargo')->findOrFail($id);
@@ -200,8 +229,6 @@ class UserController extends Controller
         \DB::transaction(function () use ($user, $id, $cargo) {
 
             if ($cargo === 'Medico') {
-                // Para médicos usamos desactivar, no eliminar
-                // Pero por si acaso se llama este endpoint:
                 $user->activo = 0;
                 $user->save();
                 return;
@@ -213,12 +240,10 @@ class UserController extends Controller
 
                 $adminId = User::where('admin', 1)->value('id');
 
-                // Preservar citas con informe reasignando paciente al admin
                 \App\Models\Cita::where('paciente_id', $id)
                     ->whereHas('enfermedad')
                     ->update(['paciente_id' => $adminId]);
 
-                // Borrar citas sin informe
                 \App\Models\Cita::where('paciente_id', $id)->delete();
 
                 \App\Models\Notificacion::where('user_id', $id)->delete();
@@ -227,6 +252,6 @@ class UserController extends Controller
             $user->delete();
         });
 
-        return response()->json(['success' => true, 'message' => 'Usuario eliminado correctamente']);
+        return response()->json(['success' => true, 'message' => 'Usuario eliminado correctamente.']);
     }
 }
