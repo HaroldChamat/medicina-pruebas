@@ -12,24 +12,24 @@ class HorarioController extends Controller
     {
         $cargo  = session('cargo');
         $userId = session('user_id');
- 
+
         $semanaParam  = $request->query('semana');
         $inicioSemana = $semanaParam
             ? \Carbon\Carbon::parse($semanaParam)->startOfWeek(\Carbon\Carbon::MONDAY)
             : \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY);
         $finSemana = $inicioSemana->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
- 
+
         if ($cargo === 'Medico') {
-            $medico  = User::with(['horario', 'especialidades'])->find($userId);
+            $medico  = User::with(['horario', 'especialidades', 'medicoPrestaciones.prestacion'])->find($userId);
             $medicos = collect([$medico]);
         } else {
             // Admin: solo médicos ACTIVOS para gestionar horarios
-            $medicos = User::with(['horario', 'especialidades'])
+            $medicos = User::with(['horario', 'especialidades', 'medicoPrestaciones.prestacion'])
                 ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
                 ->where('activo', 1)
                 ->get();
         }
- 
+
         return view('Horario', [
             'medicos'      => $medicos,
             'esAdmin'      => session('admin') === 1,
@@ -37,7 +37,6 @@ class HorarioController extends Controller
             'finSemana'    => $finSemana,
         ]);
     }
- 
 
     public function store(Request $request)
     {
@@ -52,10 +51,9 @@ class HorarioController extends Controller
             'hora_fin'       => 'required',
             'almuerzo_inicio'=> 'nullable',
             'almuerzo_fin'   => 'nullable',
-            'hora_atencion'  => 'required|integer|min:10|max:120',
         ]);
 
-        // Sanitizar días: asegurar que sean únicos y válidos
+        // Sanitizar días
         $diasPermitidos = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
         $diasSemana = array_values(array_unique(
             array_filter(
@@ -73,7 +71,6 @@ class HorarioController extends Controller
                 'hora_fin'        => $request->hora_fin,
                 'almuerzo_inicio' => $request->almuerzo_inicio,
                 'almuerzo_fin'    => $request->almuerzo_fin,
-                'hora_atencion'   => $request->hora_atencion,
                 'dias_semana'     => $diasSemana,
             ]);
         } else {
@@ -83,7 +80,6 @@ class HorarioController extends Controller
                 'hora_fin'        => $request->hora_fin,
                 'almuerzo_inicio' => $request->almuerzo_inicio,
                 'almuerzo_fin'    => $request->almuerzo_fin,
-                'hora_atencion'   => $request->hora_atencion,
                 'dias_semana'     => $diasSemana,
             ]);
         }
@@ -104,16 +100,15 @@ class HorarioController extends Controller
                 ->orderBy('id', 'desc')
                 ->firstOrFail();
         }
-        
+
         $request->validate([
             'hora_inicio'    => 'required',
             'hora_fin'       => 'required',
             'almuerzo_inicio'=> 'nullable',
             'almuerzo_fin'   => 'nullable',
-            'hora_atencion'  => 'required|integer|min:10|max:120',
         ]);
 
-        // Sanitizar días: asegurar que sean únicos y válidos
+        // Sanitizar días
         $diasPermitidos = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
         $diasSemana = array_values(array_unique(
             array_filter(
@@ -127,7 +122,6 @@ class HorarioController extends Controller
             'hora_fin'       => $request->hora_fin,
             'almuerzo_inicio'=> $request->almuerzo_inicio,
             'almuerzo_fin'   => $request->almuerzo_fin,
-            'hora_atencion'  => $request->hora_atencion,
             'dias_semana'    => $diasSemana,
         ]);
 

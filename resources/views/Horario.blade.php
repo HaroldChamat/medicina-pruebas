@@ -20,8 +20,8 @@
                     Consulta tu horario de atención asignado.
                 @endif
             </p>
-            </div>
         </div>
+    </div>
 
     {{-- Vista MÉDICO: card visual --}}
     @if(!$esAdmin)
@@ -66,34 +66,89 @@
                 <div class="col-md-3">
                     <div class="card border-0 shadow-sm text-center p-3">
                         <div class="icon-dash mx-auto mb-3 bg-success-soft">
-                            <i class="bi bi-stopwatch fs-3 text-success"></i>
+                            <i class="bi bi-clipboard2-pulse fs-3 text-success"></i>
                         </div>
-                        <p class="text-muted small mb-1">Duración por cita</p>
-                        <h5 class="fw-bold">{{ $medico->horario->hora_atencion }} min</h5>
+                        <p class="text-muted small mb-1">Prestaciones</p>
+                        <h5 class="fw-bold">{{ $medico->medicoPrestaciones->count() }}</h5>
                     </div>
                 </div>
             </div>
+
+            {{-- Prestaciones del médico --}}
+            @if($medico->medicoPrestaciones->count() > 0)
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header text-white fw-semibold" style="background-color: #0d3b6e;">
+                    <i class="bi bi-clipboard2-pulse me-2"></i> Mis Prestaciones
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small text-uppercase">
+                                <tr>
+                                    <th class="px-4">Prestación</th>
+                                    <th>Horario</th>
+                                    <th>Min/paciente</th>
+                                    <th>Horas asignadas</th>
+                                    <th>Cupos online</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($medico->medicoPrestaciones as $mp)
+                                    <tr>
+                                        <td class="px-4 fw-semibold">{{ $mp->prestacion->nombre }}</td>
+                                        <td>
+                                            <span class="badge bg-success">
+                                                {{ \Carbon\Carbon::createFromFormat('H:i:s', $mp->hora_entrada)->format('H:i') }}
+                                                —
+                                                {{ \Carbon\Carbon::createFromFormat('H:i:s', $mp->hora_salida)->format('H:i') }}
+                                            </span>
+                                        </td>
+                                        <td><span class="badge bg-info text-dark">{{ $mp->hora_atencion }} min</span></td>
+                                        <td>{{ $mp->cantidad_horas }}h</td>
+                                        <td><span class="badge bg-primary">{{ $mp->cant_online }}</span></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @else
+                <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                    <span>Aún no tienes prestaciones asignadas. Contacta al administrador.</span>
+                </div>
+            @endif
 
             {{-- Calendario semanal --}}
             @php
                 $diasSemana     = ['lunes','martes','miercoles','jueves','viernes'];
                 $diasPermitidos = $medico->horario->dias_semana ?? [];
-                $duracion       = $medico->horario->hora_atencion;
-                $horaInicio     = \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->hora_inicio);
-                $horaFin        = \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->hora_fin);
-                $almuerzoIni    = $medico->horario->almuerzo_inicio
+
+                // Usar la primera prestación para los slots del calendario, o generar slots genéricos
+                $primeraPresatcion = $medico->medicoPrestaciones->first();
+                $slots = [];
+                if ($primeraPresatcion) {
+                    $slots = $primeraPresatcion->slotsDisponibles();
+                } else {
+                    // Slots genéricos de 30 min basados en el horario general
+                    $horaInicio = \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->hora_inicio);
+                    $horaFin    = \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->hora_fin);
+                    $cursor = $horaInicio->copy();
+                    while ($cursor->copy()->addMinutes(30)->lte($horaFin)) {
+                        $slots[] = $cursor->format('H:i');
+                        $cursor->addMinutes(30);
+                    }
+                }
+
+                $horaInicio  = \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->hora_inicio);
+                $horaFin     = \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->hora_fin);
+                $almuerzoIni = $medico->horario->almuerzo_inicio
                     ? \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->almuerzo_inicio)
                     : null;
-                $almuerzoFin    = $medico->horario->almuerzo_fin
+                $almuerzoFin = $medico->horario->almuerzo_fin
                     ? \Carbon\Carbon::createFromFormat('H:i:s', $medico->horario->almuerzo_fin)
                     : null;
-
-                $slots = [];
-                $cursor = $horaInicio->copy();
-                while ($cursor->copy()->addMinutes($duracion)->lte($horaFin)) {
-                    $slots[] = $cursor->format('H:i');
-                    $cursor->addMinutes($duracion);
-                }
 
                 $citasSemana = \App\Models\Cita::with('paciente')
                     ->where('medico_id', $medico->id)
@@ -103,35 +158,33 @@
                         return \Carbon\Carbon::parse($c->Fecha_y_hora)->format('N');
                     });
 
-                $diaNumero      = ['lunes'=>1,'martes'=>2,'miercoles'=>3,'jueves'=>4,'viernes'=>5];
-                $semanaAnterior = $inicioSemana->copy()->subWeek()->format('Y-m-d');
+                $diaNumero       = ['lunes'=>1,'martes'=>2,'miercoles'=>3,'jueves'=>4,'viernes'=>5];
+                $semanaAnterior  = $inicioSemana->copy()->subWeek()->format('Y-m-d');
                 $semanaSiguiente = $inicioSemana->copy()->addWeek()->format('Y-m-d');
-                $esActual       = $inicioSemana->isSameWeek(\Carbon\Carbon::now());
+                $esActual        = $inicioSemana->isSameWeek(\Carbon\Carbon::now());
             @endphp
 
             <div class="card border-0 shadow-sm">
                 <div class="card-header text-white fw-semibold d-flex align-items-center justify-content-between"
                 style="background-color: #0d3b6e;">
-                <a href="{{ route('Horario') }}?semana={{ $semanaAnterior }}"
-                class="btn btn-sm btn-outline-light rounded-pill">
-                    <i class="bi bi-chevron-left"></i>
-                </a>
-
-                <span>
-                    <i class="bi bi-calendar-week me-2"></i>
-                    {{ $inicioSemana->format('d/m/Y') }} — {{ $finSemana->format('d/m/Y') }}
-                    @if($esActual)
-                        <span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem;">
-                            Semana actual
-                        </span>
-                    @endif
-                </span>
-
-                <a href="{{ route('Horario') }}?semana={{ $semanaSiguiente }}"
-                class="btn btn-sm btn-outline-light rounded-pill">
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-            </div>
+                    <a href="{{ route('Horario') }}?semana={{ $semanaAnterior }}"
+                    class="btn btn-sm btn-outline-light rounded-pill">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    <span>
+                        <i class="bi bi-calendar-week me-2"></i>
+                        {{ $inicioSemana->format('d/m/Y') }} — {{ $finSemana->format('d/m/Y') }}
+                        @if($esActual)
+                            <span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem;">
+                                Semana actual
+                            </span>
+                        @endif
+                    </span>
+                    <a href="{{ route('Horario') }}?semana={{ $semanaSiguiente }}"
+                    class="btn btn-sm btn-outline-light rounded-pill">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-bordered mb-0 text-center align-middle tabla-horario"
@@ -161,14 +214,12 @@
                                             $slotCarbon->lt($almuerzoFin);
                                     @endphp
                                     <tr>
-                                        <td class="slot-hora text-center">
-                                            {{ $slot }}
-                                        </td>
+                                        <td class="slot-hora text-center">{{ $slot }}</td>
                                         @foreach($diasSemana as $dia)
                                             @php
-                                                $num   = $diaNumero[$dia];
+                                                $num    = $diaNumero[$dia];
                                                 $activo = in_array($dia, $diasPermitidos);
-                                                $cita  = null;
+                                                $cita   = null;
                                                 if ($activo && isset($citasSemana[$num])) {
                                                     $cita = $citasSemana[$num]->first(function($c) use ($slot) {
                                                         return \Carbon\Carbon::parse($c->Fecha_y_hora)->format('H:i') === $slot;
@@ -220,8 +271,8 @@
                                 <th class="px-4 py-3">Médico</th>
                                 <th>Especialidad</th>
                                 <th>Horario</th>
-                                <th>Duración por cita</th>
                                 <th>Almuerzo</th>
+                                <th>Prestaciones</th>
                                 <th>Días</th>
                                 <th class="text-center">Acciones</th>
                             </tr>
@@ -266,16 +317,6 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if($medico->horario)
-                                            <span class="badge bg-info text-dark">
-                                                <i class="bi bi-stopwatch me-1"></i>
-                                                {{ $medico->horario->hora_atencion }} min
-                                            </span>
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </td>
-                                    <td>
                                         @if($medico->horario && $medico->horario->almuerzo_inicio)
                                             <span class="badge bg-warning text-dark">
                                                 <i class="bi bi-cup-hot me-1"></i>
@@ -286,11 +327,24 @@
                                         @endif
                                     </td>
                                     <td>
+                                        @if($medico->medicoPrestaciones->count() > 0)
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-clipboard2-pulse me-1"></i>
+                                                {{ $medico->medicoPrestaciones->count() }} prestación(es)
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-exclamation-triangle me-1"></i> Sin prestaciones
+                                            </span>
+                                        @endif
+                                    </td>
+
+                                    <td>
                                         @if($medico->horario && $medico->horario->dias_semana)
                                             <div class="d-flex flex-wrap gap-1">
                                                 @foreach($medico->horario->dias_semana as $dia)
                                                     <span class="badge bg-primary text-capitalize"
-                                                          style="font-size: 0.7rem;">
+                                                        style="font-size: 0.7rem;">
                                                         {{ ucfirst($dia) }}
                                                     </span>
                                                 @endforeach
@@ -312,6 +366,10 @@
                                                 <i class="bi bi-pencil me-1"></i> Editar
                                             </button>
                                         @endif
+                                        <a href="{{ route('admin.prestaciones') }}"
+                                           class="btn btn-info btn-sm rounded-pill mt-1">
+                                            <i class="bi bi-clipboard2-pulse me-1"></i> Prestaciones
+                                        </a>
                                     </td>
                                 </tr>
                             @endforeach
@@ -371,21 +429,8 @@
                                 <input type="time" class="form-control" id="editar_almuerzo_fin"
                                        name="almuerzo_fin">
                             </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold small">
-                                    <i class="bi bi-stopwatch me-1"></i> Duración por cita
-                                </label>
-                                <select id="editar_hora_atencion" name="hora_atencion"
-                                        class="form-select" required>
-                                    <option value="20">20 minutos</option>
-                                    <option value="30">30 minutos</option>
-                                    <option value="40">40 minutos</option>
-                                    <option value="45">45 minutos</option>
-                                    <option value="60">60 minutos</option>
-                                </select>
-                            </div>
                         </div>
-                        <div class="col-12 mt-2">
+                        <div class="col-12 mt-3">
                             <label class="form-label fw-semibold small">
                                 <i class="bi bi-calendar-week me-1"></i> Días de atención
                             </label>
@@ -461,26 +506,25 @@ $(document).ready(function () {
 
     // ─── ABRIR MODAL EDITAR ──────────────────────────────────────────────
     $(document).on('click', '.btnEditarHorario', function () {
-        let horario   = $(this).data('horario');
-        let medicoId  = $(this).data('medico-id');
+        let horario  = $(this).data('horario');
+        let medicoId = $(this).data('medico-id');
         $('#horario_id').val(horario.id);
         $('#editar_medico_id_hidden').val(medicoId);
-        $('#editar_hora_inicio').val(horario.hora_inicio);
-        $('#editar_hora_fin').val(horario.hora_fin);
-        $('#editar_almuerzo_inicio').val(horario.almuerzo_inicio);
-        $('#editar_almuerzo_fin').val(horario.almuerzo_fin);
-        $('#editar_hora_atencion').val(horario.hora_atencion);
+        $('#editar_hora_inicio').val(horario.hora_inicio ? horario.hora_inicio.substring(0,5) : '');
+        $('#editar_hora_fin').val(horario.hora_fin ? horario.hora_fin.substring(0,5) : '');
+        $('#editar_almuerzo_inicio').val(horario.almuerzo_inicio ? horario.almuerzo_inicio.substring(0,5) : '');
+        $('#editar_almuerzo_fin').val(horario.almuerzo_fin ? horario.almuerzo_fin.substring(0,5) : '');
 
-        // Marcar días guardados — usar selector específico del modal editar
+        // Marcar días guardados
         let dias = horario.dias_semana || [];
         $('#exampledit input[name="dias_semana_editar[]"]').each(function () {
             $(this).prop('checked', dias.includes($(this).val()));
         });
 
         modalEditar.show();
-    });   
+    });
 
-     // ─── CREAR HORARIO ───────────────────────────────────────────────────
+    // ─── CREAR HORARIO ───────────────────────────────────────────────────
     $('#formHorario').off('submit').on('submit', function (e) {
         e.preventDefault();
         const $btn = $(this).find('button[type="submit"]');
@@ -493,7 +537,6 @@ $(document).ready(function () {
             data: $(this).serialize(),
             success: function () {
                 mostrarToast('Horario creado correctamente', 'success');
-                agregarNotificacion('Horario definido para médico', 'success');
                 setTimeout(() => { modalHorario.hide(); location.reload(); }, 1500);
             },
             error: function (xhr) {
@@ -513,7 +556,7 @@ $(document).ready(function () {
         if ($btn.prop('disabled')) return;
         $btn.prop('disabled', true);
 
-        // Recoger días marcados del modal editar específicamente
+        // Recoger días marcados del modal editar
         let diasSeleccionados = [];
         $('#exampledit input[name="dias_semana_editar[]"]:checked').each(function () {
             diasSeleccionados.push($(this).val());
@@ -530,12 +573,10 @@ $(document).ready(function () {
                 hora_fin:        $('#editar_hora_fin').val(),
                 almuerzo_inicio: $('#editar_almuerzo_inicio').val(),
                 almuerzo_fin:    $('#editar_almuerzo_fin').val(),
-                hora_atencion:   $('#editar_hora_atencion').val(),
                 'dias_semana[]': diasSeleccionados,
             },
             success: function () {
                 mostrarToast('Horario actualizado correctamente', 'success');
-                agregarNotificacion('Horario de médico actualizado', 'info');
                 setTimeout(() => { modalEditar.hide(); location.reload(); }, 1500);
             },
             error: function (xhr) {
