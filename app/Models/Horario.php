@@ -13,7 +13,7 @@ class Horario extends Model
         'hora_fin',
         'almuerzo_inicio',
         'almuerzo_fin',
-        'hora_atencion',
+        // 'hora_atencion' eliminado — ahora vive en medico_prestaciones
         'dias_semana',
     ];
 
@@ -21,8 +21,8 @@ class Horario extends Model
         'dias_semana' => 'array',
     ];
 
-    public function users()
+    public function medico()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'medico_id');
     }
 }
