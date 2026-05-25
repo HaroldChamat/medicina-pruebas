@@ -6,17 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cita extends Model
 {
-    //
-
     public function user()
     {
         return $this->belongsTo('App\Models\User', 'Rut');
-        return $this->belongsTo(User::class, 'Rut');
     }
 
-
     protected $casts = [
-        'Fecha_y_hora' => 'date:Y-m-d'
+        'Fecha_y_hora' => 'datetime',
     ];
 
     protected $fillable = [
@@ -24,6 +20,7 @@ class Cita extends Model
         'estado',
         'medico_id',
         'paciente_id',
+        'prestacion_id',
         'codigo_cita',
     ];
 
@@ -58,5 +55,8 @@ class Cita extends Model
         return $this->hasOne(Tratamiento::class);
     }
 
-
+    public function prestacion()
+    {
+        return $this->belongsTo(Prestacion::class);
+    }
 }

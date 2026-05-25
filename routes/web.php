@@ -54,6 +54,23 @@ Route::middleware(['cargo:Admin'])->group(function () {
     Route::post('/usuario/{id}/activar',    [UserController::class, 'activar'])->name('User.activar');
 });
 
+// Centros médicos
+Route::get('/admin/centros-medicos', [\App\Http\Controllers\CentroMedicoController::class, 'index'])->name('admin.centros');
+Route::post('/admin/centros-medicos', [\App\Http\Controllers\CentroMedicoController::class, 'store'])->name('admin.centros.store');
+Route::put('/admin/centros-medicos/{id}', [\App\Http\Controllers\CentroMedicoController::class, 'update'])->name('admin.centros.update');
+Route::delete('/admin/centros-medicos/{id}', [\App\Http\Controllers\CentroMedicoController::class, 'destroy'])->name('admin.centros.destroy');
+ 
+// Prestaciones
+Route::get('/admin/prestaciones', [\App\Http\Controllers\PrestacionController::class, 'index'])->name('admin.prestaciones');
+Route::post('/admin/prestaciones', [\App\Http\Controllers\PrestacionController::class, 'store'])->name('admin.prestaciones.store');
+Route::put('/admin/prestaciones/{id}', [\App\Http\Controllers\PrestacionController::class, 'update'])->name('admin.prestaciones.update');
+Route::delete('/admin/prestaciones/{id}', [\App\Http\Controllers\PrestacionController::class, 'destroy'])->name('admin.prestaciones.destroy');
+Route::post('/admin/prestaciones/asignar-medico', [\App\Http\Controllers\PrestacionController::class, 'asignarMedico'])->name('admin.prestaciones.asignar');
+Route::delete('/admin/prestaciones/medico/{id}', [\App\Http\Controllers\PrestacionController::class, 'eliminarDeMedico'])->name('admin.prestaciones.eliminarDeMedico');
+ 
+// Horas disponibles para prestaciones (pública para todos los autenticados)
+Route::get('/horas-disponibles-prestacion', [\App\Http\Controllers\PrestacionController::class, 'horasDisponibles']);
+ 
 // ── Solo Médico ──────────────────────────────────────────────────────────────
 Route::middleware(['cargo:Medico'])->group(function () {
     // Tickets: solo el médico puede crear
