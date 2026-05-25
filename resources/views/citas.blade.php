@@ -1,8 +1,6 @@
 @extends('layouts.app')
 @section('content')
 
-
-
     {{-- Filtros: solo Admin --}}
     @if(session('admin') === 1)
         <div class="container mb-4">
@@ -69,11 +67,11 @@
                     <thead class="table-light text-uppercase small">
                         <tr>
                             <th>Código</th>
-                            <th>Medico</th>
+                            <th>Médico</th>
                             <th>Paciente</th>
+                            <th>Prestación</th>
                             <th>Fecha</th>
                             <th>Estado</th>
-                            {{-- Columna acciones: Admin y Médico --}}
                             @if(session('admin') === 1 || session('cargo') === 'Medico')
                                 <th>Acciones</th>
                             @endif
@@ -82,9 +80,9 @@
                     <tbody>
                         @foreach($Citas as $cita)
                             <tr data-medico="{{ $cita->medico->id }}"
-                                    data-paciente="{{ $cita->paciente->id }}"
-                                    data-paciente-texto="{{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}"
-                                    data-activo-medico="{{ $cita->medico->activo }}">
+                                data-paciente="{{ $cita->paciente->id }}"
+                                data-paciente-texto="{{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}"
+                                data-activo-medico="{{ $cita->medico->activo }}">
                                 <td>
                                     <span class="badge bg-light text-dark border" style="font-size: 0.72rem; letter-spacing: 0.5px;">
                                         {{ $cita->codigo_cita ?? 'CIT-' . $cita->id }}
@@ -97,13 +95,19 @@
                                     @endif
                                 </td>
                                 <td>
-                                    {{-- Solo Admin y Médico pueden ver el historial --}}
                                     @if(session('admin') === 1 || session('cargo') === 'Medico')
                                         <a href="{{ route('historial.index', $cita->paciente->id) }}">
                                             {{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}
                                         </a>
                                     @else
                                         {{ $cita->paciente->name }} {{ $cita->paciente->Apellidos }}
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($cita->prestacion)
+                                        <span class="badge bg-info text-dark">{{ $cita->prestacion->nombre }}</span>
+                                    @else
+                                        <span class="text-muted small">—</span>
                                     @endif
                                 </td>
                                 <td>{{ \Carbon\Carbon::parse($cita->Fecha_y_hora)->format('d/m/Y H:i') }}</td>
@@ -127,9 +131,6 @@
                                             <a href="#" data-id="{{ $cita->id }}" class="btn btn-primary btn-sm editar">
                                                 Editar <i class="bi bi-eye ms-1"></i>
                                             </a>
-                                        @endif
-
-                                        @if(session('admin') === 1)
                                             <a href="#" data-id="{{ $cita->id }}" class="btn btn-danger btn-sm eliminar">
                                                 Eliminar <i class="bi bi-x-lg ms-1"></i>
                                             </a>
@@ -143,6 +144,16 @@
                                             <a href="{{ route('informe.edit', $cita->id) }}" class="btn btn-warning btn-sm">
                                                 Editar informe <i class="bi bi-pencil ms-1"></i>
                                             </a>
+                                        @endif
+                                    </td>
+                                @elseif(session('cargo') === 'Paciente')
+                                    {{-- Paciente solo puede cancelar citas pendientes o programadas --}}
+                                    <td>
+                                        @if(in_array($cita->estado, ['Pendiente', 'Programada']))
+                                            <button class="btn btn-danger btn-sm btnCancelarPaciente"
+                                                    data-id="{{ $cita->id }}">
+                                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                                            </button>
                                         @endif
                                     </td>
                                 @endif
@@ -160,21 +171,16 @@
                         </div>
                         <nav>
                             <ul class="pagination pagination-sm mb-0">
-                                {{-- Anterior --}}
                                 <li class="page-item {{ $Citas->onFirstPage() ? 'disabled' : '' }}">
                                     <a class="page-link rounded-start" href="{{ $Citas->previousPageUrl() }}">
                                         <i class="bi bi-chevron-left"></i>
                                     </a>
                                 </li>
-
-                                {{-- Números de página --}}
                                 @foreach($Citas->getUrlRange(1, $Citas->lastPage()) as $page => $url)
                                     <li class="page-item {{ $Citas->currentPage() === $page ? 'active' : '' }}">
                                         <a class="page-link" href="{{ $url }}">{{ $page }}</a>
                                     </li>
                                 @endforeach
-
-                                {{-- Siguiente --}}
                                 <li class="page-item {{ !$Citas->hasMorePages() ? 'disabled' : '' }}">
                                     <a class="page-link rounded-end" href="{{ $Citas->nextPageUrl() }}">
                                         <i class="bi bi-chevron-right"></i>
@@ -185,36 +191,28 @@
                     </div>
                 @endif
 
-
                 {{-- Botones de acciones globales --}}
                 <div class="d-flex flex-wrap gap-2 justify-content-end mt-4">
-
-                    {{-- Email: Admin y Médico --}}
                     @if(session('admin') === 1 || session('cargo') === 'Medico')
                         <button class="btn btn-outline-primary" id="btnEmailGlobal">
                             📧 Enviar correo
                         </button>
                     @endif
-
-                    {{-- WhatsApp: solo Admin --}}
                     @if(session('admin') === 1)
                         <button class="btn btn-outline-success" id="btnWhatsappGlobal">
                             💬 WhatsApp
                         </button>
                     @endif
-
-                    {{-- PDF: todos los roles --}}
                     <button class="btn btn-outline-danger" id="btnPdfGlobal">
                         📄 Descargar PDF
                     </button>
-
                 </div>
 
-                {{-- Nueva cita: Admin y Paciente (no Médico) --}}
-                @if(session('admin') === 1 || session('cargo') === 'Paciente')
+                {{-- Nueva cita: SOLO el Paciente puede pedir hora online --}}
+                @if(session('cargo') === 'Paciente')
                     <div class="text-end mt-4">
                         <button class="btn btn-success btn-lg" id="btnAgregarCita">
-                            ➕ Nueva cita
+                            ➕ Solicitar hora
                         </button>
                     </div>
                 @endif
@@ -229,7 +227,8 @@
     </div>
 
 
-    {{-- ===== MODAL EDITAR ===== --}}
+    {{-- ===== MODAL EDITAR (solo Admin) ===== --}}
+    @if(session('admin') === 1)
     <div class="modal fade" id="exampledit" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -281,113 +280,124 @@
             </div>
         </div>
     </div>
+    @endif
 
 
-    {{-- ===== MODAL CREAR CITA ===== --}}
+    {{-- ===== MODAL CREAR CITA (solo Paciente) ===== --}}
+    @if(session('cargo') === 'Paciente')
     <div class="modal fade" id="modalCrear" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Nueva cita</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header" style="background-color: #0d3b6e;">
+                    <h5 class="modal-title text-white fw-bold">
+                        <i class="bi bi-calendar-plus me-2"></i> Solicitar hora médica
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="formCrearCita">
                     @csrf
                     <div class="modal-body">
 
-                        {{-- Médico --}}
+                        {{-- Paso 1: Médico --}}
                         <div class="mb-3">
-                            <label class="form-label">Médico</label>
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person-badge me-1"></i> Médico
+                            </label>
                             <select name="medico_id" id="medico_id" class="form-select" required>
                                 <option value="" disabled selected>Seleccione un médico</option>
                                 @foreach($medicos as $m)
                                     <option value="{{ $m->id }}">
                                         {{ $m->name }} {{ $m->Apellidos }}
-                                        @if($m->especialidad) — {{ $m->especialidad->Nombre_especialidad }} @endif
                                     </option>
                                 @endforeach
                             </select>
                         </div>
 
-                        {{-- Paciente: Admin ve select, Paciente ve su nombre fijo --}}
+                        {{-- Paso 2: Prestación (se carga según médico) --}}
                         <div class="mb-3">
-                            <label class="form-label">Paciente</label>
-                            @if(session('admin') === 1)
-                                <select name="paciente_id" class="form-select" required>
-                                    <option value="" disabled selected>Seleccione un paciente</option>
-                                    @foreach($pacientes as $p)
-                                        <option value="{{ $p->id }}">
-                                            {{ $p->name }} {{ $p->Apellidos }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            @else
-                                {{-- Paciente solo puede crear cita para sí mismo --}}
-                                <input type="hidden" name="paciente_id" value="{{ session('user_id') }}">
-                                @php
-                                    $pacienteActual = $pacientes->firstWhere('id', session('user_id'));
-                                @endphp
-                                <input type="text" class="form-control" disabled
-                                       value="{{ $pacienteActual ? $pacienteActual->name . ' ' . $pacienteActual->Apellidos : 'Paciente' }}">
-                            @endif
-                        </div>
-
-                        {{-- Fecha --}}
-                        <div class="mb-3">
-                            <label class="form-label">Fecha</label>
-                            <input type="date" id="fecha_cita" class="form-control" required>
-                            <input type="hidden" name="Fecha_y_hora" id="Fecha_y_hora">
-                        </div>
-
-                        {{-- Hora disponible (se carga por AJAX) --}}
-                        <div class="mb-3">
-                            <label class="form-label">Hora de atención</label>
-                            <select id="hora_atencion" class="form-select" disabled>
-                                <option value="">Seleccione médico y fecha primero</option>
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-clipboard2-pulse me-1"></i> Tipo de atención
+                            </label>
+                            <select name="prestacion_id" id="prestacion_id" class="form-select" required disabled>
+                                <option value="">Seleccione un médico primero</option>
                             </select>
                         </div>
 
-                        {{-- Estado fijo en Pendiente --}}
+                        {{-- Paciente fijo (el mismo paciente autenticado) --}}
+                        <input type="hidden" name="paciente_id" value="{{ session('user_id') }}">
                         <input type="hidden" name="estado" value="Pendiente">
+
+                        {{-- Paso 3: Fecha --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-calendar me-1"></i> Fecha
+                            </label>
+                            <input type="date" id="fecha_cita" class="form-control" required disabled>
+                            <small class="text-muted" id="diasDisponibles"></small>
+                            <input type="hidden" name="Fecha_y_hora" id="Fecha_y_hora">
+                        </div>
+
+                        {{-- Paso 4: Hora disponible (se carga por AJAX) --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-clock me-1"></i> Hora disponible
+                            </label>
+                            <select id="hora_atencion" class="form-select" disabled>
+                                <option value="">Seleccione prestación y fecha primero</option>
+                            </select>
+                        </div>
+
+                        {{-- Info de cupos --}}
+                        <div id="infoCupos" class="alert alert-info small d-none">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <span id="textoCupos"></span>
+                        </div>
 
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-success">Guardar</button>
+                        <button type="submit" class="btn btn-success" id="btnConfirmarCita" disabled>
+                            <i class="bi bi-check-circle me-1"></i> Confirmar hora
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+    @endif
 
 
-    {{-- ===== MODAL CONFIRMAR CANCELACIÓN ===== --}}
+    {{-- ===== MODAL CONFIRMAR CANCELACIÓN (Paciente) ===== --}}
+    @if(session('cargo') === 'Paciente')
     <div class="modal fade" id="modalConfirmarCancelacion" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title">Confirmar cancelación</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    ¿Estás seguro de que deseas <strong>cancelar y eliminar</strong> esta cita?
+                    ¿Estás seguro de que deseas <strong>cancelar</strong> esta cita?
+                    Esta acción no se puede deshacer.
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">No, mantener</button>
                     <button class="btn btn-danger" id="btnConfirmarCancelacion">Sí, cancelar cita</button>
                 </div>
             </div>
         </div>
     </div>
+    @endif
 
 
     {{-- ===== MODAL WHATSAPP ===== --}}
+    @if(session('admin') === 1)
     <div class="modal fade" id="modalWhatsapp" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">Enviar informe por WhatsApp</h5>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <label class="mb-1">Cita</label>
@@ -415,6 +425,7 @@
             </div>
         </div>
     </div>
+    @endif
 
 
     {{-- ===== MODAL PDF ===== --}}
@@ -423,7 +434,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title">Descargar informe PDF</h5>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <label class="mb-1">Cita</label>
@@ -446,12 +457,13 @@
 
 
     {{-- ===== MODAL EMAIL ===== --}}
+    @if(session('admin') === 1 || session('cargo') === 'Medico')
     <div class="modal fade" id="modalEmail" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">Enviar informe por correo</h5>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <label class="mb-1">Cita</label>
@@ -474,6 +486,7 @@
             </div>
         </div>
     </div>
+    @endif
 
 
     {{-- ===== MODAL INSTRUCCIONES ===== --}}
@@ -482,14 +495,14 @@
             <div class="modal-content">
                 <div class="modal-header bg-info text-white">
                     <h5 class="modal-title">📘 Instrucciones del sistema</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     @if(session('admin') === 1)
                         <h6 class="fw-bold text-primary">👑 Administrador</h6>
                         <ul>
                             <li>Gestionar médicos y pacientes</li>
-                            <li>Crear, editar y eliminar citas</li>
+                            <li>Editar y eliminar citas existentes</li>
                             <li>Asignar especialidades a médicos</li>
                             <li>Enviar informes por correo, WhatsApp o PDF</li>
                             <li>Ver y filtrar todas las citas del sistema</li>
@@ -498,16 +511,16 @@
                         <h6 class="fw-bold text-success">👨‍⚕️ Médico</h6>
                         <ul>
                             <li>Ver sus citas asignadas</li>
-                            <li>Editar el estado de una cita</li>
-                            <li>Crear informes médicos</li>
-                            <li>Consultar historial de pacientes</li>
+                            <li>Crear informes médicos para sus pacientes</li>
+                            <li>Ver el historial médico de sus pacientes</li>
                             <li>Enviar informes por correo o WhatsApp</li>
                         </ul>
                     @elseif(session('cargo') === 'Paciente')
                         <h6 class="fw-bold text-warning">🧑 Paciente</h6>
                         <ul>
                             <li>Ver sus propias citas médicas</li>
-                            <li>Solicitar nuevas citas</li>
+                            <li><strong>Solicitar nuevas horas médicas online</strong></li>
+                            <li><strong>Cancelar sus citas pendientes o programadas</strong></li>
                             <li>Descargar sus informes médicos en PDF</li>
                         </ul>
                     @else
@@ -530,15 +543,15 @@
 $(document).ready(function () {
 
     let citaCancelarId = null;
-    let modalConfirmar;
     let modalEditar;
     let modalCrear;
+    let modalConfirmarCancelacion;
 
     $.ajaxSetup({
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
     });
 
-    // ─── ELIMINAR ────────────────────────────────────────────────────────
+    // ─── SOLO ADMIN: Eliminar ────────────────────────────────────────────────
     $('.eliminar').on('click', function () {
         let citaId = $(this).data('id');
         if (!confirm('¿Seguro que deseas eliminar esta cita?')) return;
@@ -546,13 +559,9 @@ $(document).ready(function () {
         $.ajax({
             url: '/citas/' + citaId,
             type: 'POST',
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                _method: 'DELETE'
-            },
+            data: { _token: $('meta[name="csrf-token"]').attr('content'), _method: 'DELETE' },
             success: function () {
                 mostrarToast('Cita eliminada correctamente', 'success');
-                agregarNotificacion('Cita eliminada', 'danger');
                 setTimeout(() => location.reload(), 1500);
             },
             error: function () {
@@ -561,7 +570,7 @@ $(document).ready(function () {
         });
     });
 
-    // ─── EDITAR ──────────────────────────────────────────────────────────
+    // ─── SOLO ADMIN: Editar ──────────────────────────────────────────────────
     $('.editar').on('click', function () {
         let citaId = $(this).data('id');
 
@@ -575,8 +584,6 @@ $(document).ready(function () {
                 $('#paciente').val(cita.paciente.name + ' ' + cita.paciente.Apellidos);
                 $('#estado').val(cita.estado);
 
-                console.log('Fecha_y_hora recibida:', cita.Fecha_y_hora);
-
                 const fechaHora = cita.Fecha_y_hora ? cita.Fecha_y_hora.replace('T', ' ') : '';
                 const partes    = fechaHora.split(' ');
                 const fechaSola = partes[0] ?? '';
@@ -588,60 +595,41 @@ $(document).ready(function () {
                 modalEditar = new bootstrap.Modal(document.getElementById('exampledit'));
                 modalEditar.show();
 
-                fetch(`/citas/horas-disponibles?medico_id=${cita.medico_id}&fecha=${fechaSola}&excluir_cita=${cita.id}`)
+                fetch(`/citas/horas-disponibles?medico_id=${cita.medico_id}&fecha=${fechaSola}`)
                     .then(r => r.json())
                     .then(horas => {
                         $('#editar_hora').html('<option value="">Seleccione una hora</option>');
-
-                        const horasConActual = horas.includes(horaSola)
-                            ? horas
-                            : [horaSola, ...horas];
-
+                        const horasConActual = horas.includes(horaSola) ? horas : [horaSola, ...horas];
                         horasConActual.forEach(h => {
                             const selected = h === horaSola ? 'selected' : '';
                             $('#editar_hora').append(`<option value="${h}" ${selected}>${h}</option>`);
                         });
-
-                        $('#editar_hora').prop('disabled', false);
-                    })
-                    .catch(() => {
-                        $('#editar_hora').html('<option value="">Error al cargar horas</option>');
                         $('#editar_hora').prop('disabled', false);
                     });
             }
         });
     });
 
-    // ─── RECARGAR HORAS AL CAMBIAR FECHA EN EDITAR ───────────────────────
+    // ─── SOLO ADMIN: Recargar horas al cambiar fecha en editar ───────────────
     $(document).on('change', '#editar_fecha', function () {
-        const citaId   = $('#cita_id').val();
         const medicoId = $('#editar_medico_id').val();
         const fecha    = $(this).val();
-
         if (!medicoId || !fecha) return;
 
         $('#editar_hora').html('<option value="">Cargando...</option>').prop('disabled', true);
-
-        fetch(`/citas/horas-disponibles?medico_id=${medicoId}&fecha=${fecha}&excluir_cita=${citaId}`)
+        fetch(`/citas/horas-disponibles?medico_id=${medicoId}&fecha=${fecha}`)
             .then(r => r.json())
             .then(horas => {
                 $('#editar_hora').html('<option value="">Seleccione una hora</option>');
-                horas.forEach(h => {
-                    $('#editar_hora').append(`<option value="${h}">${h}</option>`);
-                });
-                $('#editar_hora').prop('disabled', false);
-            })
-            .catch(() => {
-                $('#editar_hora').html('<option value="">Error al cargar horas</option>');
+                horas.forEach(h => $('#editar_hora').append(`<option value="${h}">${h}</option>`));
                 $('#editar_hora').prop('disabled', false);
             });
     });
 
-    // ─── GUARDAR EDICIÓN ─────────────────────────────────────────────────
+    // ─── SOLO ADMIN: Guardar edición ─────────────────────────────────────────
     $('#formEditarCita').on('submit', function (e) {
         e.preventDefault();
         let citaId = $('#cita_id').val();
-
         const fechaVal = $('#editar_fecha').val();
         const horaVal  = $('#editar_hora').val();
         $('#fecha').val(fechaVal && horaVal ? `${fechaVal} ${horaVal}` : '');
@@ -657,7 +645,6 @@ $(document).ready(function () {
             },
             success: function () {
                 mostrarToast('Cita actualizada correctamente', 'success');
-                agregarNotificacion('Cita actualizada', 'info');
                 setTimeout(() => { modalEditar.hide(); location.reload(); }, 1500);
             },
             error: function (xhr) {
@@ -666,124 +653,252 @@ $(document).ready(function () {
         });
     });
 
-    // ─── CREAR CITA ──────────────────────────────────────────────────────
+    // ─── SOLO PACIENTE: Flujo para solicitar hora ────────────────────────────
+    @if(session('cargo') === 'Paciente')
+
+    // Mapeo de prestaciones por médico (se carga dinámicamente)
+    let prestacionesMedico = {};
+
+    // Abrir modal
     $('#btnAgregarCita').on('click', function () {
         modalCrear = new bootstrap.Modal(document.getElementById('modalCrear'));
+        // Reset
+        $('#medico_id').val('');
+        $('#prestacion_id').html('<option value="">Seleccione un médico primero</option>').prop('disabled', true);
+        $('#fecha_cita').val('').prop('disabled', true);
+        $('#hora_atencion').html('<option value="">Seleccione prestación y fecha primero</option>').prop('disabled', true);
+        $('#Fecha_y_hora').val('');
+        $('#infoCupos').addClass('d-none');
+        $('#btnConfirmarCita').prop('disabled', true);
+        $('#diasDisponibles').text('');
         modalCrear.show();
     });
 
+    // Paso 1: Al seleccionar médico → cargar sus prestaciones
+    $('#medico_id').on('change', function () {
+        const medicoId = $(this).val();
+        if (!medicoId) return;
+
+        // Reset pasos siguientes
+        $('#prestacion_id').html('<option value="">Cargando...</option>').prop('disabled', true);
+        $('#fecha_cita').val('').prop('disabled', true);
+        $('#hora_atencion').html('<option value="">...</option>').prop('disabled', true);
+        $('#btnConfirmarCita').prop('disabled', true);
+        $('#diasDisponibles').text('');
+
+        // Buscar prestaciones del médico via AJAX
+        // Usamos los datos de medicos que ya tienen medicoPrestaciones cargadas
+        const medicoData = @json($medicos->load('medicoPrestaciones.prestacion'));
+        const medico = medicoData.find(m => m.id == medicoId);
+
+        if (!medico || !medico.medico_prestaciones || medico.medico_prestaciones.length === 0) {
+            $('#prestacion_id').html('<option value="">Este médico no tiene prestaciones asignadas</option>');
+            return;
+        }
+
+        prestacionesMedico[medicoId] = medico.medico_prestaciones;
+
+        let opciones = '<option value="" disabled selected>Seleccione una atención</option>';
+        medico.medico_prestaciones.forEach(mp => {
+            opciones += `<option value="${mp.id_prestacion}"
+                data-mp-id="${mp.id}"
+                data-hora-entrada="${mp.hora_entrada}"
+                data-hora-salida="${mp.hora_salida}"
+                data-hora-atencion="${mp.hora_atencion}"
+                data-cant-online="${mp.cant_online}">
+                ${mp.prestacion.nombre}
+                (${mp.hora_entrada.substring(0,5)} - ${mp.hora_salida.substring(0,5)}, ${mp.hora_atencion} min/pac.)
+            </option>`;
+        });
+
+        $('#prestacion_id').html(opciones).prop('disabled', false);
+    });
+
+    // Paso 2: Al seleccionar prestación → habilitar fecha con restricción de días
+    $('#prestacion_id').on('change', function () {
+        const medicoId     = $('#medico_id').val();
+        const prestacionId = $(this).val();
+        if (!medicoId || !prestacionId) return;
+
+        // Reset
+        $('#fecha_cita').val('').prop('disabled', false);
+        $('#hora_atencion').html('<option value="">Seleccione una fecha</option>').prop('disabled', true);
+        $('#btnConfirmarCita').prop('disabled', true);
+
+        // Mostrar info de cupos
+        const $opt = $(this).find(':selected');
+        const cantOnline = $opt.data('cant-online');
+        $('#infoCupos').removeClass('d-none');
+        $('#textoCupos').text(`Cupos online disponibles por horario: ${cantOnline}`);
+
+        // Obtener días disponibles del médico para orientar al paciente
+        // Hacemos petición para ver el horario
+        const medicoData = @json($medicos);
+        const medico = medicoData.find(m => m.id == medicoId);
+        if (medico && medico.horario && medico.horario.dias_semana) {
+            const dias = medico.horario.dias_semana.map(d =>
+                d.charAt(0).toUpperCase() + d.slice(1)
+            ).join(', ');
+            $('#diasDisponibles').text(`Días de atención: ${dias}`);
+        }
+    });
+
+    // Paso 3: Al seleccionar fecha → cargar horas disponibles
+    $('#fecha_cita').on('change', function () {
+        const medicoId     = $('#medico_id').val();
+        const prestacionId = $('#prestacion_id').val();
+        const fecha        = $(this).val();
+
+        if (!medicoId || !prestacionId || !fecha) return;
+
+        $('#hora_atencion').html('<option value="">Cargando horas...</option>').prop('disabled', true);
+        $('#btnConfirmarCita').prop('disabled', true);
+
+        fetch(`/citas/horas-disponibles?medico_id=${medicoId}&prestacion_id=${prestacionId}&fecha=${fecha}`)
+            .then(r => r.json())
+            .then(horas => {
+                if (horas.length === 0) {
+                    $('#hora_atencion').html('<option value="">No hay horas disponibles para esta fecha</option>');
+                    return;
+                }
+                $('#hora_atencion').html('<option value="" disabled selected>Seleccione una hora</option>');
+                horas.forEach(hora => {
+                    $('#hora_atencion').append(`<option value="${hora}">${hora}</option>`);
+                });
+                $('#hora_atencion').prop('disabled', false);
+            })
+            .catch(() => {
+                $('#hora_atencion').html('<option value="">Error al cargar horas</option>');
+            });
+    });
+
+    // Paso 4: Al seleccionar hora → habilitar botón y setear campo oculto
+    $('#hora_atencion').on('change', function () {
+        const hora  = $(this).val();
+        const fecha = $('#fecha_cita').val();
+        if (hora && fecha) {
+            $('#Fecha_y_hora').val(`${fecha} ${hora}`);
+            $('#btnConfirmarCita').prop('disabled', false);
+        } else {
+            $('#btnConfirmarCita').prop('disabled', true);
+        }
+    });
+
+    // Enviar formulario
     $('#formCrearCita').on('submit', function (e) {
         e.preventDefault();
+
+        const $btn = $('#btnConfirmarCita');
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Guardando...');
 
         $.ajax({
             url: '/citas',
             type: 'POST',
             data: $(this).serialize(),
             success: function () {
-                mostrarToast('Cita creada correctamente', 'success');
-                agregarNotificacion('Nueva cita agendada', 'success');
+                mostrarToast('¡Hora solicitada correctamente!', 'success');
                 setTimeout(() => { modalCrear.hide(); location.reload(); }, 1500);
             },
             error: function (xhr) {
-                mostrarToast(xhr.responseJSON?.message ?? 'Error al crear la cita', 'danger');
+                mostrarToast(xhr.responseJSON?.message ?? 'Error al solicitar la hora', 'danger');
+                $btn.prop('disabled', false).html('<i class="bi bi-check-circle me-1"></i> Confirmar hora');
             }
         });
     });
 
-    // ─── CONFIRMAR CANCELACIÓN ───────────────────────────────────────────
-    $('#estado').on('change', function () {
-        if ($(this).val() === 'Cancelada') {
-            citaCancelarId = $('#cita_id').val();
-            modalConfirmar = new bootstrap.Modal(
-                document.getElementById('modalConfirmarCancelacion')
-            );
-            modalConfirmar.show();
-        }
+    // ─── SOLO PACIENTE: Cancelar cita ────────────────────────────────────────
+    $(document).on('click', '.btnCancelarPaciente', function () {
+        citaCancelarId = $(this).data('id');
+        modalConfirmarCancelacion = new bootstrap.Modal(
+            document.getElementById('modalConfirmarCancelacion')
+        );
+        modalConfirmarCancelacion.show();
     });
 
     $('#btnConfirmarCancelacion').on('click', function () {
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Cancelando...');
+
         $.ajax({
-            url: '/citas/' + citaCancelarId,
+            url: '/citas/' + citaCancelarId + '/cancelar',
             type: 'POST',
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                _method: 'DELETE'
-            },
+            data: { _token: $('meta[name="csrf-token"]').attr('content') },
             success: function () {
-                modalConfirmar.hide();
-                modalEditar.hide();
-                location.reload();
+                mostrarToast('Cita cancelada correctamente', 'warning');
+                setTimeout(() => { modalConfirmarCancelacion.hide(); location.reload(); }, 1500);
             },
-            error: function () {
-                alert('Error al cancelar la cita');
+            error: function (xhr) {
+                mostrarToast(xhr.responseJSON?.message ?? 'Error al cancelar la cita', 'danger');
+                $btn.prop('disabled', false).html('Sí, cancelar cita');
             }
         });
     });
 
-    // ─── FILTROS (solo Admin) ────────────────────────────────────────────
-    // Mapa de medicoId → activo (1 o 0) para filtrar por estado
+    @endif
+
+    // ─── FILTROS (solo Admin) ────────────────────────────────────────────────
+    @if(session('admin') === 1)
     const estadoMedicos = {
         @foreach($todosMedicos as $m)
         {{ $m->id }}: {{ $m->activo }},
         @endforeach
     };
- 
+
     function aplicarFiltrosCitas() {
-        const medicoSel  = $('#filtroMedico').val();
+        const medicoSel   = $('#filtroMedico').val();
         const pacienteSel = $('#filtroPaciente').val();
-        const estadoSel  = $('#filtroEstadoMedico').val();
- 
+        const estadoSel   = $('#filtroEstadoMedico').val();
+
         $('tbody tr').each(function () {
             const medicoFila   = $(this).data('medico')?.toString();
             const pacienteFila = $(this).data('paciente')?.toString();
             const activoMedico = estadoMedicos[medicoFila] !== undefined
-                ? estadoMedicos[medicoFila].toString()
-                : '1';
- 
+                ? estadoMedicos[medicoFila].toString() : '1';
+
             const ok =
-                (!medicoSel  || medicoFila   === medicoSel) &&
+                (!medicoSel   || medicoFila   === medicoSel) &&
                 (!pacienteSel || pacienteFila === pacienteSel) &&
-                (!estadoSel  || activoMedico  === estadoSel);
- 
+                (!estadoSel   || activoMedico  === estadoSel);
+
             $(this).toggle(ok);
         });
     }
- 
+
     $('#filtroMedico').on('change', function () {
         let medicoSeleccionado = $(this).val();
         let pacientes = new Map();
- 
+
         $('tbody tr').each(function () {
             let medicoFila    = $(this).data('medico').toString();
             let pacienteFila  = $(this).data('paciente').toString();
             let textoPaciente = $(this).data('paciente-texto');
- 
+
             if (!medicoSeleccionado || medicoFila === medicoSeleccionado) {
                 pacientes.set(pacienteFila, textoPaciente);
             }
         });
- 
+
         let selectPaciente = $('#filtroPaciente');
         selectPaciente.empty().append('<option value="">Todos los pacientes</option>');
         pacientes.forEach((nombre, id) => {
             selectPaciente.append(`<option value="${id}">${nombre}</option>`);
         });
         selectPaciente.prop('disabled', pacientes.size === 0).val('');
- 
         aplicarFiltrosCitas();
     });
- 
+
     $('#filtroPaciente').on('change', aplicarFiltrosCitas);
     $('#filtroEstadoMedico').on('change', aplicarFiltrosCitas);
- 
     $('#btnLimpiarFiltros').on('click', function () {
         $('#filtroMedico').val('');
         $('#filtroPaciente').val('').prop('disabled', true);
         $('#filtroEstadoMedico').val('');
         $('tbody tr').show();
     });
+    @endif
 
-    // ─── WHATSAPP ────────────────────────────────────────────────────────
+    // ─── WHATSAPP ────────────────────────────────────────────────────────────
+    @if(session('admin') === 1)
     let modalWhatsapp;
     let dataWhatsapp = {};
 
@@ -806,7 +921,6 @@ $(document).ready(function () {
 
     $('#btnEnviarWhatsapp').on('click', function () {
         if (!dataWhatsapp.id) { alert('Seleccione una cita'); return; }
-
         let telefono = $('#telefonoWhatsapp').val().replace(/\D/g, '');
         if (!telefono) { alert('Ingrese un número válido'); return; }
 
@@ -832,15 +946,14 @@ ${dataWhatsapp.tratamiento || 'No registrado'}
         $('#selectCitaWhatsapp').val('');
         dataWhatsapp = {};
     });
+    @endif
 
-    // ─── PDF ─────────────────────────────────────────────────────────────
+    // ─── PDF ─────────────────────────────────────────────────────────────────
     let modalPdf;
-
     $('#btnPdfGlobal').on('click', function () {
         modalPdf = new bootstrap.Modal(document.getElementById('modalPdf'));
         modalPdf.show();
     });
-
     $('#btnDescargarPdf').on('click', function () {
         let citaId = $('#selectCitaPdf').val();
         if (!citaId) { alert('Seleccione una cita'); return; }
@@ -849,34 +962,24 @@ ${dataWhatsapp.tratamiento || 'No registrado'}
         $('#selectCitaPdf').val('');
     });
 
-    // ─── EMAIL ───────────────────────────────────────────────────────────
+    // ─── EMAIL ───────────────────────────────────────────────────────────────
+    @if(session('admin') === 1 || session('cargo') === 'Medico')
     let modalEmail;
-
     $('#btnEmailGlobal').on('click', function () {
         modalEmail = new bootstrap.Modal(document.getElementById('modalEmail'));
         modalEmail.show();
     });
-
     $('#btnEnviarEmail').on('click', function () {
         let citaId = $('#selectCitaEmail').val();
         let correo = $('#correoEmail').val();
-
-        if (!citaId || !correo) {
-            alert('Seleccione una cita y escriba un correo');
-            return;
-        }
+        if (!citaId || !correo) { alert('Seleccione una cita y escriba un correo'); return; }
 
         $.ajax({
             url: '/informe/email',
             type: 'POST',
-            data: {
-                _token:   $('meta[name="csrf-token"]').attr('content'),
-                cita_id:  citaId,
-                correo:   correo
-            },
+            data: { _token: $('meta[name="csrf-token"]').attr('content'), cita_id: citaId, correo: correo },
             success: function () {
                 mostrarToast('Correo enviado correctamente', 'success');
-                agregarNotificacion('Informe enviado por correo', 'info');
                 modalEmail.hide();
             },
             error: function () {
@@ -884,58 +987,8 @@ ${dataWhatsapp.tratamiento || 'No registrado'}
             }
         });
     });
+    @endif
 
-});
-</script>
-
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-
-    const medico       = document.getElementById('medico_id');
-    const fecha        = document.getElementById('fecha_cita');
-    const horaSel      = document.getElementById('hora_atencion');
-    const fechaHoraInput = document.getElementById('Fecha_y_hora');
-
-    function cargarHoras() {
-        horaSel.innerHTML = '<option value="">Cargando...</option>';
-        horaSel.disabled  = true;
-
-        if (!medico.value || !fecha.value) {
-            horaSel.innerHTML = '<option value="">Seleccione médico y fecha</option>';
-            return;
-        }
-
-        fetch(`/citas/horas-disponibles?medico_id=${medico.value}&fecha=${fecha.value}`)
-            .then(r => r.json())
-            .then(horas => {
-                horaSel.innerHTML = '<option value="">Seleccione una hora</option>';
-
-                if (horas.length === 0) {
-                    horaSel.innerHTML = '<option value="">No hay horas disponibles</option>';
-                    return;
-                }
-
-                horas.forEach(hora => {
-                    const opt = document.createElement('option');
-                    opt.value = hora;
-                    opt.textContent = hora;
-                    horaSel.appendChild(opt);
-                });
-
-                horaSel.disabled = false;
-            })
-            .catch(() => {
-                horaSel.innerHTML = '<option value="">Error al cargar horas</option>';
-            });
-    }
-
-    medico.addEventListener('change', cargarHoras);
-    fecha.addEventListener('change', cargarHoras);
-
-    horaSel.addEventListener('change', () => {
-        fechaHoraInput.value = horaSel.value ? `${fecha.value} ${horaSel.value}` : '';
-    });
 });
 </script>
 

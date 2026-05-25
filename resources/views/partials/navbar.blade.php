@@ -82,7 +82,7 @@
                         <i class="bi bi-clock me-1"></i> Mi horario
                     </a>
                 </li>
-                
+
                 {{-- Tickets con badge para Médico --}}
                 <li class="nav-item">
                     <a class="nav-link text-white fw-semibold px-3" href="{{ route('tickets.index') }}">
@@ -98,17 +98,13 @@
                 </li>
 
             @elseif(session('cargo') === 'Paciente')
+                {{-- Paciente: solo ve sus citas y mensajes. SIN historial. --}}
                 <li class="nav-item">
                     <a class="nav-link text-white fw-semibold px-3" href="/citas">
                         <i class="bi bi-calendar-check me-1"></i> Mis citas
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white fw-semibold px-3"
-                       href="{{ route('historial.index', session('user_id')) }}">
-                        <i class="bi bi-clock-history me-1"></i> Mi historial
-                    </a>
-                </li>
+
                 {{-- Mensajes con badge para Paciente --}}
                 <li class="nav-item">
                     <a class="nav-link text-white fw-semibold px-3" href="{{ route('chat.index') }}">

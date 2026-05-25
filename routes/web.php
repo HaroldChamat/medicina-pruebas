@@ -38,7 +38,6 @@ Route::middleware(['cargo:Admin'])->group(function () {
     Route::put('/usuario/{id}', [UserController::class, 'update'])->name('User.update');
     Route::delete('/usuario/{id}', [UserController::class, 'destroy'])->name('User.destroy');
     Route::get('/Especialidad', [UserController::class, 'index_especialidad'])->name('Especialidad');
-    Route::post('/citas', [CitaController::class, 'store']);
     Route::get('/citas/{id}/edit', [CitaController::class, 'edit']);
     Route::put('/citas/{id}', [CitaController::class, 'update']);
     Route::delete('/citas/{id}', [CitaController::class, 'destroy']);
@@ -48,10 +47,13 @@ Route::middleware(['cargo:Admin'])->group(function () {
     // Tickets: acciones exclusivas de Admin
     Route::post('/tickets/{ticket}/tomar', [TicketController::class, 'tomar'])->name('tickets.tomar');
     Route::post('/tickets/{ticket}/cerrar', [TicketController::class, 'cerrar'])->name('tickets.cerrar');
-    
-    //Desactivar o activar usuarios
+
+    // Activar/desactivar usuarios
     Route::post('/usuario/{id}/desactivar', [UserController::class, 'desactivar'])->name('User.desactivar');
     Route::post('/usuario/{id}/activar',    [UserController::class, 'activar'])->name('User.activar');
+
+    // Historial: Admin puede ver el historial de cualquier paciente
+    Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
 });
 
 // Centros médicos
@@ -59,7 +61,7 @@ Route::get('/admin/centros-medicos', [\App\Http\Controllers\CentroMedicoControll
 Route::post('/admin/centros-medicos', [\App\Http\Controllers\CentroMedicoController::class, 'store'])->name('admin.centros.store');
 Route::put('/admin/centros-medicos/{id}', [\App\Http\Controllers\CentroMedicoController::class, 'update'])->name('admin.centros.update');
 Route::delete('/admin/centros-medicos/{id}', [\App\Http\Controllers\CentroMedicoController::class, 'destroy'])->name('admin.centros.destroy');
- 
+
 // Prestaciones
 Route::get('/admin/prestaciones', [\App\Http\Controllers\PrestacionController::class, 'index'])->name('admin.prestaciones');
 Route::post('/admin/prestaciones', [\App\Http\Controllers\PrestacionController::class, 'store'])->name('admin.prestaciones.store');
@@ -67,14 +69,24 @@ Route::put('/admin/prestaciones/{id}', [\App\Http\Controllers\PrestacionControll
 Route::delete('/admin/prestaciones/{id}', [\App\Http\Controllers\PrestacionController::class, 'destroy'])->name('admin.prestaciones.destroy');
 Route::post('/admin/prestaciones/asignar-medico', [\App\Http\Controllers\PrestacionController::class, 'asignarMedico'])->name('admin.prestaciones.asignar');
 Route::delete('/admin/prestaciones/medico/{id}', [\App\Http\Controllers\PrestacionController::class, 'eliminarDeMedico'])->name('admin.prestaciones.eliminarDeMedico');
- 
-// Horas disponibles para prestaciones (pública para todos los autenticados)
+
+// Horas disponibles para prestaciones (accesible para todos los autenticados)
 Route::get('/horas-disponibles-prestacion', [\App\Http\Controllers\PrestacionController::class, 'horasDisponibles']);
- 
+
 // ── Solo Médico ──────────────────────────────────────────────────────────────
 Route::middleware(['cargo:Medico'])->group(function () {
     // Tickets: solo el médico puede crear
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+
+    // Historial: el médico puede ver el historial de sus pacientes
+    Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
+});
+
+// ── Solo Paciente ────────────────────────────────────────────────────────────
+// El paciente es quien pide o cancela sus propias horas online
+Route::middleware(['cargo:Paciente'])->group(function () {
+    Route::post('/citas', [CitaController::class, 'store']);
+    Route::post('/citas/{id}/cancelar', [CitaController::class, 'cancelarPaciente'])->name('citas.cancelar');
 });
 
 // ── Admin y Médico ───────────────────────────────────────────────────────────
@@ -88,7 +100,7 @@ Route::middleware(['cargo:Admin,Medico'])->group(function () {
     Route::get('/Horario', [HorarioController::class, 'index'])->name('Horario');
     Route::resource('horario', HorarioController::class)->only(['store', 'update']);
 
-    // Tickets: ver lista, detalle, mensajes y archivos
+    // Tickets
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/mensaje', [TicketController::class, 'mensaje'])->name('tickets.mensaje');
@@ -100,18 +112,12 @@ Route::middleware(['cargo:Admin,Medico,Paciente'])->group(function () {
     Route::get('/Informe/{cita}/ver', [InformeController::class, 'show'])->name('informe.show');
 });
 
-// ── Admin y Paciente ────────────────────────────────────────────────────────
-Route::middleware(['cargo:Admin,Paciente'])->group(function () {
-    Route::post('/citas', [CitaController::class, 'store']);
-});
-
 // ── Todos los roles autenticados ─────────────────────────────────────────────
 Route::middleware(['cargo:Admin,Medico,Paciente'])->group(function () {
     Route::get('/citas', [CitaController::class, 'index'])->name('citas');
     Route::get('/citas/horas-disponibles', [CitaController::class, 'horasDisponibles']);
     Route::get('/informe/pdf/{cita}', [InformeController::class, 'pdf'])->name('informe.pdf');
     Route::post('/informe/email', [InformeController::class, 'enviarPorEmail']);
-    Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
 });
 
 // ── Chat: solo Admin y Paciente ──────────────────────────────────────────────
