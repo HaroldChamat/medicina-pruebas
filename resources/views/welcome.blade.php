@@ -429,21 +429,7 @@
                     </a>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
-                    <div class="icon-dash mx-auto mb-3 bg-warning-soft">
-                        <i class="bi bi-clock-history fs-3 text-warning"></i>
-                    </div>
-                    <h6 class="fw-bold">Mi historial médico</h6>
-                    <p class="text-muted small mb-3">
-                        Ver diagnósticos, tratamientos e informes PDF de tus citas finalizadas.
-                    </p>
-                    <a href="{{ route('historial.index', session('user_id')) }}"
-                       class="btn btn-outline-warning btn-sm rounded-pill">
-                        Ver historial
-                    </a>
-                </div>
-            </div>
+            
         </div>
     </div>
     @endif
