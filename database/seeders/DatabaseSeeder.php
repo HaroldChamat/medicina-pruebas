@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
      * 7. NotificacionSeeder  → necesita usuarios
      * 8. TicketSeeder        → necesita médicos, admin y citas
      * 9. MensajeSeeder       → necesita citas programadas/finalizadas
+     * 10. SuperadminSeeder   → necesita todo lo demas
      */
     public function run(): void
     {
@@ -38,6 +39,8 @@ class DatabaseSeeder extends Seeder
             NotificacionSeeder::class,
             TicketSeeder::class,
             MensajeSeeder::class,
+            SuperadminSeeder::class,
+            
         ]);
 
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -57,6 +60,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('   Paciente 4    → RUT: 20000004-4  / pass: paciente123');
         $this->command->info('   Paciente 5    → RUT: 20000005-5  / pass: paciente123');
         $this->command->info('   Paciente 6    → RUT: 20000006-6  / pass: paciente123');
+        $this->command->info('   SuperAdmin    → RUT: 99999999-9  / pass: superadmin123');
         $this->command->info('');
         $this->command->info('💡 Para resetear: php artisan migrate:fresh --seed');
         $this->command->info('');

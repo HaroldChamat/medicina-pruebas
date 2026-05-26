@@ -23,6 +23,7 @@ class SuperadminSeeder extends Seeder
 
         $this->command->info('✅ Superadmin creado:');
         $this->command->info('   → Email:  superadmin@clinica.cl');
+        $this->command->info('   → RUT:  99999999-9');
         $this->command->info('   → Pass:   superadmin123');
         $this->command->info('   → URL:    /superadmin/login');
     }
