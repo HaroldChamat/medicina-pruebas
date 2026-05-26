@@ -10,11 +10,11 @@ use App\Http\Controllers\InformeController;
 use App\Http\Controllers\HistorialController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\TicketController;
-use App\Http\Controllers\SuperadminLoginController;
-use App\Http\Controllers\SuperadminDashboardController;
-use App\Http\Controllers\SuperadminCentroController;
-use App\Http\Controllers\SuperadminAdminController;
-use App\Http\Controllers\SuperadminUsuarioController;
+use App\Http\Controllers\superadmin\SuperadminLoginController;
+use App\Http\Controllers\superadmin\SuperadminDashboardController;
+use App\Http\Controllers\superadmin\SuperadminCentroController;
+use App\Http\Controllers\superadmin\SuperadminAdminController;
+use App\Http\Controllers\superadmin\SuperadminUsuarioController;
 
 // ── Rutas públicas ──────────────────────────────────────────────────────────
 Route::get('/', function () {

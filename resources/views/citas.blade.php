@@ -11,7 +11,7 @@
                         <h5 class="mb-0">Filtros de búsqueda</h5>
                     </div>
                     <div class="row g-3 align-items-end">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold">👨‍⚕️ Médico</label>
                             <select id="filtroMedico" class="form-select">
                                 <option value="">Todos los médicos</option>
@@ -33,8 +33,13 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">🧑 Paciente</label>
-                            <select id="filtroPaciente" class="form-select" disabled>
+                            <select id="filtroPaciente" class="form-select">
                                 <option value="">Todos los pacientes</option>
+                                @foreach($pacientes as $paciente)
+                                    <option value="{{ $paciente->id }}">
+                                        {{ $paciente->name }} {{ $paciente->Apellidos }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -48,7 +53,7 @@
                                 <option value="0">Solo inactivos</option>
                             </select>
                         </div>
-                        <div class="col-md-2 d-grid">
+                        <div class="col-md-3 d-grid">
                             <button class="btn btn-outline-secondary" id="btnLimpiarFiltros">
                                 ❌ Limpiar
                             </button>
@@ -147,7 +152,6 @@
                                         @endif
                                     </td>
                                 @elseif(session('cargo') === 'Paciente')
-                                    {{-- Paciente solo puede cancelar citas pendientes o programadas --}}
                                     <td>
                                         @if(in_array($cita->estado, ['Pendiente', 'Programada']))
                                             <button class="btn btn-danger btn-sm btnCancelarPaciente"
@@ -208,7 +212,6 @@
                     </button>
                 </div>
 
-                {{-- Nueva cita: SOLO el Paciente puede pedir hora online --}}
                 @if(session('cargo') === 'Paciente')
                     <div class="text-end mt-4">
                         <button class="btn btn-success btn-lg" id="btnAgregarCita">
@@ -230,50 +233,91 @@
     {{-- ===== MODAL EDITAR (solo Admin) ===== --}}
     @if(session('admin') === 1)
     <div class="modal fade" id="exampledit" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Editar cita</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header" style="background-color: #0d3b6e;">
+                    <h5 class="modal-title text-white fw-bold">
+                        <i class="bi bi-pencil-square me-2"></i>Editar cita
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="formEditarCita">
                         @csrf
                         <input type="hidden" id="cita_id" name="id">
                         <input type="hidden" id="editar_medico_id">
+                        <input type="hidden" id="editar_prestacion_id">
 
-                        <div class="mb-2">
-                            <label class="form-label">Médico</label>
-                            <input id="medico" class="form-control" disabled>
+                        {{-- Médico (solo lectura) --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">
+                                <i class="bi bi-person-badge me-1"></i> Médico
+                            </label>
+                            <input id="medico" class="form-control" disabled
+                                   style="background:#f8f9fa; font-weight:600;">
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label">Paciente</label>
-                            <input id="paciente" class="form-control" disabled>
+
+                        {{-- Paciente (solo lectura) --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">
+                                <i class="bi bi-person me-1"></i> Paciente
+                            </label>
+                            <input id="paciente" class="form-control" disabled
+                                   style="background:#f8f9fa;">
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label">Fecha</label>
-                            <input id="editar_fecha" type="date" class="form-control">
+
+                        {{-- Prestación (solo lectura) --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">
+                                <i class="bi bi-clipboard2-pulse me-1"></i> Prestación
+                            </label>
+                            <input id="prestacion_nombre" class="form-control" disabled
+                                   style="background:#f8f9fa;">
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label">Hora de atención</label>
+
+                        {{-- Fecha --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-calendar me-1"></i> Fecha
+                            </label>
+                            <input id="editar_fecha" type="date" class="form-control" required>
+                            <div id="diasDisponiblesEditar" class="form-text text-muted"></div>
+                        </div>
+
+                        {{-- Hora disponible según prestación --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-clock me-1"></i> Hora de atención
+                            </label>
                             <select id="editar_hora" class="form-select" disabled>
                                 <option value="">Seleccione una fecha primero</option>
                             </select>
                             <input type="hidden" id="fecha" name="Fecha_y_hora">
+                            <div id="infoHorasEditar" class="form-text text-muted d-none">
+                                <i class="bi bi-info-circle me-1"></i>
+                                <span id="textoInfoHoras"></span>
+                            </div>
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label">Estado</label>
+
+                        {{-- Estado --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-flag me-1"></i> Estado
+                            </label>
                             <select id="estado" name="estado" class="form-select">
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Programada">Programada</option>
-                                <option value="Finalizada">Finalizada</option>
-                                <option value="Cancelada">Cancelada</option>
+                                <option value="Pendiente">⏳ Pendiente</option>
+                                <option value="Programada">📅 Programada</option>
+                                <option value="Finalizada">✅ Finalizada</option>
+                                <option value="Cancelada">❌ Cancelada</option>
                             </select>
                         </div>
 
-                        <div class="modal-footer px-0">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary rounded-pill"
+                                    data-bs-dismiss="modal">Cerrar</button>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                <i class="bi bi-save me-1"></i> Guardar
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -298,7 +342,6 @@
                     @csrf
                     <div class="modal-body">
 
-                        {{-- Paso 1: Médico --}}
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-person-badge me-1"></i> Médico
@@ -313,7 +356,6 @@
                             </select>
                         </div>
 
-                        {{-- Paso 2: Prestación (se carga según médico) --}}
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-clipboard2-pulse me-1"></i> Tipo de atención
@@ -323,11 +365,9 @@
                             </select>
                         </div>
 
-                        {{-- Paciente fijo (el mismo paciente autenticado) --}}
                         <input type="hidden" name="paciente_id" value="{{ session('user_id') }}">
                         <input type="hidden" name="estado" value="Pendiente">
 
-                        {{-- Paso 3: Fecha --}}
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-calendar me-1"></i> Fecha
@@ -337,7 +377,6 @@
                             <input type="hidden" name="Fecha_y_hora" id="Fecha_y_hora">
                         </div>
 
-                        {{-- Paso 4: Hora disponible (se carga por AJAX) --}}
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-clock me-1"></i> Hora disponible
@@ -347,7 +386,6 @@
                             </select>
                         </div>
 
-                        {{-- Info de cupos --}}
                         <div id="infoCupos" class="alert alert-info small d-none">
                             <i class="bi bi-info-circle me-1"></i>
                             <span id="textoCupos"></span>
@@ -578,52 +616,99 @@ $(document).ready(function () {
             url: '/citas/' + citaId + '/edit',
             type: 'GET',
             success: function (cita) {
+                // Datos básicos
                 $('#cita_id').val(cita.id);
                 $('#editar_medico_id').val(cita.medico_id);
+                $('#editar_prestacion_id').val(cita.prestacion_id);
                 $('#medico').val(cita.medico.name + ' ' + cita.medico.Apellidos);
                 $('#paciente').val(cita.paciente.name + ' ' + cita.paciente.Apellidos);
+
+                // Nombre de la prestación
+                if (cita.prestacion) {
+                    $('#prestacion_nombre').val(cita.prestacion.nombre);
+                } else {
+                    $('#prestacion_nombre').val('Sin prestación asignada');
+                }
+
                 $('#estado').val(cita.estado);
 
+                // Fecha y hora actuales
                 const fechaHora = cita.Fecha_y_hora ? cita.Fecha_y_hora.replace('T', ' ') : '';
                 const partes    = fechaHora.split(' ');
                 const fechaSola = partes[0] ?? '';
                 const horaSola  = partes[1] ? partes[1].substring(0, 5) : '00:00';
 
                 $('#editar_fecha').val(fechaSola);
-                $('#editar_hora').html('<option value="">Cargando...</option>').prop('disabled', true);
+                $('#editar_hora').html('<option value="">Cargando horas...</option>').prop('disabled', true);
+                $('#infoHorasEditar').addClass('d-none');
 
                 modalEditar = new bootstrap.Modal(document.getElementById('exampledit'));
                 modalEditar.show();
 
-                fetch(`/citas/horas-disponibles?medico_id=${cita.medico_id}&fecha=${fechaSola}`)
-                    .then(r => r.json())
-                    .then(horas => {
-                        $('#editar_hora').html('<option value="">Seleccione una hora</option>');
-                        const horasConActual = horas.includes(horaSola) ? horas : [horaSola, ...horas];
-                        horasConActual.forEach(h => {
-                            const selected = h === horaSola ? 'selected' : '';
-                            $('#editar_hora').append(`<option value="${h}" ${selected}>${h}</option>`);
-                        });
-                        $('#editar_hora').prop('disabled', false);
-                    });
+                // Cargar horas disponibles según prestación
+                cargarHorasEditar(cita.medico_id, cita.prestacion_id, fechaSola, horaSola);
             }
         });
     });
 
-    // ─── SOLO ADMIN: Recargar horas al cambiar fecha en editar ───────────────
-    $(document).on('change', '#editar_fecha', function () {
-        const medicoId = $('#editar_medico_id').val();
-        const fecha    = $(this).val();
-        if (!medicoId || !fecha) return;
+    // ─── Función para cargar horas en el modal editar ────────────────────────
+    function cargarHorasEditar(medicoId, prestacionId, fecha, horaActual) {
+        if (!medicoId || !fecha) {
+            $('#editar_hora').html('<option value="">Sin fecha seleccionada</option>').prop('disabled', true);
+            return;
+        }
 
-        $('#editar_hora').html('<option value="">Cargando...</option>').prop('disabled', true);
-        fetch(`/citas/horas-disponibles?medico_id=${medicoId}&fecha=${fecha}`)
+        let url = `/citas/horas-disponibles?medico_id=${medicoId}&fecha=${fecha}`;
+        if (prestacionId) {
+            url += `&prestacion_id=${prestacionId}`;
+        }
+
+        fetch(url)
             .then(r => r.json())
             .then(horas => {
                 $('#editar_hora').html('<option value="">Seleccione una hora</option>');
-                horas.forEach(h => $('#editar_hora').append(`<option value="${h}">${h}</option>`));
+
+                // Incluir la hora actual si no está en las disponibles
+                const horasConActual = (horas.includes(horaActual) || !horaActual)
+                    ? horas
+                    : [horaActual, ...horas];
+
+                if (horasConActual.length === 0) {
+                    $('#editar_hora').html('<option value="">No hay horas disponibles</option>');
+                    $('#infoHorasEditar').removeClass('d-none');
+                    $('#textoInfoHoras').text('No hay slots disponibles para esta fecha.');
+                    return;
+                }
+
+                horasConActual.forEach(h => {
+                    const selected = h === horaActual ? 'selected' : '';
+                    const esActual = h === horaActual ? ' (actual)' : '';
+                    $('#editar_hora').append(
+                        `<option value="${h}" ${selected}>${h}${esActual}</option>`
+                    );
+                });
+
                 $('#editar_hora').prop('disabled', false);
+
+                if (horas.length > 0) {
+                    $('#infoHorasEditar').removeClass('d-none');
+                    $('#textoInfoHoras').text(`${horas.length} hora(s) disponible(s) según la prestación.`);
+                }
+            })
+            .catch(() => {
+                $('#editar_hora').html('<option value="">Error al cargar horas</option>');
             });
+    }
+
+    // ─── SOLO ADMIN: Recargar horas al cambiar fecha en editar ───────────────
+    $(document).on('change', '#editar_fecha', function () {
+        const medicoId     = $('#editar_medico_id').val();
+        const prestacionId = $('#editar_prestacion_id').val();
+        const fecha        = $(this).val();
+        if (!medicoId || !fecha) return;
+
+        $('#editar_hora').html('<option value="">Cargando...</option>').prop('disabled', true);
+        cargarHorasEditar(medicoId, prestacionId, fecha, null);
     });
 
     // ─── SOLO ADMIN: Guardar edición ─────────────────────────────────────────
@@ -656,13 +741,10 @@ $(document).ready(function () {
     // ─── SOLO PACIENTE: Flujo para solicitar hora ────────────────────────────
     @if(session('cargo') === 'Paciente')
 
-    // Mapeo de prestaciones por médico (se carga dinámicamente)
     let prestacionesMedico = {};
 
-    // Abrir modal
     $('#btnAgregarCita').on('click', function () {
         modalCrear = new bootstrap.Modal(document.getElementById('modalCrear'));
-        // Reset
         $('#medico_id').val('');
         $('#prestacion_id').html('<option value="">Seleccione un médico primero</option>').prop('disabled', true);
         $('#fecha_cita').val('').prop('disabled', true);
@@ -674,20 +756,16 @@ $(document).ready(function () {
         modalCrear.show();
     });
 
-    // Paso 1: Al seleccionar médico → cargar sus prestaciones
     $('#medico_id').on('change', function () {
         const medicoId = $(this).val();
         if (!medicoId) return;
 
-        // Reset pasos siguientes
         $('#prestacion_id').html('<option value="">Cargando...</option>').prop('disabled', true);
         $('#fecha_cita').val('').prop('disabled', true);
         $('#hora_atencion').html('<option value="">...</option>').prop('disabled', true);
         $('#btnConfirmarCita').prop('disabled', true);
         $('#diasDisponibles').text('');
 
-        // Buscar prestaciones del médico via AJAX
-        // Usamos los datos de medicos que ya tienen medicoPrestaciones cargadas
         const medicoData = @json($medicos->load('medicoPrestaciones.prestacion'));
         const medico = medicoData.find(m => m.id == medicoId);
 
@@ -714,25 +792,20 @@ $(document).ready(function () {
         $('#prestacion_id').html(opciones).prop('disabled', false);
     });
 
-    // Paso 2: Al seleccionar prestación → habilitar fecha con restricción de días
     $('#prestacion_id').on('change', function () {
         const medicoId     = $('#medico_id').val();
         const prestacionId = $(this).val();
         if (!medicoId || !prestacionId) return;
 
-        // Reset
         $('#fecha_cita').val('').prop('disabled', false);
         $('#hora_atencion').html('<option value="">Seleccione una fecha</option>').prop('disabled', true);
         $('#btnConfirmarCita').prop('disabled', true);
 
-        // Mostrar info de cupos
         const $opt = $(this).find(':selected');
         const cantOnline = $opt.data('cant-online');
         $('#infoCupos').removeClass('d-none');
         $('#textoCupos').text(`Cupos online disponibles por horario: ${cantOnline}`);
 
-        // Obtener días disponibles del médico para orientar al paciente
-        // Hacemos petición para ver el horario
         const medicoData = @json($medicos);
         const medico = medicoData.find(m => m.id == medicoId);
         if (medico && medico.horario && medico.horario.dias_semana) {
@@ -743,7 +816,6 @@ $(document).ready(function () {
         }
     });
 
-    // Paso 3: Al seleccionar fecha → cargar horas disponibles
     $('#fecha_cita').on('change', function () {
         const medicoId     = $('#medico_id').val();
         const prestacionId = $('#prestacion_id').val();
@@ -772,7 +844,6 @@ $(document).ready(function () {
             });
     });
 
-    // Paso 4: Al seleccionar hora → habilitar botón y setear campo oculto
     $('#hora_atencion').on('change', function () {
         const hora  = $(this).val();
         const fecha = $('#fecha_cita').val();
@@ -784,7 +855,6 @@ $(document).ready(function () {
         }
     });
 
-    // Enviar formulario
     $('#formCrearCita').on('submit', function (e) {
         e.preventDefault();
 
@@ -806,7 +876,6 @@ $(document).ready(function () {
         });
     });
 
-    // ─── SOLO PACIENTE: Cancelar cita ────────────────────────────────────────
     $(document).on('click', '.btnCancelarPaciente', function () {
         citaCancelarId = $(this).data('id');
         modalConfirmarCancelacion = new bootstrap.Modal(
@@ -864,34 +933,15 @@ $(document).ready(function () {
         });
     }
 
-    $('#filtroMedico').on('change', function () {
-        let medicoSeleccionado = $(this).val();
-        let pacientes = new Map();
-
-        $('tbody tr').each(function () {
-            let medicoFila    = $(this).data('medico').toString();
-            let pacienteFila  = $(this).data('paciente').toString();
-            let textoPaciente = $(this).data('paciente-texto');
-
-            if (!medicoSeleccionado || medicoFila === medicoSeleccionado) {
-                pacientes.set(pacienteFila, textoPaciente);
-            }
-        });
-
-        let selectPaciente = $('#filtroPaciente');
-        selectPaciente.empty().append('<option value="">Todos los pacientes</option>');
-        pacientes.forEach((nombre, id) => {
-            selectPaciente.append(`<option value="${id}">${nombre}</option>`);
-        });
-        selectPaciente.prop('disabled', pacientes.size === 0).val('');
-        aplicarFiltrosCitas();
-    });
-
+    // El filtro de médico ya NO controla al de paciente —
+    // ambos funcionan de forma independiente
+    $('#filtroMedico').on('change', aplicarFiltrosCitas);
     $('#filtroPaciente').on('change', aplicarFiltrosCitas);
     $('#filtroEstadoMedico').on('change', aplicarFiltrosCitas);
+
     $('#btnLimpiarFiltros').on('click', function () {
         $('#filtroMedico').val('');
-        $('#filtroPaciente').val('').prop('disabled', true);
+        $('#filtroPaciente').val('');
         $('#filtroEstadoMedico').val('');
         $('tbody tr').show();
     });
