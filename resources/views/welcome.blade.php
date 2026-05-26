@@ -93,7 +93,25 @@
                                 <a href="/C_usuario" class="fw-bold text-decoration-none"
                                 style="color: #0d3b6e;">Crear cuenta</a>
                             </p>
+                            {{-- Separador --}}
+                            <div class="d-flex align-items-center gap-2 my-3">
+                                <hr class="flex-grow-1 m-0" style="border-color: rgba(0,0,0,0.1);">
+                                <span class="text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px; white-space: nowrap;">ACCESO ADMINISTRATIVO</span>
+                                <hr class="flex-grow-1 m-0" style="border-color: rgba(0,0,0,0.1);">
+                            </div>
 
+                            {{-- Botón Admin / SuperAdmin --}}
+                            <a href="{{ route('superadmin.login') }}"
+                            class="btn w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                            style="background: rgba(212,160,23,0.08);
+                                    border: 1px solid rgba(212,160,23,0.45);
+                                    color: #8a6300;
+                                    border-radius: 8px;
+                                    font-size: 0.85rem;
+                                    padding: 10px;">
+                                <i class="bi bi-gem"></i>
+                                Ingresar como Administrador / SuperAdmin
+                            </a>
                         </div>
                     </div>
 

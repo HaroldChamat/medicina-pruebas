@@ -13,6 +13,21 @@ use App\Helpers\CorreoHelper;
 
 class CitaController extends Controller
 {
+    /**
+     * Devuelve los IDs de médicos del mismo centro que el admin actual.
+     * Si no hay centro en sesión, devuelve array vacío (sin acceso cruzado).
+     */
+    private function medicoIdsDeCentro(): array
+    {
+        $centroId = session('centro_medico_id');
+        if (!$centroId) return [];
+
+        return User::where('centro_medico_id', $centroId)
+            ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
+            ->pluck('id')
+            ->toArray();
+    }
+
     public function index()
     {
         $userId  = session('user_id');
@@ -20,35 +35,46 @@ class CitaController extends Controller
         $perPage = 10;
 
         if ($cargo === 'Admin') {
+            // Admin solo ve citas de los médicos de su centro
+            $medicoIds = $this->medicoIdsDeCentro();
+
             $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento', 'prestacion'])
+                ->whereIn('medico_id', $medicoIds)
                 ->orderBy('Fecha_y_hora', 'asc')
                 ->paginate($perPage);
+
         } elseif ($cargo === 'Medico') {
             $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento', 'prestacion'])
                 ->where('medico_id', $userId)
                 ->orderBy('Fecha_y_hora', 'asc')
                 ->paginate($perPage);
+
         } elseif ($cargo === 'Paciente') {
             $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento', 'prestacion'])
                 ->where('paciente_id', $userId)
                 ->orderBy('Fecha_y_hora', 'asc')
                 ->paginate($perPage);
+
         } else {
             $Citas = collect();
         }
 
-        // Solo médicos ACTIVOS para el select de nueva cita
-        $medicos = User::whereHas('cargo', fn($q) =>
-            $q->where('Nombre_cargo', 'Medico')
-        )->where('activo', 1)->with('medicoPrestaciones.prestacion')->get();
+        // Médicos ACTIVOS del mismo centro para el select de nueva cita
+        $centroId = session('centro_medico_id');
 
-        $pacientes = User::whereHas('cargo', fn($q) =>
-            $q->where('Nombre_cargo', 'Paciente')
-        )->get();
+        $medicos = User::whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
+            ->where('activo', 1)
+            ->when($centroId, fn($q) => $q->where('centro_medico_id', $centroId))
+            ->with('medicoPrestaciones.prestacion')
+            ->get();
 
-        $todosMedicos = User::whereHas('cargo', fn($q) =>
-            $q->where('Nombre_cargo', 'Medico')
-        )->get();
+        $pacientes = User::whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Paciente'))
+            ->when($centroId, fn($q) => $q->where('centro_medico_id', $centroId))
+            ->get();
+
+        $todosMedicos = User::whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
+            ->when($centroId, fn($q) => $q->where('centro_medico_id', $centroId))
+            ->get();
 
         return view('citas', compact('Citas', 'medicos', 'pacientes', 'todosMedicos'));
     }
@@ -59,6 +85,15 @@ class CitaController extends Controller
         if (!$cita) {
             return response()->json(['error' => 'Cita no encontrada'], 404);
         }
+
+        // Admin solo puede editar citas de su centro
+        if (session('cargo') === 'Admin') {
+            $medicoIds = $this->medicoIdsDeCentro();
+            if (!in_array($cita->medico_id, $medicoIds)) {
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+        }
+
         return response()->json($cita);
     }
 
@@ -66,7 +101,6 @@ class CitaController extends Controller
     {
         $cargo = session('cargo');
 
-        // Solo Admin puede eliminar; paciente solo puede cancelar las suyas
         if (session('admin') !== 1 && $cargo !== 'Paciente') {
             abort(403, 'No autorizado');
         }
@@ -76,7 +110,14 @@ class CitaController extends Controller
             return redirect()->route('citas')->with('error', 'Cita no encontrada.');
         }
 
-        // Paciente solo puede eliminar sus propias citas
+        // Admin: solo puede eliminar citas de su centro
+        if ($cargo === 'Admin') {
+            $medicoIds = $this->medicoIdsDeCentro();
+            if (!in_array($cita->medico_id, $medicoIds)) {
+                abort(403, 'No autorizado');
+            }
+        }
+
         if ($cargo === 'Paciente' && $cita->paciente_id !== session('user_id')) {
             abort(403, 'No autorizado');
         }
@@ -87,7 +128,6 @@ class CitaController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Solo Admin puede editar estado/fecha
         if (session('admin') !== 1) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
@@ -97,7 +137,14 @@ class CitaController extends Controller
             'estado'       => 'required|in:Pendiente,Programada,Finalizada,Cancelada',
         ]);
 
-        $cita      = Cita::findOrFail($id);
+        $cita = Cita::findOrFail($id);
+
+        // Admin: solo puede editar citas de su centro
+        $medicoIds = $this->medicoIdsDeCentro();
+        if (!empty($medicoIds) && !in_array($cita->medico_id, $medicoIds)) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
         $medico    = $cita->medico;
         $fechaHora = Carbon::parse($request->Fecha_y_hora);
 
@@ -119,18 +166,10 @@ class CitaController extends Controller
         $nombreMedico    = $cita->medico->name . ' ' . $cita->medico->Apellidos;
 
         if ($request->estado === 'Programada' && $estadoAnterior !== 'Programada') {
-            NotificacionHelper::enviar(
-                $cita, $cita->medico_id,
-                'Cita programada',
-                "Tu cita del {$fechaFormateada} ha sido programada exitosamente",
-                'success', $urlCita
-            );
-            NotificacionHelper::enviar(
-                $cita, $cita->paciente_id,
-                'Cita programada',
-                "Tu cita con el Dr. {$nombreMedico} del {$fechaFormateada} fue programada exitosamente",
-                'success', $urlCita
-            );
+            NotificacionHelper::enviar($cita, $cita->medico_id, 'Cita programada',
+                "Tu cita del {$fechaFormateada} ha sido programada exitosamente", 'success', $urlCita);
+            NotificacionHelper::enviar($cita, $cita->paciente_id, 'Cita programada',
+                "Tu cita con el Dr. {$nombreMedico} del {$fechaFormateada} fue programada exitosamente", 'success', $urlCita);
             CorreoHelper::citaProgramada($cita);
         }
 
@@ -141,15 +180,11 @@ class CitaController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    /**
-     * Crear cita — SOLO Admin o el propio Paciente.
-     */
     public function store(Request $request)
     {
         $cargo  = session('cargo');
         $userId = session('user_id');
 
-        // Médicos no pueden crear citas
         if ($cargo === 'Medico') {
             return response()->json(['message' => 'No autorizado'], 403);
         }
@@ -162,9 +197,16 @@ class CitaController extends Controller
             'estado'         => 'required|in:Pendiente,Programada,Finalizada,Cancelada',
         ]);
 
-        // Paciente solo puede crear citas para sí mismo
         if ($cargo === 'Paciente' && (int) $request->paciente_id !== (int) $userId) {
             return response()->json(['message' => 'Solo puedes crear citas para ti mismo'], 403);
+        }
+
+        // Admin: verificar que el médico sea de su centro
+        if ($cargo === 'Admin') {
+            $medicoIds = $this->medicoIdsDeCentro();
+            if (!in_array((int) $request->medico_id, $medicoIds)) {
+                return response()->json(['message' => 'El médico no pertenece a tu centro'], 403);
+            }
         }
 
         $medico = User::with('horario', 'cargo')->findOrFail($request->medico_id);
@@ -180,7 +222,6 @@ class CitaController extends Controller
             return response()->json(['message' => $error], 422);
         }
 
-        // Validar disponibilidad según prestación y cant_online
         $mp = MedicoPrestacion::where('id_medico', $request->medico_id)
             ->where('id_prestacion', $request->prestacion_id)
             ->first();
@@ -196,7 +237,6 @@ class CitaController extends Controller
             return response()->json(['message' => 'Hora fuera del rango de la prestación'], 422);
         }
 
-        // Verificar cupo online
         $tomadas = Cita::where('medico_id', $request->medico_id)
             ->where('prestacion_id', $request->prestacion_id)
             ->where('Fecha_y_hora', $fechaHora->format('Y-m-d H:i:s'))
@@ -220,27 +260,21 @@ class CitaController extends Controller
         $nombrePaciente  = $cita->paciente->name . ' ' . $cita->paciente->Apellidos;
         $nombreMedico    = $cita->medico->name . ' ' . $cita->medico->Apellidos;
 
-        NotificacionHelper::enviar(
-            $cita, $cita->medico_id,
-            'Nueva cita asignada',
-            "Se agendó una cita con {$nombrePaciente} el {$fechaFormateada}",
-            'info', $urlCita
-        );
+        NotificacionHelper::enviar($cita, $cita->medico_id, 'Nueva cita asignada',
+            "Se agendó una cita con {$nombrePaciente} el {$fechaFormateada}", 'info', $urlCita);
 
         foreach (NotificacionHelper::getAdmins() as $admin) {
-            NotificacionHelper::enviar(
-                $cita, $admin->id,
-                'Nueva cita creada',
-                "El Dr. {$nombreMedico} tiene una cita con {$nombrePaciente} el {$fechaFormateada}",
-                'info', $urlCita
-            );
+            // Solo notificar admins del mismo centro
+            if ($admin->centro_medico_id === $cita->medico->centro_medico_id) {
+                NotificacionHelper::enviar($cita, $admin->id, 'Nueva cita creada',
+                    "El Dr. {$nombreMedico} tiene una cita con {$nombrePaciente} el {$fechaFormateada}", 'info', $urlCita);
+            }
         }
 
         CorreoHelper::citaCreada($cita);
         return response()->json(['success' => true]);
     }
 
-    // ── Cancelar cita — Solo el paciente dueño de la cita ────────────────
     public function cancelarPaciente($id)
     {
         if (session('cargo') !== 'Paciente') {
@@ -289,20 +323,13 @@ class CitaController extends Controller
             return "La hora seleccionada está fuera del horario de atención ({$horario->hora_inicio} - {$horario->hora_fin})";
         }
 
-        if (
-            $horario->almuerzo_inicio &&
-            $hora >= $horario->almuerzo_inicio &&
-            $hora < $horario->almuerzo_fin
-        ) {
+        if ($horario->almuerzo_inicio && $hora >= $horario->almuerzo_inicio && $hora < $horario->almuerzo_fin) {
             return "El médico se encuentra en horario de almuerzo ({$horario->almuerzo_inicio} - {$horario->almuerzo_fin})";
         }
 
         return null;
     }
 
-    /**
-     * Horas disponibles para una prestación específica de un médico en una fecha.
-     */
     public function horasDisponibles(Request $request)
     {
         $request->validate([
@@ -314,9 +341,7 @@ class CitaController extends Controller
         $medico  = User::with('horario')->findOrFail($request->medico_id);
         $horario = $medico->horario;
 
-        if (!$horario) {
-            return response()->json([]);
-        }
+        if (!$horario) return response()->json([]);
 
         $diasMap = [
             1 => 'lunes', 2 => 'martes', 3 => 'miercoles',
@@ -325,22 +350,17 @@ class CitaController extends Controller
         $fecha     = Carbon::parse($request->fecha);
         $diaSemana = $diasMap[$fecha->dayOfWeek];
 
-        if (!in_array($diaSemana, $horario->dias_semana ?? [])) {
-            return response()->json([]);
-        }
+        if (!in_array($diaSemana, $horario->dias_semana ?? [])) return response()->json([]);
 
         $mp = MedicoPrestacion::where('id_medico', $request->medico_id)
             ->where('id_prestacion', $request->prestacion_id)
             ->first();
 
-        if (!$mp) {
-            return response()->json([]);
-        }
+        if (!$mp) return response()->json([]);
 
         $slots   = $mp->slotsDisponibles();
         $cantMax = (int) $mp->cant_online;
 
-        // Citas ya tomadas ese día para esa prestación
         $tomadas = Cita::where('medico_id', $request->medico_id)
             ->where('prestacion_id', $request->prestacion_id)
             ->whereDate('Fecha_y_hora', $request->fecha)

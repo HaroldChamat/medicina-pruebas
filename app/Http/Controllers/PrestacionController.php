@@ -14,9 +14,13 @@ class PrestacionController extends Controller
     {
         if (session('admin') !== 1) abort(403);
 
+        $centroId = session('centro_medico_id');
+
         $prestaciones = Prestacion::all();
-        $medicos      = User::whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
+
+        $medicos = User::whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
             ->where('activo', 1)
+            ->when($centroId, fn($q) => $q->where('centro_medico_id', $centroId))
             ->with(['medicoPrestaciones.prestacion'])
             ->get();
 
@@ -87,18 +91,26 @@ class PrestacionController extends Controller
             'prestaciones.*.cantidad_horas'=> 'required|integer|min:1|max:24',
             'prestaciones.*.hora_atencion' => 'required|integer|min:5|max:120',
             'prestaciones.*.hora_entrada'  => 'required|date_format:H:i',
-            'prestaciones.*.hora_salida'   => 'required|date_format:H:i|after:prestaciones.*.hora_entrada',
+            'prestaciones.*.hora_salida'   => 'required|date_format:H:i',
             'prestaciones.*.cant_online'   => 'required|integer|min:0',
         ]);
 
-        $medicoId = $request->medico_id;
+        $centroId = session('centro_medico_id');
 
-        // Eliminar asignaciones previas y reemplazar
-        MedicoPrestacion::where('id_medico', $medicoId)->delete();
+        $medico = User::findOrFail($request->medico_id);
+
+        // Seguridad: médico debe pertenecer al mismo centro
+        if ($centroId && $medico->centro_medico_id != $centroId) {
+            return response()->json([
+                'message' => 'No autorizado. El médico no pertenece a tu centro.'
+            ], 403);
+        }
+
+        MedicoPrestacion::where('id_medico', $medico->id)->delete();
 
         foreach ($request->prestaciones as $p) {
             MedicoPrestacion::create([
-                'id_medico'      => $medicoId,
+                'id_medico'      => $medico->id,
                 'id_prestacion'  => $p['id_prestacion'],
                 'cantidad_horas' => $p['cantidad_horas'],
                 'hora_atencion'  => $p['hora_atencion'],

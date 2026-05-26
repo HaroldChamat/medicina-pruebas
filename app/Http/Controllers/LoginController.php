@@ -41,16 +41,17 @@ class LoginController extends Controller
             return back()->withErrors(['rut' => 'Usuario sin cargo asignado']);
         }
 
-        // Verificar contraseña
         if (!Hash::check($request->password, $user->password)) {
             return back()->withErrors(['rut' => 'Contraseña incorrecta']);
         }
 
+        // ── NUEVO: guardar centro_medico_id en sesión ─────────────────────
         session()->put([
-            'user_id' => $user->id,
-            'cargo'   => $user->cargo->Nombre_cargo,
-            'admin'   => (int) ($user->admin ?? 0),
-            'nombre'  => $user->name,
+            'user_id'          => $user->id,
+            'cargo'            => $user->cargo->Nombre_cargo,
+            'admin'            => (int) ($user->admin ?? 0),
+            'nombre'           => $user->name,
+            'centro_medico_id' => $user->centro_medico_id, // ← clave nueva
         ]);
 
         return redirect('/login');

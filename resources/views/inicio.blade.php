@@ -28,6 +28,9 @@
             <a href="{{ route('welcome') }}" class="btn btn-light fw-bold rounded-pill px-4">
                 <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
             </a>
+            <a href="{{ route('superadmin.login') }}" class="btn btn-outline-warning btn-sm rounded-pill ms-2 opacity-75">
+                <i class="bi bi-shield-lock me-1"></i> Admin
+            </a>
         </div>
     </div>
 </nav>
