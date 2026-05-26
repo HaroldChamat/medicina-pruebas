@@ -10,6 +10,11 @@ use App\Http\Controllers\InformeController;
 use App\Http\Controllers\HistorialController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\SuperadminLoginController;
+use App\Http\Controllers\SuperadminDashboardController;
+use App\Http\Controllers\SuperadminCentroController;
+use App\Http\Controllers\SuperadminAdminController;
+use App\Http\Controllers\SuperadminUsuarioController;
 
 // ── Rutas públicas ──────────────────────────────────────────────────────────
 Route::get('/', function () {
@@ -69,6 +74,72 @@ Route::put('/admin/prestaciones/{id}', [\App\Http\Controllers\PrestacionControll
 Route::delete('/admin/prestaciones/{id}', [\App\Http\Controllers\PrestacionController::class, 'destroy'])->name('admin.prestaciones.destroy');
 Route::post('/admin/prestaciones/asignar-medico', [\App\Http\Controllers\PrestacionController::class, 'asignarMedico'])->name('admin.prestaciones.asignar');
 Route::delete('/admin/prestaciones/medico/{id}', [\App\Http\Controllers\PrestacionController::class, 'eliminarDeMedico'])->name('admin.prestaciones.eliminarDeMedico');
+
+// ── Rutas públicas del superadmin (login) ────────────────────────────────────
+Route::prefix('superadmin')->name('superadmin.')->group(function () {
+ 
+    Route::get('/login', [SuperadminLoginController::class, 'showLogin'])
+        ->name('login');
+ 
+    Route::post('/login', [SuperadminLoginController::class, 'login'])
+        ->name('login.post');
+ 
+    Route::get('/logout', [SuperadminLoginController::class, 'logout'])
+        ->name('logout');
+ 
+    // ── Rutas protegidas (requieren sesión superadmin) ──────────────────────
+    Route::middleware('superadmin')->group(function () {
+ 
+        // Dashboard
+        Route::get('/dashboard', [SuperadminDashboardController::class, 'index'])
+            ->name('dashboard');
+ 
+        // ── Centros Médicos ─────────────────────────────────────────────────
+        Route::get('/centros', [SuperadminCentroController::class, 'index'])
+            ->name('centros.index');
+ 
+        Route::post('/centros', [SuperadminCentroController::class, 'store'])
+            ->name('centros.store');
+ 
+        Route::put('/centros/{id}', [SuperadminCentroController::class, 'update'])
+            ->name('centros.update');
+ 
+        // Preview antes de eliminar (paso 1)
+        Route::get('/centros/{id}/preview-destroy', [SuperadminCentroController::class, 'previewDestroy'])
+            ->name('centros.preview-destroy');
+ 
+        // Eliminación real (paso 2, requiere confirm=CONFIRMAR)
+        Route::delete('/centros/{id}', [SuperadminCentroController::class, 'destroy'])
+            ->name('centros.destroy');
+ 
+        // Vista detallada de un centro
+        Route::get('/centros/{id}', [SuperadminCentroController::class, 'show'])
+            ->name('centros.show');
+ 
+        // ── Administradores ─────────────────────────────────────────────────
+        Route::get('/admins', [SuperadminAdminController::class, 'index'])
+            ->name('admins.index');
+ 
+        Route::post('/admins', [SuperadminAdminController::class, 'store'])
+            ->name('admins.store');
+ 
+        Route::put('/admins/{id}', [SuperadminAdminController::class, 'update'])
+            ->name('admins.update');
+ 
+        Route::delete('/admins/{id}', [SuperadminAdminController::class, 'destroy'])
+            ->name('admins.destroy');
+ 
+        // ── Usuarios (médicos, pacientes, citas) ────────────────────────────
+        Route::get('/usuarios/medicos', [SuperadminUsuarioController::class, 'medicos'])
+            ->name('usuarios.medicos');
+ 
+        Route::get('/usuarios/pacientes', [SuperadminUsuarioController::class, 'pacientes'])
+            ->name('usuarios.pacientes');
+ 
+        Route::get('/usuarios/citas', [SuperadminUsuarioController::class, 'citas'])
+            ->name('usuarios.citas');
+    });
+});
 
 // Horas disponibles para prestaciones (accesible para todos los autenticados)
 Route::get('/horas-disponibles-prestacion', [\App\Http\Controllers\PrestacionController::class, 'horasDisponibles']);

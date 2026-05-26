@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'cargo' => \App\Http\Middleware\CargoMiddleware::class,
+            'superadmin' => \App\Http\Middleware\SuperadminMiddleware::class,
 
         ]);
     })
