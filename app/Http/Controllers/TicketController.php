@@ -18,11 +18,13 @@ class TicketController extends Controller
     // ── Lista de tickets ──────────────────────────────────────────────────
     public function index()
     {
-        $userId = session('user_id');
-        $cargo  = session('cargo');
-        $esAdmin = session('admin') === 1;
+        $userId   = session('user_id');
+        $cargo    = session('cargo');
+        $esAdmin  = session('admin') === 1;
+        $centroId = session('centro_medico_id');
 
         if ($cargo === 'Medico') {
+
             $tickets = Ticket::with(['admin', 'cita'])
                 ->where('medico_id', $userId)
                 ->orderByRaw("FIELD(estado, 'en_progreso', 'abierto', 'cerrado')")
@@ -30,16 +32,24 @@ class TicketController extends Controller
                 ->get();
 
         } elseif ($esAdmin) {
+
             $tickets = Ticket::with(['medico', 'cita', 'admin'])
+                ->whereHas('medico', function ($q) use ($centroId) {
+                    if ($centroId) {
+                        $q->where('centro_medico_id', $centroId);
+                    }
+                })
                 ->orderByRaw("FIELD(estado, 'abierto', 'en_progreso', 'cerrado')")
                 ->orderByRaw("FIELD(prioridad, 'alta', 'media', 'baja')")
                 ->get();
+
         } else {
             abort(403);
         }
 
-        // Citas del médico para el formulario de crear ticket
+        // Citas del médico para crear ticket
         $citasMedico = collect();
+
         if ($cargo === 'Medico') {
             $citasMedico = Cita::with('paciente')
                 ->where('medico_id', $userId)
@@ -75,22 +85,32 @@ class TicketController extends Controller
         // Subir archivos
         if ($request->hasFile('archivos')) {
             foreach ($request->file('archivos') as $archivo) {
+
                 $ruta = $archivo->store('ticket_archivos', 'public');
+
                 TicketArchivo::create([
-                    'ticket_id'      => $ticket->id,
-                    'emisor_id'      => session('user_id'),
-                    'nombre_original'=> $archivo->getClientOriginalName(),
-                    'ruta'           => $ruta,
-                    'mime_type'      => $archivo->getMimeType(),
+                    'ticket_id'       => $ticket->id,
+                    'emisor_id'       => session('user_id'),
+                    'nombre_original' => $archivo->getClientOriginalName(),
+                    'ruta'            => $ruta,
+                    'mime_type'       => $archivo->getMimeType(),
                 ]);
             }
         }
 
-        // Notificar a todos los admins
+        // Notificar admins del mismo centro
         $ticket->load('medico');
         $citaDummy = new \App\Models\Cita();
 
         foreach (NotificacionHelper::getAdmins() as $admin) {
+
+            if (
+                $ticket->medico &&
+                $admin->centro_medico_id != $ticket->medico->centro_medico_id
+            ) {
+                continue;
+            }
+
             NotificacionHelper::enviar(
                 $citaDummy,
                 $admin->id,
@@ -102,21 +122,43 @@ class TicketController extends Controller
         }
 
         CorreoHelper::ticketNuevo($ticket);
-        return response()->json(['ok' => true, 'ticket_id' => $ticket->id]);
+
+        return response()->json([
+            'ok' => true,
+            'ticket_id' => $ticket->id
+        ]);
     }
 
     // ── Ver ticket ────────────────────────────────────────────────────────
     public function show(Ticket $ticket)
     {
-        $userId  = session('user_id');
-        $cargo   = session('cargo');
-        $esAdmin = session('admin') === 1;
+        $userId   = session('user_id');
+        $cargo    = session('cargo');
+        $esAdmin  = session('admin') === 1;
+        $centroId = session('centro_medico_id');
 
-        if ($cargo === 'Medico' && $ticket->medico_id !== $userId) abort(403);
+        $ticket->load([
+            'medico',
+            'admin',
+            'cita.paciente',
+            'mensajes.emisor',
+            'archivos.emisor'
+        ]);
 
-        $ticket->load(['medico', 'admin', 'cita.paciente', 'mensajes.emisor', 'archivos.emisor']);
+        if ($cargo === 'Medico' && $ticket->medico_id !== $userId) {
+            abort(403);
+        }
 
-        // Marcar mensajes como leídos
+        if (
+            $esAdmin &&
+            $centroId &&
+            $ticket->medico &&
+            $ticket->medico->centro_medico_id != $centroId
+        ) {
+            abort(403);
+        }
+
+        // Marcar leídos
         TicketMensaje::where('ticket_id', $ticket->id)
             ->where('emisor_id', '!=', $userId)
             ->where('leido', false)
@@ -125,24 +167,37 @@ class TicketController extends Controller
         return view('TicketDetalle', compact('ticket'));
     }
 
-    // ── Tomar ticket (Admin) ──────────────────────────────────────────────
+    // ── Tomar ticket ──────────────────────────────────────────────────────
     public function tomar(Ticket $ticket)
     {
         if (session('admin') !== 1) abort(403);
 
+        $centroId = session('centro_medico_id');
+
+        $ticket->load('medico');
+
+        if (
+            $centroId &&
+            $ticket->medico &&
+            $ticket->medico->centro_medico_id != $centroId
+        ) {
+            abort(403);
+        }
+
         if ($ticket->admin_id) {
-            return response()->json(['error' => 'Este ticket ya fue tomado por otro administrador'], 422);
+            return response()->json([
+                'error' => 'Este ticket ya fue tomado por otro administrador'
+            ], 422);
         }
 
         $ticket->update([
-            'admin_id'   => session('user_id'),
-            'estado'     => 'en_progreso',
-            'tomado_en'  => Carbon::now(),
+            'admin_id'  => session('user_id'),
+            'estado'    => 'en_progreso',
+            'tomado_en' => Carbon::now(),
         ]);
 
         $ticket->load('admin', 'medico');
 
-        // Notificar al médico
         NotificacionHelper::enviar(
             new \App\Models\Cita(),
             $ticket->medico_id,
@@ -152,13 +207,20 @@ class TicketController extends Controller
             '/tickets/' . $ticket->id
         );
 
-        // Broadcast a todos los admins para que se desactive el botón
-        broadcast(new \App\Events\NuevoTicketMensaje(
-            new TicketMensaje(['ticket_id' => $ticket->id, 'emisor_id' => session('user_id'), 'contenido' => '__tomado__'])
+        broadcast(new NuevoTicketMensaje(
+            new TicketMensaje([
+                'ticket_id' => $ticket->id,
+                'emisor_id' => session('user_id'),
+                'contenido' => '__tomado__'
+            ])
         ));
 
         CorreoHelper::ticketTomado($ticket);
-        return response()->json(['ok' => true, 'admin' => $ticket->admin->name . ' ' . $ticket->admin->Apellidos]);
+
+        return response()->json([
+            'ok' => true,
+            'admin' => $ticket->admin->name . ' ' . $ticket->admin->Apellidos
+        ]);
     }
 
     // ── Cerrar ticket ─────────────────────────────────────────────────────
@@ -167,7 +229,21 @@ class TicketController extends Controller
         if (session('admin') !== 1) abort(403);
         if ($ticket->admin_id !== session('user_id')) abort(403);
 
-        $ticket->update(['estado' => 'cerrado']);
+        $centroId = session('centro_medico_id');
+
+        $ticket->load('medico');
+
+        if (
+            $centroId &&
+            $ticket->medico &&
+            $ticket->medico->centro_medico_id != $centroId
+        ) {
+            abort(403);
+        }
+
+        $ticket->update([
+            'estado' => 'cerrado'
+        ]);
 
         NotificacionHelper::enviar(
             new \App\Models\Cita(),
@@ -179,23 +255,46 @@ class TicketController extends Controller
         );
 
         CorreoHelper::ticketCerrado($ticket);
+
         return response()->json(['ok' => true]);
     }
 
-    // ── Enviar mensaje en ticket ──────────────────────────────────────────
+    // ── Mensaje ───────────────────────────────────────────────────────────
     public function mensaje(Request $request, Ticket $ticket)
     {
-        $userId  = session('user_id');
-        $cargo   = session('cargo');
-        $esAdmin = session('admin') === 1;
+        $userId   = session('user_id');
+        $cargo    = session('cargo');
+        $esAdmin  = session('admin') === 1;
+        $centroId = session('centro_medico_id');
 
-        if ($cargo === 'Medico' && $ticket->medico_id !== $userId) abort(403);
-        if ($esAdmin && $ticket->admin_id !== $userId) abort(403);
-        if ($ticket->estado === 'cerrado') {
-            return response()->json(['error' => 'El ticket está cerrado'], 403);
+        $ticket->load('medico');
+
+        if ($cargo === 'Medico' && $ticket->medico_id !== $userId) {
+            abort(403);
         }
 
-        $request->validate(['contenido' => 'required|string|max:2000']);
+        if (
+            $esAdmin &&
+            $centroId &&
+            $ticket->medico &&
+            $ticket->medico->centro_medico_id != $centroId
+        ) {
+            abort(403);
+        }
+
+        if ($esAdmin && $ticket->admin_id !== $userId) {
+            abort(403);
+        }
+
+        if ($ticket->estado === 'cerrado') {
+            return response()->json([
+                'error' => 'El ticket está cerrado'
+            ], 403);
+        }
+
+        $request->validate([
+            'contenido' => 'required|string|max:2000'
+        ]);
 
         $msg = TicketMensaje::create([
             'ticket_id' => $ticket->id,
@@ -204,11 +303,15 @@ class TicketController extends Controller
         ]);
 
         $msg->load('emisor');
+
         broadcast(new NuevoTicketMensaje($msg))->toOthers();
 
-        // Notificar al otro
-        $receptorId = $esAdmin ? $ticket->medico_id : $ticket->admin_id;
+        $receptorId = $esAdmin
+            ? $ticket->medico_id
+            : $ticket->admin_id;
+
         if ($receptorId) {
+
             NotificacionHelper::enviar(
                 new \App\Models\Cita(),
                 $receptorId,
@@ -217,17 +320,16 @@ class TicketController extends Controller
                 'info',
                 '/tickets/' . $ticket->id
             );
-        }
 
-        if ($receptorId) {
-            $receptor = \App\Models\User::find($receptorId);
+            $receptor = User::find($receptorId);
+
             if ($receptor) {
                 CorreoHelper::nuevoMensajeTicket($msg, $receptor);
             }
         }
-        
+
         return response()->json([
-            'ok'      => true,
+            'ok' => true,
             'mensaje' => [
                 'id'        => $msg->id,
                 'contenido' => $msg->contenido,
@@ -238,17 +340,45 @@ class TicketController extends Controller
         ]);
     }
 
-    // ── Subir archivo en conversación ─────────────────────────────────────
+    // ── Subir archivo ─────────────────────────────────────────────────────
     public function subirArchivo(Request $request, Ticket $ticket)
     {
-        $request->validate(['archivo' => 'required|file|max:5120']);
+        $userId   = session('user_id');
+        $cargo    = session('cargo');
+        $esAdmin  = session('admin') === 1;
+        $centroId = session('centro_medico_id');
+
+        $ticket->load('medico');
+
+        if ($cargo === 'Medico' && $ticket->medico_id !== $userId) {
+            abort(403);
+        }
+
+        if (
+            $esAdmin &&
+            $centroId &&
+            $ticket->medico &&
+            $ticket->medico->centro_medico_id != $centroId
+        ) {
+            abort(403);
+        }
+
+        if ($ticket->estado === 'cerrado') {
+            return response()->json([
+                'error' => 'El ticket está cerrado'
+            ], 403);
+        }
+
+        $request->validate([
+            'archivo' => 'required|file|max:5120'
+        ]);
 
         $archivo = $request->file('archivo');
         $ruta    = $archivo->store('ticket_archivos', 'public');
 
         TicketArchivo::create([
             'ticket_id'       => $ticket->id,
-            'emisor_id'       => session('user_id'),
+            'emisor_id'       => $userId,
             'nombre_original' => $archivo->getClientOriginalName(),
             'ruta'            => $ruta,
             'mime_type'       => $archivo->getMimeType(),
