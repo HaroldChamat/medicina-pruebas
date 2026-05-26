@@ -1,30 +1,43 @@
 @extends('superadmin.superadmin')
 
-@section('page-title', 'Centros Médicos')
+@section('page-title', 'Administradores')
 @section('breadcrumb')
-    <li class="breadcrumb-item active" style="color:#64748b;">Centros Médicos</li>
+    <li class="breadcrumb-item active" style="color:#64748b;">Administradores</li>
 @endsection
 
 @section('content')
 
 <div class="d-flex align-items-center justify-content-between mb-4">
-    <div>
-        <p class="text-muted mb-0 small">Gestión global de todos los centros médicos del sistema.</p>
-    </div>
+    <p class="text-muted mb-0 small">Gestión de administradores de centros médicos.</p>
     <button class="btn fw-semibold rounded-pill px-4"
             style="background:var(--sa-gold); color:#000; border:none;"
-            id="btnNuevoCentro">
-        <i class="bi bi-plus-circle me-2"></i>Nuevo Centro
+            id="btnNuevoAdmin">
+        <i class="bi bi-plus-circle me-2"></i>Nuevo Administrador
     </button>
 </div>
 
-{{-- Filtro --}}
+{{-- Filtros --}}
 <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
     <div class="card-body py-3 px-4">
         <div class="row g-2 align-items-center">
-            <div class="col-md-6">
-                <input type="text" id="buscadorCentros" class="form-control form-control-sm"
-                       placeholder="🔍 Buscar por nombre o dirección...">
+            <div class="col-md-5">
+                <input type="text" id="buscadorAdmins" class="form-control form-control-sm"
+                       placeholder="🔍 Buscar por nombre, email o RUT...">
+            </div>
+            <div class="col-md-4">
+                <select id="filtroCentro" class="form-select form-select-sm">
+                    <option value="">Todos los centros</option>
+                    @foreach($centros as $centro)
+                        <option value="{{ $centro->id }}" {{ $filtroCentro == $centro->id ? 'selected' : '' }}>
+                            {{ $centro->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-sm btn-outline-secondary w-100 rounded-pill" id="btnLimpiarFiltros">
+                    <i class="bi bi-x-circle me-1"></i> Limpiar
+                </button>
             </div>
         </div>
     </div>
@@ -33,69 +46,72 @@
 {{-- Tabla --}}
 <div class="card border-0 shadow-sm" style="border-radius:14px; overflow:hidden;">
     <div class="table-responsive">
-        <table class="table sa-table mb-0" id="tablaCentros">
+        <table class="table sa-table mb-0" id="tablaAdmins">
             <thead>
                 <tr>
                     <th>#</th>
                     <th>Nombre</th>
-                    <th>Dirección</th>
-                    <th class="text-center">Admins</th>
-                    <th class="text-center">Médicos</th>
-                    <th class="text-center">Pacientes</th>
-                    <th class="text-center">Creado</th>
+                    <th>Email</th>
+                    <th>RUT</th>
+                    <th>Teléfono</th>
+                    <th>Centro Médico</th>
                     <th class="text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($centros as $centro)
-                    <tr data-busqueda="{{ strtolower($centro->nombre . ' ' . $centro->direccion) }}">
+                @forelse($admins as $admin)
+                    <tr data-busqueda="{{ strtolower($admin->name . ' ' . $admin->Apellidos . ' ' . $admin->email . ' ' . $admin->Rut) }}">
                         <td class="text-muted">{{ $loop->iteration }}</td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                <div style="width:10px; height:10px; border-radius:50%; background:var(--sa-gold); flex-shrink:0;"></div>
-                                <span class="fw-semibold">{{ $centro->nombre }}</span>
+                                <div style="width:34px; height:34px; border-radius:50%;
+                                     background:linear-gradient(135deg,#0d3b6e,#1a6fa8);
+                                     display:flex; align-items:center; justify-content:center;
+                                     color:#fff; font-weight:700; font-size:.85rem; flex-shrink:0;">
+                                    {{ strtoupper(substr($admin->name, 0, 1)) }}
+                                </div>
+                                <div>
+                                    <div class="fw-semibold">{{ $admin->name }} {{ $admin->Apellidos }}</div>
+                                </div>
                             </div>
                         </td>
-                        <td class="text-muted small">{{ $centro->direccion }}</td>
-                        <td class="text-center">
-                            <span class="badge rounded-pill" style="background:rgba(99,102,241,.15); color:#6366f1;">
-                                {{ $centro->total_admins }}
+                        <td class="text-muted small">{{ $admin->email }}</td>
+                        <td>
+                            <span class="badge rounded-pill"
+                                  style="background:rgba(212,160,23,.1); color:var(--sa-gold); font-size:.72rem;">
+                                {{ $admin->Rut }}
                             </span>
                         </td>
-                        <td class="text-center">
-                            <span class="badge rounded-pill" style="background:rgba(16,185,129,.15); color:#10b981;">
-                                {{ $centro->total_medicos }}
-                            </span>
-                        </td>
-                        <td class="text-center">
-                            <span class="badge rounded-pill" style="background:rgba(59,130,246,.15); color:#3b82f6;">
-                                {{ $centro->total_pacientes }}
-                            </span>
-                        </td>
-                        <td class="text-center text-muted small">
-                            {{ $centro->created_at->format('d/m/Y') }}
+                        <td class="text-muted small">{{ $admin->telefono ?? '—' }}</td>
+                        <td>
+                            @if($admin->centroMedico)
+                                <span class="badge rounded-pill"
+                                      style="background:rgba(16,185,129,.12); color:#10b981;">
+                                    <i class="bi bi-building me-1"></i>{{ $admin->centroMedico->nombre }}
+                                </span>
+                            @else
+                                <span class="text-muted small fst-italic">Sin centro</span>
+                            @endif
                         </td>
                         <td class="text-center">
                             <div class="d-flex justify-content-center gap-1">
-                                <a href="{{ route('superadmin.centros.show', $centro->id) }}"
-                                   class="btn btn-sm rounded-pill"
-                                   title="Ver detalle"
-                                   style="background:rgba(212,160,23,.1); color:var(--sa-gold); border:1px solid rgba(212,160,23,.2);">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <button class="btn btn-sm rounded-pill btnEditarCentro"
+                                <button class="btn btn-sm rounded-pill btnEditarAdmin"
                                         title="Editar"
                                         style="background:rgba(99,102,241,.1); color:#6366f1; border:1px solid rgba(99,102,241,.2);"
-                                        data-id="{{ $centro->id }}"
-                                        data-nombre="{{ $centro->nombre }}"
-                                        data-direccion="{{ $centro->direccion }}">
+                                        data-id="{{ $admin->id }}"
+                                        data-name="{{ $admin->name }}"
+                                        data-apellidos="{{ $admin->Apellidos }}"
+                                        data-email="{{ $admin->email }}"
+                                        data-rut="{{ $admin->Rut }}"
+                                        data-telefono="{{ $admin->telefono }}"
+                                        data-centro="{{ $admin->centro_medico_id }}">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-sm rounded-pill btnEliminarCentro"
+                                <button class="btn btn-sm rounded-pill btnEliminarAdmin"
                                         title="Eliminar"
                                         style="background:rgba(239,68,68,.1); color:#ef4444; border:1px solid rgba(239,68,68,.2);"
-                                        data-id="{{ $centro->id }}"
-                                        data-nombre="{{ $centro->nombre }}">
+                                        data-id="{{ $admin->id }}"
+                                        data-name="{{ $admin->name }} {{ $admin->Apellidos }}">
                                     <i class="bi bi-trash3"></i>
                                 </button>
                             </div>
@@ -103,9 +119,9 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-5">
-                            <i class="bi bi-building-slash fs-2 d-block mb-2"></i>
-                            No hay centros médicos registrados.
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="bi bi-shield-slash fs-2 d-block mb-2"></i>
+                            No hay administradores registrados.
                         </td>
                     </tr>
                 @endforelse
@@ -115,33 +131,65 @@
 </div>
 
 {{-- ═══ MODAL CREAR/EDITAR ═══ --}}
-<div class="modal fade" id="modalCentro" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="modalAdmin" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content" style="border-radius:16px; border:1px solid var(--sa-border); background:#111827;">
             <div class="modal-header" style="background:var(--sa-navy); border-bottom:1px solid var(--sa-border); border-radius:16px 16px 0 0;">
-                <h5 class="modal-title text-white fw-bold" id="tituloCentro">
-                    <i class="bi bi-building me-2" style="color:var(--sa-gold);"></i>Nuevo Centro
+                <h5 class="modal-title text-white fw-bold" id="tituloAdmin">
+                    <i class="bi bi-shield-plus me-2" style="color:var(--sa-gold);"></i>Nuevo Administrador
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4" style="background:#111827;">
-                <input type="hidden" id="centro_id">
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold" style="color:#8aa0bc;">Nombre del centro</label>
-                    <input type="text" id="centro_nombre" class="form-control"
-                           placeholder="Ej: Clínica Central Norte"
-                           style="background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#fff; border-radius:10px;">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold" style="color:#8aa0bc;">Dirección</label>
-                    <input type="text" id="centro_direccion" class="form-control"
-                           placeholder="Ej: Av. Principal 1234, Santiago"
-                           style="background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#fff; border-radius:10px;">
+                <input type="hidden" id="admin_id">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold" style="color:#8aa0bc;">Nombre</label>
+                        <input type="text" id="admin_name" class="form-control sa-input" placeholder="Nombre">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold" style="color:#8aa0bc;">Apellidos</label>
+                        <input type="text" id="admin_apellidos" class="form-control sa-input" placeholder="Apellidos">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold" style="color:#8aa0bc;">Email</label>
+                        <input type="email" id="admin_email" class="form-control sa-input" placeholder="admin@clinica.cl">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold" style="color:#8aa0bc;">RUT</label>
+                        <input type="text" id="admin_rut" class="form-control sa-input" placeholder="12345678-9" maxlength="12">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold" style="color:#8aa0bc;">Teléfono</label>
+                        <input type="text" id="admin_telefono" class="form-control sa-input" placeholder="+56912345678">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold" style="color:#8aa0bc;">Centro Médico</label>
+                        <select id="admin_centro" class="form-select sa-input">
+                            <option value="">Seleccione un centro</option>
+                            @foreach($centros as $centro)
+                                <option value="{{ $centro->id }}">{{ $centro->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold" style="color:#8aa0bc;">
+                            Contraseña <span id="passHint" class="opacity-50 fw-normal">(dejar vacío para no cambiar)</span>
+                        </label>
+                        <div class="input-group">
+                            <input type="password" id="admin_password" class="form-control sa-input"
+                                   placeholder="Mínimo 6 caracteres">
+                            <button class="btn" type="button" id="toggleAdminPass"
+                                    style="border:1px solid rgba(255,255,255,.12); color:rgba(255,255,255,.4); background:rgba(255,255,255,.04);">
+                                <i class="bi bi-eye-fill" id="adminEye"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer" style="background:#111827; border-top:1px solid var(--sa-border); border-radius:0 0 16px 16px;">
                 <button class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                <button class="btn fw-semibold rounded-pill px-4" id="btnGuardarCentro"
+                <button class="btn fw-semibold rounded-pill px-4" id="btnGuardarAdmin"
                         style="background:var(--sa-gold); color:#000; border:none;">
                     <i class="bi bi-save me-1"></i> Guardar
                 </button>
@@ -150,86 +198,54 @@
     </div>
 </div>
 
-{{-- ═══ MODAL ELIMINAR PASO 1 ═══ --}}
-<div class="modal fade" id="modalEliminarP1" tabindex="-1">
+{{-- ═══ MODAL ELIMINAR ═══ --}}
+<div class="modal fade" id="modalEliminarAdmin" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius:16px; border:1px solid rgba(239,68,68,.3); background:#111827;">
             <div class="modal-header" style="background:rgba(239,68,68,.15); border-bottom:1px solid rgba(239,68,68,.2); border-radius:16px 16px 0 0;">
                 <h5 class="modal-title fw-bold" style="color:#ef4444;">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Primera confirmación
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Administrador
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
             </div>
             <div class="modal-body p-4" style="background:#111827;">
-                <p class="text-white mb-3">
-                    Estás a punto de eliminar el centro
-                    <strong style="color:var(--sa-gold);" id="p1NombreCentro"></strong>.
+                <p class="text-white">
+                    ¿Eliminar al administrador <strong style="color:var(--sa-gold);" id="nombreAdminEliminar"></strong>?
                 </p>
-
-                <div class="rounded-3 p-3 mb-3" style="background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.2);">
-                    <p class="small fw-bold mb-2" style="color:#ef4444;">
-                        <i class="bi bi-exclamation-circle me-1"></i>Se eliminará permanentemente:
-                    </p>
-                    <ul class="small mb-0" style="color:#fca5a5;" id="p1ListaAfectados">
-                        <li>Cargando...</li>
-                    </ul>
-                </div>
-
                 <div class="rounded-3 p-3" style="background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.2);">
                     <p class="small mb-0" style="color:#fbbf24;">
-                        <i class="bi bi-shield-exclamation me-1"></i>
-                        <strong>Esta acción es irreversible.</strong>
-                        No podrás recuperar ninguno de estos datos.
+                        <i class="bi bi-info-circle me-1"></i>
+                        El administrador perderá acceso al sistema. Los médicos, pacientes y datos
+                        que creó permanecerán en el sistema asociados a su centro médico.
                     </p>
                 </div>
             </div>
             <div class="modal-footer" style="background:#111827; border-top:1px solid rgba(239,68,68,.2); border-radius:0 0 16px 16px;">
-                <button class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar, mantener</button>
-                <button class="btn rounded-pill fw-semibold px-4" id="btnP1Continuar"
-                        style="background:rgba(239,68,68,.8); color:#fff; border:none;">
-                    <i class="bi bi-arrow-right me-1"></i> Sí, continuar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- ═══ MODAL ELIMINAR PASO 2 ═══ --}}
-<div class="modal fade" id="modalEliminarP2" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:16px; border:2px solid #ef4444; background:#111827;">
-            <div class="modal-header" style="background:#ef4444; border-radius:16px 16px 0 0;">
-                <h5 class="modal-title fw-bold text-white">
-                    <i class="bi bi-exclamation-octagon-fill me-2"></i>CONFIRMACIÓN FINAL
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4" style="background:#111827;">
-                <p class="text-white mb-4">
-                    ⚠️ Esta es tu <strong>última oportunidad</strong> para cancelar.
-                    Escribe <code style="color:var(--sa-gold); background:rgba(212,160,23,.1); padding:2px 6px; border-radius:4px;">CONFIRMAR</code>
-                    para eliminar permanentemente
-                    <strong style="color:var(--sa-gold);" id="p2NombreCentro"></strong>
-                    y todos sus datos.
-                </p>
-
-                <input type="text" id="inputConfirmar" class="form-control text-center fw-bold"
-                       placeholder="Escribe CONFIRMAR"
-                       style="background:rgba(239,68,68,.08); border:2px solid rgba(239,68,68,.4); color:#fff; border-radius:10px; font-size:1.1rem; letter-spacing:2px;">
-                <div id="errorConfirmar" class="text-danger small mt-2 d-none">
-                    <i class="bi bi-x-circle me-1"></i>Debes escribir exactamente "CONFIRMAR"
-                </div>
-            </div>
-            <div class="modal-footer" style="background:#111827; border-top:2px solid rgba(239,68,68,.3); border-radius:0 0 16px 16px;">
                 <button class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                <button class="btn rounded-pill fw-bold px-4" id="btnEliminarFinal"
-                        style="background:#ef4444; color:#fff; border:none;">
-                    <i class="bi bi-trash3-fill me-1"></i>ELIMINAR DEFINITIVAMENTE
+                <button class="btn rounded-pill fw-semibold px-4" id="btnConfirmarEliminarAdmin"
+                        style="background:rgba(239,68,68,.8); color:#fff; border:none;">
+                    <i class="bi bi-trash3 me-1"></i> Sí, eliminar
                 </button>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.sa-input {
+    background: rgba(255,255,255,.06) !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+}
+.sa-input:focus {
+    border-color: rgba(212,160,23,.5) !important;
+    box-shadow: 0 0 0 3px rgba(212,160,23,.12) !important;
+    background: rgba(255,255,255,.09) !important;
+}
+.sa-input::placeholder { color: rgba(255,255,255,.25) !important; }
+.sa-input option { background: #1e293b; color: #fff; }
+</style>
 
 @endsection
 
@@ -237,130 +253,152 @@
 <script>
 $(document).ready(function () {
     const csrf = $('meta[name="csrf-token"]').attr('content');
-    let centroIdAccion = null;
+    let adminIdAccion = null;
     let modoEditar = false;
 
-    const modalCentro  = new bootstrap.Modal(document.getElementById('modalCentro'));
-    const modalP1      = new bootstrap.Modal(document.getElementById('modalEliminarP1'));
-    const modalP2      = new bootstrap.Modal(document.getElementById('modalEliminarP2'));
+    const modalAdmin   = new bootstrap.Modal(document.getElementById('modalAdmin'));
+    const modalElim    = new bootstrap.Modal(document.getElementById('modalEliminarAdmin'));
 
-    // ── BUSCADOR ─────────────────────────────────────────────────────────
-    $('#buscadorCentros').on('keyup', function () {
+    // ── TOGGLE PASS ───────────────────────────────────────────────────
+    $('#toggleAdminPass').on('click', function () {
+        const t = $('#admin_password').attr('type') === 'password' ? 'text' : 'password';
+        $('#admin_password').attr('type', t);
+        $('#adminEye').toggleClass('bi-eye-fill bi-eye-slash-fill');
+    });
+
+    // ── FORMATO RUT ────────────────────────────────────────────────────
+    function formatRut(rut) {
+        const limpio = rut.replace(/[^0-9kK]/g, '');
+        if (limpio.length < 2) return limpio;
+        return limpio.slice(0, -1) + '-' + limpio.slice(-1).toUpperCase();
+    }
+    $('#admin_rut').on('input', function () { this.value = formatRut(this.value); });
+
+    // ── BUSCADOR ──────────────────────────────────────────────────────
+    $('#buscadorAdmins').on('keyup', function () {
         const txt = $(this).val().toLowerCase();
-        $('#tablaCentros tbody tr').each(function () {
+        $('#tablaAdmins tbody tr').each(function () {
             $(this).toggle(!txt || $(this).data('busqueda').includes(txt));
         });
     });
 
-    // ── CREAR ────────────────────────────────────────────────────────────
-    $('#btnNuevoCentro').on('click', function () {
+    // ── FILTRO CENTRO ─────────────────────────────────────────────────
+    $('#filtroCentro').on('change', function () {
+        const centroId = $(this).val();
+        if (centroId) {
+            window.location.href = `{{ route('superadmin.admins.index') }}?centro_id=${centroId}`;
+        } else {
+            window.location.href = `{{ route('superadmin.admins.index') }}`;
+        }
+    });
+
+    $('#btnLimpiarFiltros').on('click', function () {
+        window.location.href = `{{ route('superadmin.admins.index') }}`;
+    });
+
+    // ── CREAR ─────────────────────────────────────────────────────────
+    $('#btnNuevoAdmin').on('click', function () {
         modoEditar = false;
-        centroIdAccion = null;
-        $('#tituloCentro').html('<i class="bi bi-building me-2" style="color:var(--sa-gold);"></i>Nuevo Centro');
-        $('#centro_nombre, #centro_direccion').val('');
-        modalCentro.show();
+        adminIdAccion = null;
+        $('#tituloAdmin').html('<i class="bi bi-shield-plus me-2" style="color:var(--sa-gold);"></i>Nuevo Administrador');
+        $('#admin_id, #admin_name, #admin_apellidos, #admin_email, #admin_rut, #admin_telefono, #admin_password').val('');
+        $('#admin_centro').val('');
+        $('#passHint').text('(requerida)');
+        modalAdmin.show();
     });
 
-    // ── EDITAR ───────────────────────────────────────────────────────────
-    $(document).on('click', '.btnEditarCentro', function () {
+    // ── EDITAR ────────────────────────────────────────────────────────
+    $(document).on('click', '.btnEditarAdmin', function () {
         modoEditar = true;
-        centroIdAccion = $(this).data('id');
-        $('#tituloCentro').html('<i class="bi bi-pencil me-2" style="color:var(--sa-gold);"></i>Editar Centro');
-        $('#centro_nombre').val($(this).data('nombre'));
-        $('#centro_direccion').val($(this).data('direccion'));
-        modalCentro.show();
+        adminIdAccion = $(this).data('id');
+        $('#tituloAdmin').html('<i class="bi bi-pencil me-2" style="color:var(--sa-gold);"></i>Editar Administrador');
+        $('#admin_id').val(adminIdAccion);
+        $('#admin_name').val($(this).data('name'));
+        $('#admin_apellidos').val($(this).data('apellidos'));
+        $('#admin_email').val($(this).data('email'));
+        $('#admin_rut').val($(this).data('rut'));
+        $('#admin_telefono').val($(this).data('telefono'));
+        $('#admin_centro').val($(this).data('centro'));
+        $('#admin_password').val('');
+        $('#passHint').text('(dejar vacío para no cambiar)');
+        modalAdmin.show();
     });
 
-    $('#btnGuardarCentro').on('click', function () {
-        const nombre    = $('#centro_nombre').val().trim();
-        const direccion = $('#centro_direccion').val().trim();
-        if (!nombre || !direccion) { saToast('Completa todos los campos', 'warning'); return; }
+    // ── GUARDAR ───────────────────────────────────────────────────────
+    $('#btnGuardarAdmin').on('click', function () {
+        const name      = $('#admin_name').val().trim();
+        const apellidos = $('#admin_apellidos').val().trim();
+        const email     = $('#admin_email').val().trim();
+        const rut       = $('#admin_rut').val().trim();
+        const telefono  = $('#admin_telefono').val().trim();
+        const centro    = $('#admin_centro').val();
+        const password  = $('#admin_password').val();
 
-        const url    = modoEditar ? `/superadmin/centros/${centroIdAccion}` : '/superadmin/centros';
-        const method = modoEditar ? 'PUT' : 'POST';
-
-        $.ajax({
-            url, method: 'POST',
-            data: { _token: csrf, _method: method, nombre, direccion },
-            success: function () {
-                saToast('Centro guardado correctamente', 'success');
-                modalCentro.hide();
-                setTimeout(() => location.reload(), 1200);
-            },
-            error: function (xhr) {
-                saToast(xhr.responseJSON?.message ?? 'Error al guardar', 'danger');
-            }
-        });
-    });
-
-    // ── ELIMINAR PASO 1 ──────────────────────────────────────────────────
-    $(document).on('click', '.btnEliminarCentro', function () {
-        centroIdAccion = $(this).data('id');
-        const nombre   = $(this).data('nombre');
-        $('#p1NombreCentro').text(nombre);
-        $('#p1ListaAfectados').html('<li>Cargando información...</li>');
-        modalP1.show();
-
-        // Cargar preview de lo que se eliminará
-        $.get(`/superadmin/centros/${centroIdAccion}/preview-destroy`, function (data) {
-            const html = `
-                <li>${data.admins} administrador(es)</li>
-                <li>${data.medicos} médico(s)</li>
-                <li>${data.pacientes} paciente(s)</li>
-                <li>${data.citas} cita(s) médica(s)</li>
-                <li>${data.informes} informe(s) médico(s)</li>
-                <li>${data.tickets} ticket(s) de soporte</li>
-                <li>Todos los mensajes, notificaciones y archivos asociados</li>
-            `;
-            $('#p1ListaAfectados').html(html);
-        }).fail(function () {
-            $('#p1ListaAfectados').html('<li>Error al cargar la información</li>');
-        });
-    });
-
-    $('#btnP1Continuar').on('click', function () {
-        modalP1.hide();
-        $('#inputConfirmar').val('');
-        $('#errorConfirmar').addClass('d-none');
-        $('#p2NombreCentro').text($('#p1NombreCentro').text());
-        setTimeout(() => modalP2.show(), 400);
-    });
-
-    // ── ELIMINAR PASO 2 ──────────────────────────────────────────────────
-    $('#btnEliminarFinal').on('click', function () {
-        const confirmText = $('#inputConfirmar').val().trim();
-        if (confirmText !== 'CONFIRMAR') {
-            $('#errorConfirmar').removeClass('d-none');
-            $('#inputConfirmar').css('border-color', '#ef4444');
+        if (!name || !apellidos || !email || !centro) {
+            saToast('Completa todos los campos obligatorios', 'warning');
+            return;
+        }
+        if (!modoEditar && !password) {
+            saToast('La contraseña es obligatoria para nuevos admins', 'warning');
             return;
         }
 
+        const datos = { _token: csrf, name, Apellidos: apellidos, email, Rut: rut, telefono, centro_medico_id: centro };
+        if (!modoEditar) datos.password = password;
+        else if (password) datos.password = password;
+
+        const url    = modoEditar ? `/superadmin/admins/${adminIdAccion}` : '/superadmin/admins';
+        const method = modoEditar ? 'PUT' : 'POST';
+
         const $btn = $(this);
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Eliminando...');
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Guardando...');
 
         $.ajax({
-            url: `/superadmin/centros/${centroIdAccion}`,
-            method: 'POST',
-            data: { _token: csrf, _method: 'DELETE', confirm: 'CONFIRMAR' },
+            url, method: 'POST',
+            data: { ...datos, _method: method },
             success: function () {
-                saToast('Centro eliminado permanentemente', 'success');
-                modalP2.hide();
-                setTimeout(() => location.reload(), 1500);
+                saToast(modoEditar ? 'Administrador actualizado' : 'Administrador creado correctamente', 'success');
+                modalAdmin.hide();
+                setTimeout(() => location.reload(), 1200);
             },
             error: function (xhr) {
-                saToast(xhr.responseJSON?.error ?? 'Error al eliminar', 'danger');
-                $btn.prop('disabled', false).html('<i class="bi bi-trash3-fill me-1"></i>ELIMINAR DEFINITIVAMENTE');
+                const msg = Object.values(xhr.responseJSON?.errors ?? {}).flat()[0]
+                    ?? xhr.responseJSON?.message ?? 'Error al guardar';
+                saToast(msg, 'danger');
+            },
+            complete: function () {
+                $btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i> Guardar');
             }
         });
     });
 
-    $('#inputConfirmar').on('input', function () {
-        if ($(this).val() === 'CONFIRMAR') {
-            $('#errorConfirmar').addClass('d-none');
-            $(this).css('border-color', '#10b981');
-        } else {
-            $(this).css('border-color', 'rgba(239,68,68,.4)');
-        }
+    // ── ELIMINAR ──────────────────────────────────────────────────────
+    $(document).on('click', '.btnEliminarAdmin', function () {
+        adminIdAccion = $(this).data('id');
+        $('#nombreAdminEliminar').text($(this).data('name'));
+        modalElim.show();
+    });
+
+    $('#btnConfirmarEliminarAdmin').on('click', function () {
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>...');
+
+        $.ajax({
+            url: `/superadmin/admins/${adminIdAccion}`,
+            method: 'POST',
+            data: { _token: csrf, _method: 'DELETE' },
+            success: function () {
+                saToast('Administrador eliminado', 'success');
+                modalElim.hide();
+                setTimeout(() => location.reload(), 1200);
+            },
+            error: function (xhr) {
+                saToast(xhr.responseJSON?.message ?? 'Error al eliminar', 'danger');
+            },
+            complete: function () {
+                $btn.prop('disabled', false).html('<i class="bi bi-trash3 me-1"></i> Sí, eliminar');
+            }
+        });
     });
 });
 </script>
