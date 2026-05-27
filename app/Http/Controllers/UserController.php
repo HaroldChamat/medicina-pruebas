@@ -20,7 +20,7 @@ class UserController extends Controller
 
     public function index_welcome()
     {
-        $usuario = User::with('cargo')->find(session('user_id'));
+        $usuario = User::with(['cargo', 'centroMedico'])->find(session('user_id'));
 
         $centroId = session('centro_medico_id');
 

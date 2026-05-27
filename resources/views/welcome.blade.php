@@ -141,6 +141,26 @@
         </div>
     </div>
 
+    @if($usuario?->centroMedico)
+    <div class="container mb-4">
+        <div class="centro-card">
+            <div class="centro-icon" style="background:#e8f0fb;">
+                <i class="bi bi-building-fill" style="color:#0d3b6e;"></i>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <p class="centro-label">Centro médico asignado</p>
+                <p class="centro-nombre" style="color:#0d3b6e;">
+                    {{ $usuario->centroMedico->nombre }}
+                </p>
+                <small class="text-muted">{{ $usuario->centroMedico->direccion }}</small>
+            </div>
+            <span class="centro-badge" style="background:#e8f0fb; color:#0d3b6e;">
+                Tu centro
+            </span>
+        </div>
+    </div>
+    @endif
+
     <div class="container mb-5">
         <div class="row g-4">
             <div class="col-md-3">
@@ -380,6 +400,26 @@
         </div>
     </div>
 
+    @if($usuario?->centroMedico)
+    <div class="container mb-4">
+        <div class="centro-card">
+            <div class="centro-icon" style="background:#e6f9f0;">
+                <i class="bi bi-building-fill" style="color:#1a7a4a;"></i>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <p class="centro-label">Centro médico asignado</p>
+                <p class="centro-nombre" style="color:#1a7a4a;">
+                    {{ $usuario->centroMedico->nombre }}
+                </p>
+                <small class="text-muted">{{ $usuario->centroMedico->direccion }}</small>
+            </div>
+            <span class="centro-badge" style="background:#e6f9f0; color:#1a7a4a;">
+                Tu centro
+            </span>
+        </div>
+    </div>
+    @endif
+
     <div class="container mb-5">
         <div class="row g-4 justify-content-center">
             <div class="col-md-4">
@@ -432,6 +472,26 @@
             </span>
         </div>
     </div>
+
+    @if($usuario?->centroMedico)
+    <div class="container mb-4">
+        <div class="centro-card">
+            <div class="centro-icon" style="background:#e3f0fc;">
+                <i class="bi bi-building-fill" style="color:#1565c0;"></i>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <p class="centro-label">Centro médico asignado</p>
+                <p class="centro-nombre" style="color:#1565c0;">
+                    {{ $usuario->centroMedico->nombre }}
+                </p>
+                <small class="text-muted">{{ $usuario->centroMedico->direccion }}</small>
+            </div>
+            <span class="centro-badge" style="background:#e3f0fc; color:#1565c0;">
+                Tu centro
+            </span>
+        </div>
+    </div>
+    @endif
 
     <div class="container mb-5">
         <div class="row g-4 justify-content-center">
@@ -649,6 +709,52 @@ if (togglePassword) {
     .bg-warning-soft   { background-color: #fff8e1; }
     .bg-danger-soft    { background-color: #fdecea; }
     .bg-secondary-soft { background-color: #f0f0f0; }
+    
+    .centro-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .centro-icon {
+        width: 42px; height: 42px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.35rem;
+    }
+    
+    .centro-label {
+        font-size: 11px;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    .centro-nombre {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 2px 0 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .centro-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 20px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
 
 </style>
 
