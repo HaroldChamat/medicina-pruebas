@@ -133,31 +133,32 @@ class SuperadminCentroController extends Controller
     }
 
     /**
-     * Vista detallada de un centro.
-     * Soporta ?tab=citas&estado=Programada&page=2 para mantener estado al paginar.
+     * Vista detallada de un centro con paginación en todas las secciones.
      */
     public function show(Request $request, $id)
     {
         $centro = CentroMedico::findOrFail($id);
 
-        // Tab activo: se conserva al paginar
         $tabActiva    = $request->query('tab', 'admins');
         $filtroEstado = $request->query('estado', '');
 
         $admins = User::where('centro_medico_id', $id)
             ->where('admin', 1)
             ->with('cargo')
-            ->get();
+            ->paginate(10, ['*'], 'admins_page')
+            ->withQueryString();
 
         $medicos = User::where('centro_medico_id', $id)
             ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Medico'))
             ->with(['cargo', 'especialidades', 'horario'])
-            ->get();
+            ->paginate(10, ['*'], 'medicos_page')
+            ->withQueryString();
 
         $pacientes = User::where('centro_medico_id', $id)
             ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Paciente'))
             ->with('cargo')
-            ->get();
+            ->paginate(10, ['*'], 'pacientes_page')
+            ->withQueryString();
 
         $citasQuery = Cita::with(['medico', 'paciente', 'prestacion'])
             ->where(function ($q) use ($id) {
@@ -169,8 +170,9 @@ class SuperadminCentroController extends Controller
             $citasQuery->where('estado', $filtroEstado);
         }
 
-        // Paginar conservando todos los query params actuales
-        $citas = $citasQuery->orderByDesc('Fecha_y_hora')->paginate(20)->withQueryString();
+        $citas = $citasQuery->orderByDesc('Fecha_y_hora')
+            ->paginate(10, ['*'], 'citas_page')
+            ->withQueryString();
 
         return view('superadmin.centros.show', compact(
             'centro', 'admins', 'medicos', 'pacientes', 'citas',
