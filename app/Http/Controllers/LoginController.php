@@ -45,13 +45,21 @@ class LoginController extends Controller
             return back()->withErrors(['rut' => 'Contraseña incorrecta']);
         }
 
-        // ── NUEVO: guardar centro_medico_id en sesión ─────────────────────
+        // ── Restricción portal admin: solo cargo Admin puede entrar aquí ──
+        // El formulario del portal admin envía _tipo=admin (superadmin/login.blade.php)
+        if ($request->input('_tipo') === 'admin' && $user->cargo->Nombre_cargo !== 'Admin') {
+            return back()->withErrors([
+                'rut' => 'Este portal es exclusivo para administradores. Los médicos y pacientes deben ingresar desde el portal principal.',
+            ])->withInput(['_tipo' => 'admin']);
+        }
+
+        // ── Guardar sesión ────────────────────────────────────────────────
         session()->put([
             'user_id'          => $user->id,
             'cargo'            => $user->cargo->Nombre_cargo,
             'admin'            => (int) ($user->admin ?? 0),
             'nombre'           => $user->name,
-            'centro_medico_id' => $user->centro_medico_id, // ← clave nueva
+            'centro_medico_id' => $user->centro_medico_id,
         ]);
 
         return redirect('/login');

@@ -8,7 +8,10 @@
 @section('content')
 
 <div class="d-flex align-items-center justify-content-between mb-4">
-    <p class="text-muted mb-0 small">Gestión de centros médicos del sistema.</p>
+    <p class="text-muted mb-0 small">
+        Gestión de centros médicos del sistema.
+        <strong>{{ $centros->total() }}</strong> en total.
+    </p>
     <button class="btn fw-semibold rounded-pill px-4"
             style="background:var(--sa-gold); color:#000; border:none;"
             id="btnNuevoCentro">
@@ -35,7 +38,7 @@
             <tbody>
                 @forelse($centros as $centro)
                     <tr>
-                        <td class="text-muted">{{ $loop->iteration }}</td>
+                        <td class="text-muted">{{ ($centros->currentPage() - 1) * $centros->perPage() + $loop->iteration }}</td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <div style="width:8px;height:8px;border-radius:50%;background:var(--sa-gold);flex-shrink:0;"></div>
@@ -93,6 +96,18 @@
             </tbody>
         </table>
     </div>
+
+    {{-- Paginación --}}
+    @if($centros->hasPages())
+        <div class="d-flex justify-content-between align-items-center px-4 py-3"
+             style="border-top:1px solid var(--sa-border); background:var(--sa-dark);">
+            <div class="text-muted small" style="color:#8aa0bc !important;">
+                Mostrando {{ $centros->firstItem() }}–{{ $centros->lastItem() }}
+                de {{ $centros->total() }} centros
+            </div>
+            @include('superadmin.partials.pagination', ['paginator' => $centros])
+        </div>
+    @endif
 </div>
 
 {{-- ═══ MODAL CREAR/EDITAR ═══ --}}
@@ -194,7 +209,6 @@ $(document).ready(function () {
     const modalCentro   = new bootstrap.Modal(document.getElementById('modalCentro'));
     const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminarCentro'));
 
-    // ── CREAR ─────────────────────────────────────────────────────────
     $('#btnNuevoCentro').on('click', function () {
         modoEditar = false;
         $('#tituloCentro').html('<i class="bi bi-building-fill me-2" style="color:var(--sa-gold);"></i>Nuevo Centro');
@@ -203,7 +217,6 @@ $(document).ready(function () {
         modalCentro.show();
     });
 
-    // ── EDITAR ────────────────────────────────────────────────────────
     $(document).on('click', '.btnEditarCentro', function () {
         modoEditar = true;
         $('#tituloCentro').html('<i class="bi bi-pencil me-2" style="color:var(--sa-gold);"></i>Editar Centro');
@@ -213,7 +226,6 @@ $(document).ready(function () {
         modalCentro.show();
     });
 
-    // ── GUARDAR ───────────────────────────────────────────────────────
     $('#btnGuardarCentro').on('click', function () {
         const nombre    = $('#centro_nombre').val().trim();
         const direccion = $('#centro_direccion').val().trim();
@@ -243,7 +255,6 @@ $(document).ready(function () {
         });
     });
 
-    // ── ELIMINAR: preview ─────────────────────────────────────────────
     $(document).on('click', '.btnEliminarCentro', function () {
         centroIdEliminar = $(this).data('id');
         $('#nombreCentroEliminar').text($(this).data('nombre'));
@@ -253,7 +264,6 @@ $(document).ready(function () {
         $('#previewData').empty();
         modalEliminar.show();
 
-        // Cargar preview
         $.get(`/superadmin/centros/${centroIdEliminar}/preview-destroy`, function (data) {
             $('#previewData').html(`
                 <div class="col-4"><i class="bi bi-shield-check me-1"></i>${data.admins} admin(s)</div>
@@ -271,7 +281,6 @@ $(document).ready(function () {
         $('#btnConfirmarEliminarCentro').prop('disabled', $(this).val() !== 'CONFIRMAR');
     });
 
-    // ── ELIMINAR: confirmar ───────────────────────────────────────────
     $('#btnConfirmarEliminarCentro').on('click', function () {
         const $btn = $(this);
         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>...');
@@ -296,4 +305,3 @@ $(document).ready(function () {
 });
 </script>
 @endsection
-

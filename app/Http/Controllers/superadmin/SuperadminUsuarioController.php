@@ -29,7 +29,7 @@ class SuperadminUsuarioController extends Controller
             $query->where('activo', $filtroEstado);
         }
 
-        $medicos = $query->get();
+        $medicos = $query->paginate(10)->withQueryString();
         $centros = CentroMedico::orderBy('nombre')->get();
 
         return view('superadmin.usuarios.medicos', compact('medicos', 'centros', 'filtroCentro', 'filtroEstado'));
@@ -49,7 +49,7 @@ class SuperadminUsuarioController extends Controller
             $query->where('centro_medico_id', $filtroCentro);
         }
 
-        $pacientes = $query->get();
+        $pacientes = $query->paginate(10)->withQueryString();
         $centros   = CentroMedico::orderBy('nombre')->get();
 
         return view('superadmin.usuarios.pacientes', compact('pacientes', 'centros', 'filtroCentro'));
@@ -74,7 +74,7 @@ class SuperadminUsuarioController extends Controller
             $query->where('estado', $filtroEstado);
         }
 
-        $citas   = $query->orderByDesc('Fecha_y_hora')->paginate(25);
+        $citas   = $query->orderByDesc('Fecha_y_hora')->paginate(10)->withQueryString();
         $centros = CentroMedico::orderBy('nombre')->get();
 
         return view('superadmin.usuarios.citas', compact('citas', 'centros', 'filtroCentro', 'filtroEstado'));

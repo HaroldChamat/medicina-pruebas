@@ -20,12 +20,13 @@ class SuperadminCentroController extends Controller
     {
         $centros = CentroMedico::withCount([
             'users as total_usuarios',
-            'users as total_admins'    => fn($q) => $q->where('admin', 1),
+            'users as total_admins'    => fn($q) => $q->where('admin', 1)
+                ->whereHas('cargo', fn($q2) => $q2->where('Nombre_cargo', 'Admin')),
             'users as total_medicos'   => fn($q) =>
                 $q->whereHas('cargo', fn($q2) => $q2->where('Nombre_cargo', 'Medico')),
             'users as total_pacientes' => fn($q) =>
                 $q->whereHas('cargo', fn($q2) => $q2->where('Nombre_cargo', 'Paciente')),
-        ])->latest()->get();
+        ])->latest()->paginate(10)->withQueryString();
 
         return view('superadmin.centros.index', compact('centros'));
     }
@@ -97,7 +98,7 @@ class SuperadminCentroController extends Controller
     }
 
     /**
-     * Eliminación definitiva con doble confirmación (flag confirm=true requerido).
+     * Eliminación definitiva con doble confirmación.
      */
     public function destroy(Request $request, $id)
     {
@@ -110,30 +111,21 @@ class SuperadminCentroController extends Controller
         DB::transaction(function () use ($centro, $id) {
             $userIds = User::where('centro_medico_id', $id)->pluck('id');
 
-            // 1. Citas asociadas a usuarios del centro
             $citaIds = Cita::whereIn('medico_id', $userIds)
                 ->orWhereIn('paciente_id', $userIds)
                 ->pluck('id');
 
-            // 2. Mensajes de esas citas
             Mensaje::whereIn('cita_id', $citaIds)->delete();
 
-            // 3. Tickets de los médicos del centro
             $ticketIds = Ticket::whereIn('medico_id', $userIds)->pluck('id');
             TicketMensaje::whereIn('ticket_id', $ticketIds)->delete();
             TicketArchivo::whereIn('ticket_id', $ticketIds)->delete();
             Ticket::whereIn('id', $ticketIds)->delete();
 
-            // 4. Notificaciones de los usuarios
             Notificacion::whereIn('user_id', $userIds)->delete();
-
-            // 5. Citas
             Cita::whereIn('id', $citaIds)->delete();
-
-            // 6. Usuarios del centro
             User::where('centro_medico_id', $id)->delete();
 
-            // 7. Centro médico
             $centro->delete();
         });
 
@@ -141,13 +133,15 @@ class SuperadminCentroController extends Controller
     }
 
     /**
-     * Vista detallada de un centro: lista todos sus usuarios, citas, etc.
+     * Vista detallada de un centro.
+     * Soporta ?tab=citas&estado=Programada&page=2 para mantener estado al paginar.
      */
     public function show(Request $request, $id)
     {
         $centro = CentroMedico::findOrFail($id);
 
-        $filtroCargo  = $request->query('cargo', '');
+        // Tab activo: se conserva al paginar
+        $tabActiva    = $request->query('tab', 'admins');
         $filtroEstado = $request->query('estado', '');
 
         $admins = User::where('centro_medico_id', $id)
@@ -175,11 +169,12 @@ class SuperadminCentroController extends Controller
             $citasQuery->where('estado', $filtroEstado);
         }
 
-        $citas = $citasQuery->orderByDesc('Fecha_y_hora')->paginate(20);
+        // Paginar conservando todos los query params actuales
+        $citas = $citasQuery->orderByDesc('Fecha_y_hora')->paginate(20)->withQueryString();
 
         return view('superadmin.centros.show', compact(
             'centro', 'admins', 'medicos', 'pacientes', 'citas',
-            'filtroCargo', 'filtroEstado'
+            'tabActiva', 'filtroEstado'
         ));
     }
 }

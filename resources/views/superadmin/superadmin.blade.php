@@ -177,6 +177,52 @@
         .sa-table tbody tr:hover { background: #f8fafc; }
         .sa-table tbody td { padding: 13px 16px; font-size: 0.875rem; vertical-align: middle; border: none; }
 
+        /* ── PAGINACIÓN GLOBAL ── */
+        .sa-pagination {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sa-page-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            padding: 0 8px;
+            border-radius: 8px;
+            font-size: .82rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: #64748b;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            transition: all .15s;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .sa-page-btn:hover:not(.disabled):not(.active) {
+            background: #f1f5f9;
+            color: var(--sa-dark);
+            border-color: #cbd5e1;
+        }
+        .sa-page-btn.active {
+            background: var(--sa-blue);
+            color: #fff;
+            border-color: var(--sa-blue);
+        }
+        .sa-page-btn.disabled {
+            opacity: .4;
+            cursor: default;
+            pointer-events: none;
+        }
+        /* Evitar que los íconos bi hereden tamaños grandes */
+        .sa-page-btn i,
+        .sa-page-btn .bi {
+            font-size: .8rem;
+            line-height: 1;
+        }
+
         /* ── TOASTS ── */
         #toastContainer { position: fixed; top: 16px; right: 16px; z-index: 9999; }
 
@@ -258,7 +304,9 @@
             <div class="page-title">@yield('page-title', 'Dashboard')</div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="{{ route('superadmin.dashboard') }}" class="text-decoration-none" style="color:#64748b;">Inicio</a></li>
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('superadmin.dashboard') }}" class="text-decoration-none" style="color:#64748b;">Inicio</a>
+                    </li>
                     @yield('breadcrumb')
                 </ol>
             </nav>
@@ -316,7 +364,6 @@ function saToast(msg, tipo = 'success') {
     setTimeout(() => $('#'+id).remove(), 4500);
 }
 
-// Sidebar toggle mobile
 document.getElementById('sidebarToggle')?.addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('open');
 });

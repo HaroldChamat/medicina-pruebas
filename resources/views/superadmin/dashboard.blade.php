@@ -169,6 +169,18 @@
             </tbody>
         </table>
     </div>
+
+    {{-- Paginación --}}
+    @if($centros->hasPages())
+        <div class="d-flex justify-content-between align-items-center px-4 py-3"
+             style="border-top:1px solid var(--sa-border); background:var(--sa-dark);">
+            <div class="text-muted small">
+                Mostrando {{ $centros->firstItem() }}–{{ $centros->lastItem() }}
+                de {{ $centros->total() }} centros
+            </div>
+            @include('superadmin.partials.pagination', ['paginator' => $centros])
+        </div>
+    @endif
 </div>
 
 @endsection

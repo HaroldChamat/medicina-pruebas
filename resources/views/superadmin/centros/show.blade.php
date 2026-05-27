@@ -13,9 +13,16 @@
 {{-- Header del centro --}}
 <div class="rounded-3 p-4 mb-4 text-white d-flex align-items-center justify-content-between flex-wrap gap-3"
      style="background:linear-gradient(135deg,#0d2240,#0d3b6e);">
-    <div>
-        <h4 class="fw-bold mb-1"><i class="bi bi-building-fill me-2" style="color:var(--sa-gold);"></i>{{ $centro->nombre }}</h4>
-        <small class="opacity-75"><i class="bi bi-geo-alt me-1"></i>{{ $centro->direccion }}</small>
+    <div class="d-flex align-items-center gap-3">
+        <a href="{{ route('superadmin.centros.index') }}"
+           class="btn btn-sm rounded-pill flex-shrink-0"
+           style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);">
+            <i class="bi bi-arrow-left me-1"></i> Volver
+        </a>
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-building-fill me-2" style="color:var(--sa-gold);"></i>{{ $centro->nombre }}</h4>
+            <small class="opacity-75"><i class="bi bi-geo-alt me-1"></i>{{ $centro->direccion }}</small>
+        </div>
     </div>
     <div class="d-flex gap-3 flex-wrap">
         <div class="text-center">
@@ -40,22 +47,26 @@
 {{-- Tabs --}}
 <ul class="nav nav-tabs mb-4" id="centroTabs">
     <li class="nav-item">
-        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabAdmins">
+        <button class="nav-link {{ $tabActiva === 'admins' ? 'active' : '' }}"
+                data-bs-toggle="tab" data-bs-target="#tabAdmins">
             <i class="bi bi-shield-check me-1"></i>Admins ({{ $admins->count() }})
         </button>
     </li>
     <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabMedicos">
+        <button class="nav-link {{ $tabActiva === 'medicos' ? 'active' : '' }}"
+                data-bs-toggle="tab" data-bs-target="#tabMedicos">
             <i class="bi bi-person-badge me-1"></i>Médicos ({{ $medicos->count() }})
         </button>
     </li>
     <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPacientes">
+        <button class="nav-link {{ $tabActiva === 'pacientes' ? 'active' : '' }}"
+                data-bs-toggle="tab" data-bs-target="#tabPacientes">
             <i class="bi bi-person-heart me-1"></i>Pacientes ({{ $pacientes->count() }})
         </button>
     </li>
     <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCitas">
+        <button class="nav-link {{ $tabActiva === 'citas' ? 'active' : '' }}"
+                data-bs-toggle="tab" data-bs-target="#tabCitas">
             <i class="bi bi-calendar-week me-1"></i>Citas
         </button>
     </li>
@@ -64,7 +75,7 @@
 <div class="tab-content">
 
     {{-- Admins --}}
-    <div class="tab-pane fade show active" id="tabAdmins">
+    <div class="tab-pane fade {{ $tabActiva === 'admins' ? 'show active' : '' }}" id="tabAdmins">
         <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden;">
             <div class="table-responsive">
                 <table class="table sa-table mb-0">
@@ -91,7 +102,7 @@
     </div>
 
     {{-- Médicos --}}
-    <div class="tab-pane fade" id="tabMedicos">
+    <div class="tab-pane fade {{ $tabActiva === 'medicos' ? 'show active' : '' }}" id="tabMedicos">
         <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden;">
             <div class="table-responsive">
                 <table class="table sa-table mb-0">
@@ -128,7 +139,7 @@
     </div>
 
     {{-- Pacientes --}}
-    <div class="tab-pane fade" id="tabPacientes">
+    <div class="tab-pane fade {{ $tabActiva === 'pacientes' ? 'show active' : '' }}" id="tabPacientes">
         <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden;">
             <div class="table-responsive">
                 <table class="table sa-table mb-0">
@@ -153,14 +164,14 @@
     </div>
 
     {{-- Citas --}}
-    <div class="tab-pane fade" id="tabCitas">
+    <div class="tab-pane fade {{ $tabActiva === 'citas' ? 'show active' : '' }}" id="tabCitas">
         <div class="d-flex gap-2 mb-3">
             <select id="filtroEstadoCitas" class="form-select form-select-sm w-auto">
                 <option value="">Todos los estados</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Programada">Programada</option>
-                <option value="Finalizada">Finalizada</option>
-                <option value="Cancelada">Cancelada</option>
+                <option value="Pendiente"  {{ $filtroEstado === 'Pendiente'  ? 'selected' : '' }}>Pendiente</option>
+                <option value="Programada" {{ $filtroEstado === 'Programada' ? 'selected' : '' }}>Programada</option>
+                <option value="Finalizada" {{ $filtroEstado === 'Finalizada' ? 'selected' : '' }}>Finalizada</option>
+                <option value="Cancelada"  {{ $filtroEstado === 'Cancelada'  ? 'selected' : '' }}>Cancelada</option>
             </select>
         </div>
         <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden;">
@@ -192,21 +203,131 @@
                 </table>
             </div>
         </div>
-        {{-- Paginación --}}
+
+        {{-- Paginación manual (sin el renderizado de Laravel) --}}
         @if($citas->hasPages())
-            <div class="mt-3">{{ $citas->links() }}</div>
+            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <div class="text-muted small">
+                    Mostrando {{ $citas->firstItem() }}–{{ $citas->lastItem() }}
+                    de {{ $citas->total() }} citas
+                </div>
+                <div class="sa-pagination">
+                    {{-- Anterior --}}
+                    @if($citas->onFirstPage())
+                        <span class="sa-page-btn disabled">
+                            <i class="bi bi-chevron-left"></i>
+                        </span>
+                    @else
+                        <a href="{{ $citas->previousPageUrl() }}&tab=citas{{ $filtroEstado ? '&estado='.$filtroEstado : '' }}"
+                           class="sa-page-btn">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    @endif
+
+                    {{-- Páginas --}}
+                    @php
+                        $start = max(1, $citas->currentPage() - 2);
+                        $end   = min($citas->lastPage(), $citas->currentPage() + 2);
+                    @endphp
+
+                    @if($start > 1)
+                        <a href="{{ $citas->url(1) }}&tab=citas{{ $filtroEstado ? '&estado='.$filtroEstado : '' }}"
+                           class="sa-page-btn">1</a>
+                        @if($start > 2)
+                            <span class="sa-page-btn disabled">…</span>
+                        @endif
+                    @endif
+
+                    @for($p = $start; $p <= $end; $p++)
+                        <a href="{{ $citas->url($p) }}&tab=citas{{ $filtroEstado ? '&estado='.$filtroEstado : '' }}"
+                           class="sa-page-btn {{ $citas->currentPage() === $p ? 'active' : '' }}">
+                            {{ $p }}
+                        </a>
+                    @endfor
+
+                    @if($end < $citas->lastPage())
+                        @if($end < $citas->lastPage() - 1)
+                            <span class="sa-page-btn disabled">…</span>
+                        @endif
+                        <a href="{{ $citas->url($citas->lastPage()) }}&tab=citas{{ $filtroEstado ? '&estado='.$filtroEstado : '' }}"
+                           class="sa-page-btn">{{ $citas->lastPage() }}</a>
+                    @endif
+
+                    {{-- Siguiente --}}
+                    @if($citas->hasMorePages())
+                        <a href="{{ $citas->nextPageUrl() }}&tab=citas{{ $filtroEstado ? '&estado='.$filtroEstado : '' }}"
+                           class="sa-page-btn">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    @else
+                        <span class="sa-page-btn disabled">
+                            <i class="bi bi-chevron-right"></i>
+                        </span>
+                    @endif
+                </div>
+            </div>
         @endif
     </div>
 
 </div>
 
+<style>
+/* Paginación personalizada para el superadmin */
+.sa-pagination {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.sa-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: #64748b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    transition: all .15s;
+    cursor: pointer;
+    line-height: 1;
+}
+.sa-page-btn:hover:not(.disabled):not(.active) {
+    background: #f1f5f9;
+    color: var(--sa-dark, #0a1628);
+    border-color: #cbd5e1;
+}
+.sa-page-btn.active {
+    background: var(--sa-blue, #0d3b6e);
+    color: #fff;
+    border-color: var(--sa-blue, #0d3b6e);
+}
+.sa-page-btn.disabled {
+    opacity: .4;
+    cursor: default;
+    pointer-events: none;
+}
+/* Asegurar que los íconos bi no se agranden */
+.sa-page-btn i {
+    font-size: .8rem;
+    line-height: 1;
+}
+</style>
+
 @endsection
 
 @section('scripts')
 <script>
+// Filtro de estado: conserva el tab activo y la página 1
 $('#filtroEstadoCitas').on('change', function () {
     const estado = $(this).val();
-    const url = new URL(window.location.href);
+    const url    = new URL(window.location.href);
+    url.searchParams.set('tab', 'citas');
+    url.searchParams.set('page', '1');
     if (estado) url.searchParams.set('estado', estado);
     else url.searchParams.delete('estado');
     window.location.href = url.toString();

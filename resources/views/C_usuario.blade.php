@@ -94,7 +94,7 @@
                                     <small class="text-muted">Puedes incluir el indicativo del país. Ejemplo: +56912345678</small>
                                 </div>
 
-                                {{-- Si es admin, puede elegir cargo --}}
+                                {{-- Cargo: solo Admin puede elegir --}}
                                 @if(session('admin') === 1)
                                     <div class="mb-4">
                                         <label for="id_cargo" class="form-label fw-semibold">Cargo</label>
@@ -106,8 +106,27 @@
                                         </select>
                                     </div>
                                 @else
+                                    {{-- Paciente registrándose solo: cargo fijo a Paciente --}}
                                     @php $cargoPaciente = $cargos->firstWhere('Nombre_cargo', 'Paciente') @endphp
                                     <input type="hidden" name="id_cargo" value="{{ $cargoPaciente->id }}">
+
+                                    {{-- Selector de centro médico (solo para registro libre) --}}
+                                    <div class="mb-4">
+                                        <label for="centro_medico_id" class="form-label fw-semibold">
+                                            <i class="bi bi-building me-1"></i> Centro Médico
+                                        </label>
+                                        <select name="centro_medico_id" id="centro_medico_id" class="form-select" required>
+                                            <option value="" disabled selected>Seleccione su centro médico</option>
+                                            @foreach($centros as $centro)
+                                                <option value="{{ $centro->id }}">
+                                                    {{ $centro->nombre }} — {{ $centro->direccion }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <div class="invalid-feedback" id="centroFeedback">
+                                            Debes seleccionar un centro médico.
+                                        </div>
+                                    </div>
                                 @endif
 
                                 <button type="button"
@@ -165,7 +184,6 @@ $(document).ready(function () {
 
     // ── VALIDACIÓN CORREO ELECTRÓNICO ────────────────────────────────────
     function validarEmail(email) {
-        // Validación estándar: algo@algo.algo
         return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
     }
 
@@ -184,13 +202,10 @@ $(document).ready(function () {
         }
     });
 
-    // ── VALIDACIÓN TELÉFONO (solo + y números) ───────────────────────────
+    // ── VALIDACIÓN TELÉFONO ──────────────────────────────────────────────
     $('#telefono').on('input', function () {
-        // Solo permite + al inicio y dígitos
         let val = this.value;
-        // Permitir solo: + al comienzo y números
         val = val.replace(/[^\d+]/g, '');
-        // Solo un + permitido y solo al inicio
         val = val.replace(/(?!^)\+/g, '');
         this.value = val;
 
@@ -218,6 +233,15 @@ $(document).ready(function () {
         }
     });
 
+    // ── VALIDACIÓN CENTRO MÉDICO ─────────────────────────────────────────
+    $('#centro_medico_id').on('change', function () {
+        if ($(this).val()) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+        }
+    });
+
     // ── ENVÍO DEL FORMULARIO ─────────────────────────────────────────────
     $('#Ingresar_U').on('click', function (e) {
         e.preventDefault();
@@ -229,6 +253,7 @@ $(document).ready(function () {
         const telefono  = $('#telefono').val().trim();
         const id_cargo  = $('#id_cargo').val() || $('input[name="id_cargo"]').val();
         const password  = $('#passwordField').val().trim();
+        const esAdmin   = {{ session('admin') === 1 ? 'true' : 'false' }};
 
         let hayError = false;
 
@@ -294,6 +319,16 @@ $(document).ready(function () {
             hayError = true;
         }
 
+        // Validar centro solo cuando el paciente se registra solo
+        if (!esAdmin) {
+            const centro = $('#centro_medico_id').val();
+            if (!centro) {
+                $('#centro_medico_id').removeClass('is-valid').addClass('is-invalid');
+                $('#centroFeedback').text('Debes seleccionar un centro médico.');
+                hayError = true;
+            }
+        }
+
         if (hayError) {
             mostrarToast('Por favor corrige los errores antes de continuar.', 'warning');
             return;
@@ -301,17 +336,25 @@ $(document).ready(function () {
 
         $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Guardando...');
 
-        const esAdmin = $('#id_cargo option:selected').text().trim() === 'Admin';
+        const esCargAdmin = $('#id_cargo option:selected').text().trim() === 'Admin';
+
+        // Construir datos del formulario
+        const datos = {
+            name, Apellidos, email, Rut, telefono, id_cargo, password,
+            admin: esCargAdmin ? 1 : 0,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        // Agregar centro solo si el paciente se registra solo
+        if (!esAdmin) {
+            datos.centro_medico_id = $('#centro_medico_id').val();
+        }
 
         $.ajax({
             url: '/usuario/store',
             type: 'POST',
             dataType: 'json',
-            data: {
-                name, Apellidos, email, Rut, telefono, id_cargo, password,
-                admin: esAdmin ? 1 : 0,
-                _token: $('meta[name="csrf-token"]').attr('content')
-            },
+            data: datos,
             success: function (response) {
                 mostrarToast('✅ Usuario registrado correctamente.', 'success');
                 setTimeout(() => window.location.href = '/login', 1800);
@@ -319,7 +362,6 @@ $(document).ready(function () {
             error: function (xhr) {
                 const errores = xhr.responseJSON?.errors;
                 if (errores) {
-                    // Mostrar errores específicos en los campos correspondientes
                     if (errores.email) {
                         $('#email').addClass('is-invalid');
                         $('#emailFeedback').text(errores.email[0]);
@@ -333,7 +375,10 @@ $(document).ready(function () {
                         $('#telefono').addClass('is-invalid');
                         $('#telefonoFeedback').text(errores.telefono[0]);
                     }
-                    // Mostrar el primer error como toast general
+                    if (errores.centro_medico_id) {
+                        $('#centro_medico_id').addClass('is-invalid');
+                        $('#centroFeedback').text(errores.centro_medico_id[0]);
+                    }
                     const primerError = Object.values(errores).flat()[0];
                     mostrarToast(primerError, 'danger');
                 } else {
@@ -346,7 +391,8 @@ $(document).ready(function () {
 
     // Limpiar estado inválido al escribir
     $('input, select').on('input change', function () {
-        if ($(this).attr('id') !== 'Rut' && $(this).attr('id') !== 'email' && $(this).attr('id') !== 'telefono') {
+        const id = $(this).attr('id');
+        if (id !== 'Rut' && id !== 'email' && id !== 'telefono' && id !== 'centro_medico_id') {
             $(this).removeClass('is-invalid');
         }
     });
@@ -360,5 +406,6 @@ $(document).ready(function () {
     #telefono ~ .invalid-feedback,
     #passwordField ~ .invalid-feedback { display: block; }
     .input-group .invalid-feedback { display: block; }
+    #centro_medico_id.is-invalid ~ .invalid-feedback { display: block; }
 </style>
 @endsection

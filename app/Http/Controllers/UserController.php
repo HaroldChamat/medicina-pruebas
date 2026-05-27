@@ -6,14 +6,16 @@ use Illuminate\Http\Request;
 use App\Models\Cargo;
 use App\Models\User;
 use App\Models\Especialidad;
+use App\Models\CentroMedico;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $cargos = Cargo::all();
-        return view('C_usuario', compact('cargos'));
+        $cargos  = Cargo::all();
+        $centros = session('admin') === 1 ? collect() : CentroMedico::orderBy('nombre')->get();
+        return view('C_usuario', compact('cargos', 'centros'));
     }
 
     public function index_welcome()
@@ -104,18 +106,33 @@ class UserController extends Controller
             return response()->json(['message' => 'No tienes permisos para asignar este cargo.'], 403);
         }
 
+        // ── Determinar centro médico ──────────────────────────────────────
+        // Si hay un admin en sesión → se asigna su centro automáticamente.
+        // Si es un registro libre (paciente desde la web) → usa el centro seleccionado.
+        if (session('admin') === 1) {
+            $centroMedicoId = session('centro_medico_id');
+        } else {
+            // Validar que el centro fue enviado y existe
+            $request->validate([
+                'centro_medico_id' => 'required|exists:centro_medico,id',
+            ], [
+                'centro_medico_id.required' => 'Debes seleccionar un centro médico.',
+                'centro_medico_id.exists'   => 'El centro médico seleccionado no es válido.',
+            ]);
+            $centroMedicoId = $request->centro_medico_id;
+        }
+
         $user = new User();
-        $user->id_cargo          = $request->id_cargo;
-        $user->name              = $request->name;
-        $user->admin             = (int) ($request->admin ?? 0);
-        $user->activo            = 1;
-        $user->Apellidos         = $request->Apellidos;
-        $user->email             = $request->email;
-        $user->Rut               = $request->Rut;
-        $user->telefono          = $request->telefono;
-        $user->password          = Hash::make($request->password);
-        // ── NUEVO: asignar al mismo centro del admin que lo crea ──────────
-        $user->centro_medico_id  = session('centro_medico_id');
+        $user->id_cargo         = $request->id_cargo;
+        $user->name             = $request->name;
+        $user->admin            = (int) ($request->admin ?? 0);
+        $user->activo           = 1;
+        $user->Apellidos        = $request->Apellidos;
+        $user->email            = $request->email;
+        $user->Rut              = $request->Rut;
+        $user->telefono         = $request->telefono;
+        $user->password         = Hash::make($request->password);
+        $user->centro_medico_id = $centroMedicoId;
         $user->save();
 
         return response()->json(['success' => true, 'message' => 'Usuario creado exitosamente.']);
@@ -154,7 +171,7 @@ class UserController extends Controller
         $user->email     = $request->email;
         $user->telefono  = $request->telefono;
 
-        if ($request->filled('Rut')) $user->Rut = $request->Rut;
+        if ($request->filled('Rut'))      $user->Rut      = $request->Rut;
         if ($request->filled('password')) $user->password = Hash::make($request->password);
 
         $user->save();

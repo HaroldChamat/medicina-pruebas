@@ -10,7 +10,7 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
     <p class="text-muted mb-0 small">
         Todos los pacientes registrados en el sistema.
-        <strong>{{ $pacientes->count() }}</strong> en total.
+        <strong>{{ $pacientes->total() }}</strong> en total.
     </p>
 </div>
 
@@ -58,7 +58,7 @@
             <tbody>
                 @forelse($pacientes as $paciente)
                     <tr data-busqueda="{{ strtolower($paciente->name.' '.$paciente->Apellidos.' '.$paciente->email.' '.$paciente->Rut) }}">
-                        <td class="text-muted">{{ $loop->iteration }}</td>
+                        <td class="text-muted">{{ ($pacientes->currentPage() - 1) * $pacientes->perPage() + $loop->iteration }}</td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <div style="width:34px;height:34px;border-radius:50%;
@@ -102,6 +102,18 @@
             </tbody>
         </table>
     </div>
+
+    {{-- Paginación --}}
+    @if($pacientes->hasPages())
+        <div class="d-flex justify-content-between align-items-center px-4 py-3"
+             style="border-top:1px solid #e2e8f0;">
+            <div class="text-muted small">
+                Mostrando {{ $pacientes->firstItem() }}–{{ $pacientes->lastItem() }}
+                de {{ $pacientes->total() }} pacientes
+            </div>
+            @include('superadmin.partials.pagination', ['paginator' => $pacientes])
+        </div>
+    @endif
 </div>
 
 @endsection
@@ -118,9 +130,10 @@ $(document).ready(function () {
 
     $('#filtroCentro').on('change', function () {
         const centroId = $(this).val();
-        window.location.href = centroId
-            ? `{{ route('superadmin.usuarios.pacientes') }}?centro_id=${centroId}`
-            : `{{ route('superadmin.usuarios.pacientes') }}`;
+        const params   = new URLSearchParams();
+        if (centroId) params.set('centro_id', centroId);
+        params.set('page', '1');
+        window.location.href = `{{ route('superadmin.usuarios.pacientes') }}?${params.toString()}`;
     });
 
     $('#btnLimpiar').on('click', function () {

@@ -10,7 +10,7 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
     <p class="text-muted mb-0 small">
         Todos los médicos registrados en el sistema.
-        <strong>{{ $medicos->count() }}</strong> en total.
+        <strong>{{ $medicos->total() }}</strong> en total.
     </p>
 </div>
 
@@ -68,7 +68,7 @@
                 @forelse($medicos as $medico)
                     <tr data-busqueda="{{ strtolower($medico->name.' '.$medico->Apellidos.' '.$medico->email.' '.$medico->Rut) }}"
                         data-activo="{{ $medico->activo }}">
-                        <td class="text-muted">{{ $loop->iteration }}</td>
+                        <td class="text-muted">{{ ($medicos->currentPage() - 1) * $medicos->perPage() + $loop->iteration }}</td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <div style="width:34px;height:34px;border-radius:50%;
@@ -140,6 +140,18 @@
             </tbody>
         </table>
     </div>
+
+    {{-- Paginación --}}
+    @if($medicos->hasPages())
+        <div class="d-flex justify-content-between align-items-center px-4 py-3"
+             style="border-top:1px solid #e2e8f0;">
+            <div class="text-muted small">
+                Mostrando {{ $medicos->firstItem() }}–{{ $medicos->lastItem() }}
+                de {{ $medicos->total() }} médicos
+            </div>
+            @include('superadmin.partials.pagination', ['paginator' => $medicos])
+        </div>
+    @endif
 </div>
 
 @endsection
@@ -148,20 +160,13 @@
 <script>
 $(document).ready(function () {
 
-    function filtrar() {
-        const txt    = $('#buscador').val().toLowerCase();
-        const activo = $('#filtroEstado').val();
-        let visible  = 0;
-
+    // Búsqueda local dentro de la página actual
+    $('#buscador').on('keyup', function () {
+        const txt = $(this).val().toLowerCase();
         $('#tablaMedicos tbody tr').each(function () {
-            const coincide = (!txt || $(this).data('busqueda').includes(txt))
-                && (!activo || $(this).data('activo').toString() === activo);
-            $(this).toggle(coincide);
-            if (coincide) visible++;
+            $(this).toggle(!txt || $(this).data('busqueda').includes(txt));
         });
-    }
-
-    $('#buscador').on('keyup', filtrar);
+    });
 
     $('#filtroEstado').on('change', function () {
         const estado   = $(this).val();
@@ -169,6 +174,7 @@ $(document).ready(function () {
         const params   = new URLSearchParams();
         if (centroId) params.set('centro_id', centroId);
         if (estado)   params.set('activo', estado);
+        params.set('page', '1');
         window.location.href = `{{ route('superadmin.usuarios.medicos') }}?${params.toString()}`;
     });
 
@@ -178,6 +184,7 @@ $(document).ready(function () {
         const params   = new URLSearchParams();
         if (centroId) params.set('centro_id', centroId);
         if (estado)   params.set('activo', estado);
+        params.set('page', '1');
         window.location.href = `{{ route('superadmin.usuarios.medicos') }}?${params.toString()}`;
     });
 
