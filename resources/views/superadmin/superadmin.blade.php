@@ -41,6 +41,7 @@
             z-index: 1000;
             border-right: 1px solid var(--sa-border);
             transition: transform .3s;
+            overflow-y: auto;
         }
 
         .sidebar-brand {
@@ -89,6 +90,7 @@
             font-size: 0.875rem;
             border-left: 3px solid transparent;
             transition: all .2s;
+            position: relative;
         }
         .sidebar-nav a:hover,
         .sidebar-nav a.active {
@@ -97,6 +99,18 @@
             border-left-color: var(--sa-gold);
         }
         .sidebar-nav a i { font-size: 1rem; }
+
+        /* Badge de notificación en el sidebar */
+        .sidebar-nav a .nav-badge {
+            margin-left: auto;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 20px;
+            line-height: 1.4;
+        }
 
         .sidebar-footer {
             margin-top: auto;
@@ -216,7 +230,6 @@
             cursor: default;
             pointer-events: none;
         }
-        /* Evitar que los íconos bi hereden tamaños grandes */
         .sa-page-btn i,
         .sa-page-btn .bi {
             font-size: .8rem;
@@ -233,6 +246,8 @@
             #main { margin-left: 0; }
         }
     </style>
+
+    @stack('styles')
 </head>
 <body>
 
@@ -264,16 +279,27 @@
            class="{{ request()->routeIs('superadmin.admins.*') ? 'active' : '' }}">
             <i class="bi bi-shield-fill-check"></i> Administradores
         </a>
+        {{-- ── ENLACE SOLICITUDES DE CAMBIO ── --}}
+        <a href="{{ route('superadmin.solicitudes.index') }}"
+           class="{{ request()->routeIs('superadmin.solicitudes.*') ? 'active' : '' }}">
+            <i class="bi bi-arrow-left-right"></i> Cambios de Centro
+            @php
+                $pendientesSolicitudes = \App\Models\SolicitudCambioCentro::where('estado', 'pendiente')->count();
+            @endphp
+            @if($pendientesSolicitudes > 0)
+                <span class="nav-badge">{{ $pendientesSolicitudes }}</span>
+            @endif
+        </a>
     </nav>
 
     <div class="sidebar-section">Usuarios</div>
     <nav class="sidebar-nav">
-        <a href="{{ route('superadmin.usuarios.medicos') }}"
-           class="{{ request()->routeIs('superadmin.usuarios.medicos') ? 'active' : '' }}">
+        <a href="{{ route('superadmin.medicos.index') }}"
+           class="{{ request()->routeIs('superadmin.medicos.*') ? 'active' : '' }}">
             <i class="bi bi-person-badge-fill"></i> Médicos
         </a>
-        <a href="{{ route('superadmin.usuarios.pacientes') }}"
-           class="{{ request()->routeIs('superadmin.usuarios.pacientes') ? 'active' : '' }}">
+        <a href="{{ route('superadmin.pacientes.index') }}"
+           class="{{ request()->routeIs('superadmin.pacientes.*') ? 'active' : '' }}">
             <i class="bi bi-person-heart"></i> Pacientes
         </a>
         <a href="{{ route('superadmin.usuarios.citas') }}"
@@ -370,5 +396,6 @@ document.getElementById('sidebarToggle')?.addEventListener('click', () => {
 </script>
 
 @yield('scripts')
+@stack('scripts')
 </body>
 </html>

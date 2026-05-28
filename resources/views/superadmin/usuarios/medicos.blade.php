@@ -175,7 +175,7 @@ $(document).ready(function () {
         if (centroId) params.set('centro_id', centroId);
         if (estado)   params.set('activo', estado);
         params.set('page', '1');
-        window.location.href = `{{ route('superadmin.usuarios.medicos') }}?${params.toString()}`;
+        window.location.href = `{{ route('superadmin.medicos.index') }}?${params.toString()}`;
     });
 
     $('#filtroCentro').on('change', function () {
@@ -185,11 +185,11 @@ $(document).ready(function () {
         if (centroId) params.set('centro_id', centroId);
         if (estado)   params.set('activo', estado);
         params.set('page', '1');
-        window.location.href = `{{ route('superadmin.usuarios.medicos') }}?${params.toString()}`;
+        window.location.href = `{{ route('superadmin.medicos.index')}}?${params.toString()}`;
     });
 
     $('#btnLimpiar').on('click', function () {
-        window.location.href = `{{ route('superadmin.usuarios.medicos') }}`;
+        window.location.href = `{{ route('superadmin.medicos.index') }}`;
     });
 });
 </script>

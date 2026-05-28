@@ -134,34 +134,47 @@
 <div class="modal fade" id="modalAdmin" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content" style="border-radius:16px;border:1px solid var(--sa-border);background:#111827;">
+
             <div class="modal-header" style="background:var(--sa-navy);border-bottom:1px solid var(--sa-border);border-radius:16px 16px 0 0;">
                 <h5 class="modal-title text-white fw-bold" id="tituloAdmin">
                     <i class="bi bi-shield-plus me-2" style="color:var(--sa-gold);"></i>Nuevo Administrador
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
+
             <div class="modal-body p-4" style="background:#111827;">
                 <input type="hidden" id="admin_id">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold" style="color:#8aa0bc;">Nombre</label>
                         <input type="text" id="admin_name" class="form-control sa-input" placeholder="Nombre">
+                        <div class="sa-field-error" id="err_admin_name"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold" style="color:#8aa0bc;">Apellidos</label>
                         <input type="text" id="admin_apellidos" class="form-control sa-input" placeholder="Apellidos">
+                        <div class="sa-field-error" id="err_admin_apellidos"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold" style="color:#8aa0bc;">Email</label>
                         <input type="email" id="admin_email" class="form-control sa-input" placeholder="admin@clinica.cl">
+                        <div class="sa-field-error" id="err_admin_email"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold" style="color:#8aa0bc;">RUT</label>
-                        <input type="text" id="admin_rut" class="form-control sa-input" placeholder="12345678-9" maxlength="12">
+                        <input type="text" id="admin_rut" class="form-control sa-input"
+                               placeholder="12345678-9" maxlength="12">
+                        <div class="sa-field-error" id="err_admin_rut"></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small fw-semibold" style="color:#8aa0bc;">Teléfono</label>
-                        <input type="text" id="admin_telefono" class="form-control sa-input" placeholder="+56912345678">
+                        <label class="form-label small fw-semibold" style="color:#8aa0bc;">
+                            Teléfono
+                            <span class="fw-normal opacity-50" style="font-size:.75rem;">(ej: +56912345678)</span>
+                        </label>
+                        <input type="tel" id="admin_telefono" class="form-control sa-input"
+                               placeholder="+56912345678" maxlength="20"
+                               autocomplete="off">
+                        <div class="sa-field-error" id="err_admin_telefono"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold" style="color:#8aa0bc;">Centro Médico</label>
@@ -171,10 +184,12 @@
                                 <option value="{{ $centro->id }}">{{ $centro->nombre }}</option>
                             @endforeach
                         </select>
+                        <div class="sa-field-error" id="err_admin_centro"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold" style="color:#8aa0bc;">
-                            Contraseña <span id="passHint" class="opacity-50 fw-normal">(dejar vacío para no cambiar)</span>
+                            Contraseña
+                            <span id="passHint" class="opacity-50 fw-normal" style="font-size:.75rem;">(dejar vacío para no cambiar)</span>
                         </label>
                         <div class="input-group">
                             <input type="password" id="admin_password" class="form-control sa-input"
@@ -184,9 +199,11 @@
                                 <i class="bi bi-eye-fill" id="adminEye"></i>
                             </button>
                         </div>
+                        <div class="sa-field-error" id="err_admin_password"></div>
                     </div>
                 </div>
             </div>
+
             <div class="modal-footer" style="background:#111827;border-top:1px solid var(--sa-border);border-radius:0 0 16px 16px;">
                 <button class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
                 <button class="btn fw-semibold rounded-pill px-4" id="btnGuardarAdmin"
@@ -231,10 +248,28 @@
 </div>
 
 <style>
-.sa-input{background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.12)!important;color:#fff!important;border-radius:10px!important;}
-.sa-input:focus{border-color:rgba(212,160,23,.5)!important;box-shadow:0 0 0 3px rgba(212,160,23,.12)!important;background:rgba(255,255,255,.09)!important;}
-.sa-input::placeholder{color:rgba(255,255,255,.25)!important;}
-.sa-input option{background:#1e293b;color:#fff;}
+.sa-input {
+    background: rgba(255,255,255,.06) !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+    transition: border-color .18s, box-shadow .18s;
+}
+.sa-input:focus {
+    border-color: rgba(212,160,23,.5) !important;
+    box-shadow: 0 0 0 3px rgba(212,160,23,.12) !important;
+    background: rgba(255,255,255,.09) !important;
+    outline: none;
+}
+.sa-input::placeholder { color: rgba(255,255,255,.25) !important; }
+.sa-input option { background: #1e293b; color: #fff; }
+
+.sa-field-error {
+    font-size: .75rem;
+    color: #f87171;
+    margin-top: .25rem;
+    min-height: 1rem;
+}
 </style>
 
 @endsection
@@ -249,19 +284,43 @@ $(document).ready(function () {
     const modalAdmin = new bootstrap.Modal(document.getElementById('modalAdmin'));
     const modalElim  = new bootstrap.Modal(document.getElementById('modalEliminarAdmin'));
 
+    // ── Toggle contraseña ─────────────────────────────────────────────────────
     $('#toggleAdminPass').on('click', function () {
         const t = $('#admin_password').attr('type') === 'password' ? 'text' : 'password';
         $('#admin_password').attr('type', t);
         $('#adminEye').toggleClass('bi-eye-fill bi-eye-slash-fill');
     });
 
+    // ── Formato RUT ───────────────────────────────────────────────────────────
     function formatRut(rut) {
         const limpio = rut.replace(/[^0-9kK]/g, '');
         if (limpio.length < 2) return limpio;
         return limpio.slice(0, -1) + '-' + limpio.slice(-1).toUpperCase();
     }
-    $('#admin_rut').on('input', function () { this.value = formatRut(this.value); });
+    $('#admin_rut').on('input', function () {
+        this.value = formatRut(this.value);
+    });
 
+    // ── Teléfono: permite dígitos y + solo al inicio ──────────────────────────
+    $('#admin_telefono').on('input', function () {
+        let val = this.value;
+        // Permitir + solo al inicio, luego solo dígitos
+        // 1. Separar posible + inicial
+        const tienePlus = val.startsWith('+');
+        // 2. Quitar todo lo que no sea dígito
+        let soloDigitos = val.replace(/[^\d]/g, '');
+        // 3. Reconstruir con + si corresponde
+        this.value = (tienePlus ? '+' : '') + soloDigitos;
+        // Limpiar error
+        $('#err_admin_telefono').text('');
+    });
+
+    // ── Limpiar errores del formulario ────────────────────────────────────────
+    function clearErrors() {
+        $('#err_admin_name, #err_admin_apellidos, #err_admin_email, #err_admin_rut, #err_admin_telefono, #err_admin_centro, #err_admin_password').text('');
+    }
+
+    // ── Buscador ──────────────────────────────────────────────────────────────
     $('#buscadorAdmins').on('keyup', function () {
         const txt = $(this).val().toLowerCase();
         $('#tablaAdmins tbody tr').each(function () {
@@ -269,6 +328,7 @@ $(document).ready(function () {
         });
     });
 
+    // ── Filtro centro ─────────────────────────────────────────────────────────
     $('#filtroCentro').on('change', function () {
         const centroId = $(this).val();
         window.location.href = centroId
@@ -280,8 +340,11 @@ $(document).ready(function () {
         window.location.href = `{{ route('superadmin.admins.index') }}`;
     });
 
+    // ── Abrir modal CREAR ─────────────────────────────────────────────────────
     $('#btnNuevoAdmin').on('click', function () {
-        modoEditar = false; adminIdAccion = null;
+        modoEditar = false;
+        adminIdAccion = null;
+        clearErrors();
         $('#tituloAdmin').html('<i class="bi bi-shield-plus me-2" style="color:var(--sa-gold);"></i>Nuevo Administrador');
         $('#admin_id, #admin_name, #admin_apellidos, #admin_email, #admin_rut, #admin_telefono, #admin_password').val('');
         $('#admin_centro').val('');
@@ -289,8 +352,11 @@ $(document).ready(function () {
         modalAdmin.show();
     });
 
+    // ── Abrir modal EDITAR ────────────────────────────────────────────────────
     $(document).on('click', '.btnEditarAdmin', function () {
-        modoEditar = true; adminIdAccion = $(this).data('id');
+        modoEditar = true;
+        adminIdAccion = $(this).data('id');
+        clearErrors();
         $('#tituloAdmin').html('<i class="bi bi-pencil me-2" style="color:var(--sa-gold);"></i>Editar Administrador');
         $('#admin_id').val(adminIdAccion);
         $('#admin_name').val($(this).data('name'));
@@ -304,7 +370,10 @@ $(document).ready(function () {
         modalAdmin.show();
     });
 
+    // ── Guardar (crear o editar) ───────────────────────────────────────────────
     $('#btnGuardarAdmin').on('click', function () {
+        clearErrors();
+
         const name      = $('#admin_name').val().trim();
         const apellidos = $('#admin_apellidos').val().trim();
         const email     = $('#admin_email').val().trim();
@@ -313,35 +382,77 @@ $(document).ready(function () {
         const centro    = $('#admin_centro').val();
         const password  = $('#admin_password').val();
 
-        if (!name || !apellidos || !email || !centro) {
-            saToast('Completa todos los campos obligatorios', 'warning'); return;
+        // Validación básica
+        let hayError = false;
+
+        if (!name) {
+            $('#err_admin_name').text('El nombre es obligatorio.');
+            hayError = true;
+        }
+        if (!apellidos) {
+            $('#err_admin_apellidos').text('Los apellidos son obligatorios.');
+            hayError = true;
+        }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+            $('#err_admin_email').text('Ingresa un email válido.');
+            hayError = true;
+        }
+        if (!centro) {
+            $('#err_admin_centro').text('Selecciona un centro médico.');
+            hayError = true;
         }
         if (!modoEditar && !password) {
-            saToast('La contraseña es obligatoria para nuevos admins', 'warning'); return;
+            $('#err_admin_password').text('La contraseña es obligatoria para nuevos admins.');
+            hayError = true;
+        }
+        if (password && password.length < 6) {
+            $('#err_admin_password').text('La contraseña debe tener al menos 6 caracteres.');
+            hayError = true;
         }
 
-        const datos = { _token: csrf, name, Apellidos: apellidos, email, Rut: rut, telefono, centro_medico_id: centro };
+        if (hayError) return;
+
+        const datos = {
+            _token:           csrf,
+            name,
+            Apellidos:        apellidos,
+            email,
+            Rut:              rut,
+            telefono,
+            centro_medico_id: centro,
+        };
         if (!modoEditar) datos.password = password;
         else if (password) datos.password = password;
 
         const url    = modoEditar ? `/superadmin/admins/${adminIdAccion}` : '/superadmin/admins';
         const method = modoEditar ? 'PUT' : 'POST';
-        const $btn   = $(this);
 
+        const $btn = $(this);
         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Guardando...');
 
         $.ajax({
-            url, method: 'POST',
+            url,
+            method: 'POST',
             data: { ...datos, _method: method },
             success: function () {
-                saToast(modoEditar ? 'Administrador actualizado' : 'Administrador creado correctamente', 'success');
+                saToast(modoEditar ? 'Administrador actualizado correctamente.' : 'Administrador creado correctamente.', 'success');
                 modalAdmin.hide();
                 setTimeout(() => location.reload(), 1200);
             },
             error: function (xhr) {
-                const msg = Object.values(xhr.responseJSON?.errors ?? {}).flat()[0]
-                    ?? xhr.responseJSON?.message ?? 'Error al guardar';
-                saToast(msg, 'danger');
+                const errores = xhr.responseJSON?.errors ?? {};
+                if (errores.name)             $('#err_admin_name').text(errores.name[0]);
+                if (errores.Apellidos)        $('#err_admin_apellidos').text(errores.Apellidos[0]);
+                if (errores.email)            $('#err_admin_email').text(errores.email[0]);
+                if (errores.Rut)              $('#err_admin_rut').text(errores.Rut[0]);
+                if (errores.telefono)         $('#err_admin_telefono').text(errores.telefono[0]);
+                if (errores.centro_medico_id) $('#err_admin_centro').text(errores.centro_medico_id[0]);
+                if (errores.password)         $('#err_admin_password').text(errores.password[0]);
+
+                const primerError = Object.values(errores).flat()[0]
+                    ?? xhr.responseJSON?.message
+                    ?? 'Error al guardar';
+                saToast(primerError, 'danger');
             },
             complete: function () {
                 $btn.prop('disabled', false).html('<i class="bi bi-save me-1"></i> Guardar');
@@ -349,26 +460,29 @@ $(document).ready(function () {
         });
     });
 
+    // ── Abrir modal ELIMINAR ──────────────────────────────────────────────────
     $(document).on('click', '.btnEliminarAdmin', function () {
         adminIdAccion = $(this).data('id');
         $('#nombreAdminEliminar').text($(this).data('name'));
         modalElim.show();
     });
 
+    // ── Confirmar eliminar ────────────────────────────────────────────────────
     $('#btnConfirmarEliminarAdmin').on('click', function () {
         const $btn = $(this);
         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>...');
+
         $.ajax({
             url: `/superadmin/admins/${adminIdAccion}`,
             method: 'POST',
             data: { _token: csrf, _method: 'DELETE' },
             success: function () {
-                saToast('Administrador eliminado', 'success');
+                saToast('Administrador eliminado correctamente.', 'success');
                 modalElim.hide();
                 setTimeout(() => location.reload(), 1200);
             },
             error: function (xhr) {
-                saToast(xhr.responseJSON?.message ?? 'Error al eliminar', 'danger');
+                saToast(xhr.responseJSON?.message ?? 'Error al eliminar.', 'danger');
             },
             complete: function () {
                 $btn.prop('disabled', false).html('<i class="bi bi-trash3 me-1"></i> Sí, eliminar');

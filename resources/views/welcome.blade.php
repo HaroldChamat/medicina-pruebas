@@ -207,6 +207,27 @@
                     <a href="/C_usuario" class="btn btn-outline-warning btn-sm rounded-pill">Crear</a>
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-warning-soft">
+                        <i class="bi bi-building-gear fs-3 text-warning"></i>
+                    </div>
+                    <h6 class="fw-bold">Cambio de Centro</h6>
+                    <p class="text-muted small mb-3">
+                        Solicita el traslado de un paciente a otro centro médico.
+                    </p>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{{ route('solicitudes.create') }}"
+                        class="btn btn-warning btn-sm rounded-pill fw-semibold">
+                            <i class="bi bi-plus-circle me-1"></i> Nueva solicitud
+                        </a>
+                        <a href="{{ route('solicitudes.index') }}"
+                            class="btn btn-outline-warning btn-sm rounded-pill">
+                             <i class="bi bi-list-ul me-1"></i> Mis solicitudes
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -452,6 +473,27 @@
                     <a href="/Horario" class="btn btn-outline-secondary btn-sm rounded-pill">Ver horario</a>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-warning-soft">
+                        <i class="bi bi-building-gear fs-3 text-warning"></i>
+                    </div>
+                    <h6 class="fw-bold">Cambio de Centro</h6>
+                    <p class="text-muted small mb-3">
+                        Solicita el traslado de un paciente a otro centro médico.
+                    </p>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{{ route('solicitudes.create') }}"
+                        class="btn btn-warning btn-sm rounded-pill fw-semibold">
+                            <i class="bi bi-plus-circle me-1"></i> Nueva solicitud
+                        </a>
+                        <a href="{{ route('solicitudes.index') }}"
+                        class="btn btn-outline-warning btn-sm rounded-pill">
+                            <i class="bi bi-list-ul me-1"></i> Mis solicitudes
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -507,7 +549,27 @@
                     </a>
                 </div>
             </div>
-            
+            <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                <div class="icon-dash mx-auto mb-3 bg-warning-soft">
+                    <i class="bi bi-building-gear fs-3 text-warning"></i>
+                </div>
+                <h6 class="fw-bold">Cambio de Centro</h6>
+                <p class="text-muted small mb-3">
+                    ¿Quieres cambiar tu centro médico? Envía una solicitud.
+                </p>
+                <div class="d-flex flex-column gap-2">
+                    <a href="{{ route('solicitudes.create') }}"
+                    class="btn btn-warning btn-sm rounded-pill fw-semibold">
+                        <i class="bi bi-plus-circle me-1"></i> Solicitar cambio
+                    </a>
+                    <a href="{{ route('solicitudes.index') }}"
+                    class="btn btn-outline-warning btn-sm rounded-pill">
+                        <i class="bi bi-list-ul me-1"></i> Mis solicitudes
+                    </a>
+                </div>
+            </div>
+        </div>
         </div>
     </div>
     @endif

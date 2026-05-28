@@ -15,6 +15,9 @@ use App\Http\Controllers\superadmin\SuperadminDashboardController;
 use App\Http\Controllers\superadmin\SuperadminCentroController;
 use App\Http\Controllers\superadmin\SuperadminAdminController;
 use App\Http\Controllers\superadmin\SuperadminUsuarioController;
+use App\Http\Controllers\SolicitudCambioCentroController;
+use App\Http\Controllers\SuperadminPacienteController;
+use App\Http\Controllers\SuperadminSolicitudController;
 
 // ── Rutas públicas ──────────────────────────────────────────────────────────
 Route::get('/', function () {
@@ -131,15 +134,64 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
  
         // ── Usuarios (médicos, pacientes, citas) ────────────────────────────
         Route::get('/usuarios/medicos', [SuperadminUsuarioController::class, 'medicos'])
-            ->name('usuarios.medicos');
- 
+            ->name('medicos.index');
+
         Route::get('/usuarios/pacientes', [SuperadminUsuarioController::class, 'pacientes'])
-            ->name('usuarios.pacientes');
+            ->name('pacientes.index');
  
         Route::get('/usuarios/citas', [SuperadminUsuarioController::class, 'citas'])
             ->name('usuarios.citas');
+
+        // ── Gestión de solicitudes ──────────────────────────────────────────
+        Route::prefix('solicitudes')->name('solicitudes.')->group(function () {
+    
+            // Listado con filtros
+            Route::get('/', [SuperadminSolicitudController::class, 'index'])
+                ->name('index');
+    
+            // Detalle / ticket individual
+            Route::get('/{solicitud}', [SuperadminSolicitudController::class, 'show'])
+                ->name('show');
+    
+            // Aceptar o rechazar (AJAX/JSON)
+            Route::post('/{solicitud}/gestionar', [SuperadminSolicitudController::class, 'gestionar'])
+                ->name('gestionar');
+            // Gestión de solicitudes de cambio de centro
+            Route::prefix('solicitudes')->name('solicitudes.')->group(function () {
+                Route::get('/', [SuperadminSolicitudController::class, 'index'])
+                    ->name('index');
+                Route::get('/{solicitud}', [SuperadminSolicitudController::class, 'show'])
+                    ->name('show');
+                Route::post('/{solicitud}/gestionar', [SuperadminSolicitudController::class, 'gestionar'])
+                    ->name('gestionar');
+            });
+            
+            // Gestión de pacientes (superadmin)
+            Route::prefix('pacientes')->name('pacientes.')->group(function () {
+                Route::get('/', [SuperadminPacienteController::class, 'index'])
+                    ->name('index');
+                Route::put('/{paciente}', [SuperadminPacienteController::class, 'update'])
+                    ->name('update');
+                Route::post('/{paciente}/cambiar-centro', [SuperadminPacienteController::class, 'cambiarCentro'])
+                    ->name('cambiar-centro');
+                Route::delete('/{paciente}', [SuperadminPacienteController::class, 'destroy'])
+                    ->name('destroy');
+            });
+            
+            // Gestión de médicos (superadmin) - nueva ruta con nombre correcto
+            Route::get('/medicos', [SuperadminUsuarioController::class, 'medicos'])
+                ->name('medicos.index');
+            
+        });
+    
+        // ── Cambio directo de centro desde la vista de pacientes ───────────
+        // POST /superadmin/pacientes/{paciente}/cambiar-centro
+        Route::post('pacientes/{paciente}/cambiar-centro', [SuperadminSolicitudController::class, 'cambiarCentroDirecto'])
+            ->name('pacientes.cambiar-centro');
+        });
     });
-});
+   
+ 
 
 // Horas disponibles para prestaciones (accesible para todos los autenticados)
 Route::get('/horas-disponibles-prestacion', [\App\Http\Controllers\PrestacionController::class, 'horasDisponibles']);
@@ -189,6 +241,17 @@ Route::middleware(['cargo:Admin,Medico,Paciente'])->group(function () {
     Route::get('/citas/horas-disponibles', [CitaController::class, 'horasDisponibles']);
     Route::get('/informe/pdf/{cita}', [InformeController::class, 'pdf'])->name('informe.pdf');
     Route::post('/informe/email', [InformeController::class, 'enviarPorEmail']);
+    Route::get('/solicitudes', [SolicitudCambioCentroController::class, 'index'])
+    ->name('solicitudes.index');
+ 
+    Route::get('/solicitudes/crear', [SolicitudCambioCentroController::class, 'create'])
+        ->name('solicitudes.create');
+    
+    Route::post('/solicitudes', [SolicitudCambioCentroController::class, 'store'])
+        ->name('solicitudes.store');
+    
+    Route::get('/solicitudes/{solicitud}', [SolicitudCambioCentroController::class, 'show'])
+        ->name('solicitudes.show');
 });
 
 // ── Chat: solo Admin y Paciente ──────────────────────────────────────────────
