@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use App\Models\Superadmin;
 
 class LoginController extends Controller
 {
@@ -15,6 +16,19 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
 
+        // ── Intentar login como Superadmin primero ────────────────────────
+        $superadmin = Superadmin::where('Rut', $request->rut)->first();
+
+        if ($superadmin && Hash::check($request->password, $superadmin->password)) {
+            session()->put([
+                'superadmin_id'     => $superadmin->id,
+                'superadmin_nombre' => $superadmin->name . ' ' . $superadmin->Apellidos,
+                'superadmin_email'  => $superadmin->email,
+            ]);
+            return redirect()->route('superadmin.dashboard');
+        }
+
+        // ── Login normal de usuarios ──────────────────────────────────────
         $user = User::with('cargo')
             ->where('Rut', $request->rut)
             ->first();
@@ -27,16 +41,25 @@ class LoginController extends Controller
             return back()->withErrors(['rut' => 'Usuario sin cargo asignado']);
         }
 
-        // Verificar contraseña
         if (!Hash::check($request->password, $user->password)) {
             return back()->withErrors(['rut' => 'Contraseña incorrecta']);
         }
 
+        // ── Restricción portal admin: solo cargo Admin puede entrar aquí ──
+        // El formulario del portal admin envía _tipo=admin (superadmin/login.blade.php)
+        if ($request->input('_tipo') === 'admin' && $user->cargo->Nombre_cargo !== 'Admin') {
+            return back()->withErrors([
+                'rut' => 'Este portal es exclusivo para administradores. Los médicos y pacientes deben ingresar desde el portal principal.',
+            ])->withInput(['_tipo' => 'admin']);
+        }
+
+        // ── Guardar sesión ────────────────────────────────────────────────
         session()->put([
-            'user_id' => $user->id,
-            'cargo'   => $user->cargo->Nombre_cargo,
-            'admin'   => (int) ($user->admin ?? 0),
-            'nombre'  => $user->name,
+            'user_id'          => $user->id,
+            'cargo'            => $user->cargo->Nombre_cargo,
+            'admin'            => (int) ($user->admin ?? 0),
+            'nombre'           => $user->name,
+            'centro_medico_id' => $user->centro_medico_id,
         ]);
 
         return redirect('/login');

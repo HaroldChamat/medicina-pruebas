@@ -93,7 +93,25 @@
                                 <a href="/C_usuario" class="fw-bold text-decoration-none"
                                 style="color: #0d3b6e;">Crear cuenta</a>
                             </p>
+                            {{-- Separador --}}
+                            <div class="d-flex align-items-center gap-2 my-3">
+                                <hr class="flex-grow-1 m-0" style="border-color: rgba(0,0,0,0.1);">
+                                <span class="text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px; white-space: nowrap;">ACCESO ADMINISTRATIVO</span>
+                                <hr class="flex-grow-1 m-0" style="border-color: rgba(0,0,0,0.1);">
+                            </div>
 
+                            {{-- Botón Admin / SuperAdmin --}}
+                            <a href="{{ route('superadmin.login') }}"
+                            class="btn w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                            style="background: rgba(212,160,23,0.08);
+                                    border: 1px solid rgba(212,160,23,0.45);
+                                    color: #8a6300;
+                                    border-radius: 8px;
+                                    font-size: 0.85rem;
+                                    padding: 10px;">
+                                <i class="bi bi-gem"></i>
+                                Ingresar como Administrador / SuperAdmin
+                            </a>
                         </div>
                     </div>
 
@@ -122,6 +140,26 @@
             </span>
         </div>
     </div>
+
+    @if($usuario?->centroMedico)
+    <div class="container mb-4">
+        <div class="centro-card">
+            <div class="centro-icon" style="background:#e8f0fb;">
+                <i class="bi bi-building-fill" style="color:#0d3b6e;"></i>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <p class="centro-label">Centro médico asignado</p>
+                <p class="centro-nombre" style="color:#0d3b6e;">
+                    {{ $usuario->centroMedico->nombre }}
+                </p>
+                <small class="text-muted">{{ $usuario->centroMedico->direccion }}</small>
+            </div>
+            <span class="centro-badge" style="background:#e8f0fb; color:#0d3b6e;">
+                Tu centro
+            </span>
+        </div>
+    </div>
+    @endif
 
     <div class="container mb-5">
         <div class="row g-4">
@@ -167,6 +205,27 @@
                     <h6 class="fw-bold">Crear usuario</h6>
                     <p class="text-muted small mb-3">Registrar nuevos usuarios.</p>
                     <a href="/C_usuario" class="btn btn-outline-warning btn-sm rounded-pill">Crear</a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-warning-soft">
+                        <i class="bi bi-building-gear fs-3 text-warning"></i>
+                    </div>
+                    <h6 class="fw-bold">Cambio de Centro</h6>
+                    <p class="text-muted small mb-3">
+                        Solicita el traslado de un paciente a otro centro médico.
+                    </p>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{{ route('solicitudes.create') }}"
+                        class="btn btn-warning btn-sm rounded-pill fw-semibold">
+                            <i class="bi bi-plus-circle me-1"></i> Nueva solicitud
+                        </a>
+                        <a href="{{ route('solicitudes.index') }}"
+                            class="btn btn-outline-warning btn-sm rounded-pill">
+                             <i class="bi bi-list-ul me-1"></i> Mis solicitudes
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -362,6 +421,26 @@
         </div>
     </div>
 
+    @if($usuario?->centroMedico)
+    <div class="container mb-4">
+        <div class="centro-card">
+            <div class="centro-icon" style="background:#e6f9f0;">
+                <i class="bi bi-building-fill" style="color:#1a7a4a;"></i>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <p class="centro-label">Centro médico asignado</p>
+                <p class="centro-nombre" style="color:#1a7a4a;">
+                    {{ $usuario->centroMedico->nombre }}
+                </p>
+                <small class="text-muted">{{ $usuario->centroMedico->direccion }}</small>
+            </div>
+            <span class="centro-badge" style="background:#e6f9f0; color:#1a7a4a;">
+                Tu centro
+            </span>
+        </div>
+    </div>
+    @endif
+
     <div class="container mb-5">
         <div class="row g-4 justify-content-center">
             <div class="col-md-4">
@@ -394,6 +473,27 @@
                     <a href="/Horario" class="btn btn-outline-secondary btn-sm rounded-pill">Ver horario</a>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-warning-soft">
+                        <i class="bi bi-building-gear fs-3 text-warning"></i>
+                    </div>
+                    <h6 class="fw-bold">Cambio de Centro</h6>
+                    <p class="text-muted small mb-3">
+                        Solicita el traslado de un paciente a otro centro médico.
+                    </p>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{{ route('solicitudes.create') }}"
+                        class="btn btn-warning btn-sm rounded-pill fw-semibold">
+                            <i class="bi bi-plus-circle me-1"></i> Nueva solicitud
+                        </a>
+                        <a href="{{ route('solicitudes.index') }}"
+                        class="btn btn-outline-warning btn-sm rounded-pill">
+                            <i class="bi bi-list-ul me-1"></i> Mis solicitudes
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -415,6 +515,26 @@
         </div>
     </div>
 
+    @if($usuario?->centroMedico)
+    <div class="container mb-4">
+        <div class="centro-card">
+            <div class="centro-icon" style="background:#e3f0fc;">
+                <i class="bi bi-building-fill" style="color:#1565c0;"></i>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <p class="centro-label">Centro médico asignado</p>
+                <p class="centro-nombre" style="color:#1565c0;">
+                    {{ $usuario->centroMedico->nombre }}
+                </p>
+                <small class="text-muted">{{ $usuario->centroMedico->direccion }}</small>
+            </div>
+            <span class="centro-badge" style="background:#e3f0fc; color:#1565c0;">
+                Tu centro
+            </span>
+        </div>
+    </div>
+    @endif
+
     <div class="container mb-5">
         <div class="row g-4 justify-content-center">
             <div class="col-md-4">
@@ -430,20 +550,26 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
-                    <div class="icon-dash mx-auto mb-3 bg-warning-soft">
-                        <i class="bi bi-clock-history fs-3 text-warning"></i>
-                    </div>
-                    <h6 class="fw-bold">Mi historial médico</h6>
-                    <p class="text-muted small mb-3">
-                        Ver diagnósticos, tratamientos e informes PDF de tus citas finalizadas.
-                    </p>
-                    <a href="{{ route('historial.index', session('user_id')) }}"
-                       class="btn btn-outline-warning btn-sm rounded-pill">
-                        Ver historial
+            <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                <div class="icon-dash mx-auto mb-3 bg-warning-soft">
+                    <i class="bi bi-building-gear fs-3 text-warning"></i>
+                </div>
+                <h6 class="fw-bold">Cambio de Centro</h6>
+                <p class="text-muted small mb-3">
+                    ¿Quieres cambiar tu centro médico? Envía una solicitud.
+                </p>
+                <div class="d-flex flex-column gap-2">
+                    <a href="{{ route('solicitudes.create') }}"
+                    class="btn btn-warning btn-sm rounded-pill fw-semibold">
+                        <i class="bi bi-plus-circle me-1"></i> Solicitar cambio
+                    </a>
+                    <a href="{{ route('solicitudes.index') }}"
+                    class="btn btn-outline-warning btn-sm rounded-pill">
+                        <i class="bi bi-list-ul me-1"></i> Mis solicitudes
                     </a>
                 </div>
             </div>
+        </div>
         </div>
     </div>
     @endif
@@ -645,6 +771,52 @@ if (togglePassword) {
     .bg-warning-soft   { background-color: #fff8e1; }
     .bg-danger-soft    { background-color: #fdecea; }
     .bg-secondary-soft { background-color: #f0f0f0; }
+    
+    .centro-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .centro-icon {
+        width: 42px; height: 42px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.35rem;
+    }
+    
+    .centro-label {
+        font-size: 11px;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    .centro-nombre {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 2px 0 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .centro-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 20px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
 
 </style>
 

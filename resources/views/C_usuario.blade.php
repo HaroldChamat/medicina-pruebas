@@ -22,6 +22,7 @@
                                         id="name"
                                         name="name"
                                         placeholder="Nombre">
+                                    <div class="invalid-feedback" id="nameFeedback"></div>
                                 </div>
 
                                 <div class="mb-3">
@@ -31,25 +32,34 @@
                                         id="Apellidos"
                                         name="Apellidos"
                                         placeholder="Apellidos">
+                                    <div class="invalid-feedback" id="apellidosFeedback"></div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="email" class="form-label fw-semibold">Email</label>
-                                    <input type="email"
+                                    <label for="email" class="form-label fw-semibold">Correo electrónico</label>
+                                    <input type="text"
                                         class="form-control"
                                         id="email"
                                         name="email"
-                                        placeholder="example@gmail.com">
+                                        placeholder="ejemplo@correo.com"
+                                        autocomplete="off">
+                                    <div class="invalid-feedback" id="emailFeedback">Ingresa un correo electrónico válido (ejemplo@correo.com).</div>
                                 </div>
 
-                               <div class="mb-3">
-                                    <label for="passwordField" class="form-label small fw-semibold">Contraseña</label>
-                                    <input type="password" 
-                                        class="form-control" 
-                                        id="passwordField" 
-                                        name="password" 
-                                        placeholder="Ingrese su contraseña" 
-                                        required>
+                                <div class="mb-3">
+                                    <label for="passwordField" class="form-label fw-semibold">Contraseña</label>
+                                    <div class="input-group">
+                                        <input type="password"
+                                            class="form-control"
+                                            id="passwordField"
+                                            name="password"
+                                            placeholder="Ingrese su contraseña"
+                                            required>
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePass">
+                                            <i class="bi bi-eye-fill" id="eyeIconPass"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback" id="passwordFeedback">La contraseña debe tener al menos 6 caracteres.</div>
                                 </div>
 
                                 <div class="mb-3">
@@ -61,20 +71,30 @@
                                         placeholder="12345678-9"
                                         maxlength="12"
                                         autocomplete="off">
-                                    <div class="invalid-feedback" id="rutFeedback">Formato inválido. Ej: 12345678-9</div>
-                                    <small class="text-muted">El guión se agrega automáticamente</small>
+                                    <div class="invalid-feedback" id="rutFeedback">Formato inválido. Ejemplo: 12345678-9</div>
+                                    <small class="text-muted">El guión se agrega automáticamente.</small>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="telefono" class="form-label fw-semibold">Teléfono</label>
-                                    <input type="number"
-                                        class="form-control"
-                                        id="telefono"
-                                        name="telefono"
-                                        placeholder="Teléfono">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light fw-semibold" style="min-width:56px;">
+                                            <i class="bi bi-telephone me-1"></i>
+                                            <span id="indicativoLabel">+56</span>
+                                        </span>
+                                        <input type="text"
+                                            class="form-control"
+                                            id="telefono"
+                                            name="telefono"
+                                            placeholder="912345678"
+                                            maxlength="20"
+                                            autocomplete="off">
+                                    </div>
+                                    <div class="invalid-feedback" id="telefonoFeedback">Solo se permiten números y el signo +. Ejemplo: +56912345678</div>
+                                    <small class="text-muted">Puedes incluir el indicativo del país. Ejemplo: +56912345678</small>
                                 </div>
 
-                                {{-- Si es admin, puede elegir cargo. Si no, se asigna Paciente automáticamente --}}
+                                {{-- Cargo: solo Admin puede elegir --}}
                                 @if(session('admin') === 1)
                                     <div class="mb-4">
                                         <label for="id_cargo" class="form-label fw-semibold">Cargo</label>
@@ -86,14 +106,33 @@
                                         </select>
                                     </div>
                                 @else
+                                    {{-- Paciente registrándose solo: cargo fijo a Paciente --}}
                                     @php $cargoPaciente = $cargos->firstWhere('Nombre_cargo', 'Paciente') @endphp
                                     <input type="hidden" name="id_cargo" value="{{ $cargoPaciente->id }}">
+
+                                    {{-- Selector de centro médico (solo para registro libre) --}}
+                                    <div class="mb-4">
+                                        <label for="centro_medico_id" class="form-label fw-semibold">
+                                            <i class="bi bi-building me-1"></i> Centro Médico
+                                        </label>
+                                        <select name="centro_medico_id" id="centro_medico_id" class="form-select" required>
+                                            <option value="" disabled selected>Seleccione su centro médico</option>
+                                            @foreach($centros as $centro)
+                                                <option value="{{ $centro->id }}">
+                                                    {{ $centro->nombre }} — {{ $centro->direccion }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <div class="invalid-feedback" id="centroFeedback">
+                                            Debes seleccionar un centro médico.
+                                        </div>
+                                    </div>
                                 @endif
 
-                                <button type="submit"
+                                <button type="button"
                                         class="btn btn-primary w-100 fw-semibold"
                                         id="Ingresar_U">
-                                    Ingresar Usuario
+                                    Registrar Usuario
                                 </button>
 
                             </form>
@@ -110,6 +149,13 @@
 <script>
 $(document).ready(function () {
 
+    // ── TOGGLE CONTRASEÑA ────────────────────────────────────────────────
+    $('#togglePass').on('click', function () {
+        const tipo = $('#passwordField').attr('type') === 'password' ? 'text' : 'password';
+        $('#passwordField').attr('type', tipo);
+        $('#eyeIconPass').toggleClass('bi-eye-fill bi-eye-slash-fill');
+    });
+
     // ── FORMATO AUTOMÁTICO DE RUT ────────────────────────────────────────
     function formatearRut(rut) {
         var limpio = rut.replace(/[^0-9kK]/g, '');
@@ -119,13 +165,16 @@ $(document).ready(function () {
         return cuerpo + '-' + dv;
     }
 
+    function validarFormatoRut(rut) {
+        return /^\d{7,8}-[\dkK]$/.test(rut);
+    }
+
     $('#Rut').on('input', function () {
         var formatted = formatearRut(this.value);
         this.value = formatted;
-
-        // Validar formato
-        if (formatted && !/^\d{7,8}-[\dkK]$/.test(formatted)) {
+        if (formatted && !validarFormatoRut(formatted)) {
             $(this).removeClass('is-valid').addClass('is-invalid');
+            $('#rutFeedback').text('Formato inválido. Ejemplo: 12345678-9');
         } else if (formatted) {
             $(this).removeClass('is-invalid').addClass('is-valid');
         } else {
@@ -133,21 +182,64 @@ $(document).ready(function () {
         }
     });
 
-    // ── VALIDACIÓN EN TIEMPO REAL ────────────────────────────────────────
-    function validarRut(rut) {
-        return /^\d{7,8}-[\dkK]$/.test(rut);
+    // ── VALIDACIÓN CORREO ELECTRÓNICO ────────────────────────────────────
+    function validarEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
     }
 
-    $('#email').on('input', function () {
-        const val = $(this).val();
-        const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-        $(this).toggleClass('is-valid', valid).toggleClass('is-invalid', val.length > 0 && !valid);
+    $('#email').on('input blur', function () {
+        const val = $(this).val().trim();
+        if (val.length === 0) {
+            $(this).removeClass('is-valid is-invalid');
+            return;
+        }
+        if (validarEmail(val)) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+            $('#emailFeedback').text('');
+        } else {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+            $('#emailFeedback').text('Ingresa un correo electrónico válido (ejemplo@correo.com).');
+        }
     });
 
+    // ── VALIDACIÓN TELÉFONO ──────────────────────────────────────────────
     $('#telefono').on('input', function () {
+        let val = this.value;
+        val = val.replace(/[^\d+]/g, '');
+        val = val.replace(/(?!^)\+/g, '');
+        this.value = val;
+
+        const limpio = val.replace(/\D/g, '');
+        if (val.length > 0 && limpio.length >= 7) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else if (val.length > 0) {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+            $('#telefonoFeedback').text('El número debe tener al menos 7 dígitos.');
+        } else {
+            $(this).removeClass('is-valid is-invalid');
+        }
+    });
+
+    // ── VALIDACIÓN CONTRASEÑA ────────────────────────────────────────────
+    $('#passwordField').on('input', function () {
         const val = $(this).val();
-        const valid = val.length >= 8 && val.length <= 12;
-        $(this).toggleClass('is-valid', valid).toggleClass('is-invalid', val.length > 0 && !valid);
+        if (val.length === 0) {
+            $(this).removeClass('is-valid is-invalid');
+        } else if (val.length < 6) {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+            $('#passwordFeedback').text('La contraseña debe tener al menos 6 caracteres.');
+        } else {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        }
+    });
+
+    // ── VALIDACIÓN CENTRO MÉDICO ─────────────────────────────────────────
+    $('#centro_medico_id').on('change', function () {
+        if ($(this).val()) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+        }
     });
 
     // ── ENVÍO DEL FORMULARIO ─────────────────────────────────────────────
@@ -161,62 +253,159 @@ $(document).ready(function () {
         const telefono  = $('#telefono').val().trim();
         const id_cargo  = $('#id_cargo').val() || $('input[name="id_cargo"]').val();
         const password  = $('#passwordField').val().trim();
+        const esAdmin   = {{ session('admin') === 1 ? 'true' : 'false' }};
 
-        // Validación básica
-        if (!name || !Apellidos || !email || !Rut || !telefono || !id_cargo || !password) {
-            mostrarToast('Por favor completa todos los campos obligatorios.', 'warning');
-            [['#name', name], ['#Apellidos', Apellidos], ['#email', email],
-                ['#Rut', Rut], ['#telefono', telefono], ['#passwordField', password]].forEach(([id, val]) => {
-                if (!val) $(id).addClass('is-invalid');
-            });
+        let hayError = false;
+
+        if (!name) {
+            $('#name').addClass('is-invalid');
+            $('#nameFeedback').text('El nombre es obligatorio.');
+            hayError = true;
+        } else {
+            $('#name').removeClass('is-invalid').addClass('is-valid');
+        }
+
+        if (!Apellidos) {
+            $('#Apellidos').addClass('is-invalid');
+            $('#apellidosFeedback').text('Los apellidos son obligatorios.');
+            hayError = true;
+        } else {
+            $('#Apellidos').removeClass('is-invalid').addClass('is-valid');
+        }
+
+        if (!email || !validarEmail(email)) {
+            $('#email').removeClass('is-valid').addClass('is-invalid');
+            $('#emailFeedback').text(
+                !email
+                    ? 'El correo electrónico es obligatorio.'
+                    : 'Ingresa un correo electrónico válido (ejemplo@correo.com).'
+            );
+            hayError = true;
+        }
+
+        if (!Rut || !validarFormatoRut(Rut)) {
+            $('#Rut').removeClass('is-valid').addClass('is-invalid');
+            $('#rutFeedback').text(
+                !Rut
+                    ? 'El RUT es obligatorio.'
+                    : 'Formato de RUT inválido. Ejemplo: 12345678-9'
+            );
+            hayError = true;
+        }
+
+        const telefonoLimpio = telefono.replace(/\D/g, '');
+        if (!telefono || telefonoLimpio.length < 7) {
+            $('#telefono').removeClass('is-valid').addClass('is-invalid');
+            $('#telefonoFeedback').text(
+                !telefono
+                    ? 'El teléfono es obligatorio.'
+                    : 'El número debe tener al menos 7 dígitos.'
+            );
+            hayError = true;
+        }
+
+        if (!id_cargo) {
+            mostrarToast('Debes seleccionar un cargo.', 'warning');
+            hayError = true;
+        }
+
+        if (!password || password.length < 6) {
+            $('#passwordField').removeClass('is-valid').addClass('is-invalid');
+            $('#passwordFeedback').text(
+                !password
+                    ? 'La contraseña es obligatoria.'
+                    : 'La contraseña debe tener al menos 6 caracteres.'
+            );
+            hayError = true;
+        }
+
+        // Validar centro solo cuando el paciente se registra solo
+        if (!esAdmin) {
+            const centro = $('#centro_medico_id').val();
+            if (!centro) {
+                $('#centro_medico_id').removeClass('is-valid').addClass('is-invalid');
+                $('#centroFeedback').text('Debes seleccionar un centro médico.');
+                hayError = true;
+            }
+        }
+
+        if (hayError) {
+            mostrarToast('Por favor corrige los errores antes de continuar.', 'warning');
             return;
         }
 
-        if (!validarRut(Rut)) {
-            mostrarToast('El RUT ingresado no tiene formato válido. Ej: 12345678-9', 'danger');
-            $('#Rut').addClass('is-invalid');
-            return;
-        }
-
-        // Deshabilitar botón mientras se envía
         $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Guardando...');
 
-        const esAdmin = $('#id_cargo option:selected').text().trim() === 'Admin';
+        const esCargAdmin = $('#id_cargo option:selected').text().trim() === 'Admin';
+
+        // Construir datos del formulario
+        const datos = {
+            name, Apellidos, email, Rut, telefono, id_cargo, password,
+            admin: esCargAdmin ? 1 : 0,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        // Agregar centro solo si el paciente se registra solo
+        if (!esAdmin) {
+            datos.centro_medico_id = $('#centro_medico_id').val();
+        }
 
         $.ajax({
             url: '/usuario/store',
             type: 'POST',
             dataType: 'json',
-            data: { name, Apellidos, email, Rut, telefono, id_cargo, password, admin: esAdmin ? 1 : 0 },
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: datos,
             success: function (response) {
-                mostrarToast('✅ Usuario registrado correctamente', 'success');
+                mostrarToast('✅ Usuario registrado correctamente.', 'success');
                 setTimeout(() => window.location.href = '/login', 1800);
             },
             error: function (xhr) {
                 const errores = xhr.responseJSON?.errors;
                 if (errores) {
-                    const msgs = Object.values(errores).flat().join('<br>');
-                    mostrarToast(msgs, 'danger');
+                    if (errores.email) {
+                        $('#email').addClass('is-invalid');
+                        $('#emailFeedback').text(errores.email[0]);
+                    }
+                    if (errores.Rut) {
+                        $('#Rut').addClass('is-invalid');
+                        $('#rutFeedback').text(errores.Rut[0]);
+                        mostrarToast(errores.Rut[0] + ' Por favor ingresa otro RUT.', 'danger');
+                    }
+                    if (errores.telefono) {
+                        $('#telefono').addClass('is-invalid');
+                        $('#telefonoFeedback').text(errores.telefono[0]);
+                    }
+                    if (errores.centro_medico_id) {
+                        $('#centro_medico_id').addClass('is-invalid');
+                        $('#centroFeedback').text(errores.centro_medico_id[0]);
+                    }
+                    const primerError = Object.values(errores).flat()[0];
+                    mostrarToast(primerError, 'danger');
                 } else {
-                    mostrarToast(xhr.responseJSON?.message ?? 'Error al registrar el usuario', 'danger');
+                    mostrarToast(xhr.responseJSON?.message ?? 'Error al registrar el usuario.', 'danger');
                 }
-                $('#Ingresar_U').prop('disabled', false).html('Ingresar Usuario');
+                $('#Ingresar_U').prop('disabled', false).html('Registrar Usuario');
             }
         });
     });
 
-    // Quitar clase inválida al escribir
+    // Limpiar estado inválido al escribir
     $('input, select').on('input change', function () {
-        if ($(this).attr('id') !== 'Rut') {
+        const id = $(this).attr('id');
+        if (id !== 'Rut' && id !== 'email' && id !== 'telefono' && id !== 'centro_medico_id') {
             $(this).removeClass('is-invalid');
         }
     });
+
 });
 </script>
 
-{{-- Feedback de RUT --}}
 <style>
-    #Rut ~ .invalid-feedback { display: block; }
+    #Rut ~ .invalid-feedback,
+    #email ~ .invalid-feedback,
+    #telefono ~ .invalid-feedback,
+    #passwordField ~ .invalid-feedback { display: block; }
+    .input-group .invalid-feedback { display: block; }
+    #centro_medico_id.is-invalid ~ .invalid-feedback { display: block; }
 </style>
 @endsection
