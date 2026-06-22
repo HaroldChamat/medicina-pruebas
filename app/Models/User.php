@@ -104,4 +104,8 @@ class User extends Authenticatable
     {
         return $query->where('activo', 1);
     }
+    public function citasPaciente()
+    {
+        return $this->hasMany(\App\Models\Cita::class, 'paciente_id');
+    }
 }

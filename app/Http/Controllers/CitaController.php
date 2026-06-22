@@ -28,7 +28,7 @@ class CitaController extends Controller
             ->toArray();
     }
 
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         $userId  = session('user_id');
         $cargo   = session('cargo');
@@ -38,10 +38,18 @@ class CitaController extends Controller
             // Admin solo ve citas de los médicos de su centro
             $medicoIds = $this->medicoIdsDeCentro();
 
-            $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento', 'prestacion'])
-                ->whereIn('medico_id', $medicoIds)
-                ->orderBy('Fecha_y_hora', 'asc')
-                ->paginate($perPage);
+            $query = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento', 'prestacion'])
+            ->whereIn('medico_id', $medicoIds);
+
+        if ($request->filled('medico_id')) {
+            $query->where('medico_id', $request->medico_id);
+        }
+
+        if ($request->filled('paciente_id')) {
+            $query->where('paciente_id', $request->paciente_id);
+        }
+
+        $Citas = $query->orderBy('Fecha_y_hora', 'asc')->paginate($perPage)->withQueryString();
 
         } elseif ($cargo === 'Medico') {
             $Citas = Cita::with(['medico', 'paciente', 'enfermedad', 'tratamiento', 'prestacion'])
@@ -178,6 +186,33 @@ class CitaController extends Controller
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    public function citasPendientesPaciente(\App\Models\User $paciente)
+    {
+        if (session('admin') !== 1) abort(403);
+
+        // Verificar que el paciente pertenezca al centro del admin
+        $centroId = session('centro_medico_id');
+        if ($centroId && $paciente->centro_medico_id !== $centroId) {
+            abort(403);
+        }
+
+        $citas = Cita::with(['medico', 'prestacion'])
+            ->where('paciente_id', $paciente->id)
+            ->where('estado', 'Pendiente')
+            ->orderBy('Fecha_y_hora', 'asc')
+            ->get()
+            ->map(fn($c) => [
+                'id'        => $c->id,
+                'codigo'    => $c->codigo_cita ?? 'CIT-' . $c->id,
+                'fecha'     => \Carbon\Carbon::parse($c->Fecha_y_hora)->format('d/m/Y H:i'),
+                'medico'    => $c->medico->name . ' ' . $c->medico->Apellidos,
+                'prestacion'=> $c->prestacion?->nombre,
+                'estado'    => $c->estado,
+            ]);
+
+        return response()->json($citas);
     }
 
     public function store(Request $request)

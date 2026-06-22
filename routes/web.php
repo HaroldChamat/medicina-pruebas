@@ -62,6 +62,10 @@ Route::middleware(['cargo:Admin'])->group(function () {
 
     // Historial: Admin puede ver el historial de cualquier paciente
     Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
+    Route::get('/admin/historial-pacientes', [UserController::class, 'historial_pacientes'])
+    ->name('admin.historial_pacientes');
+    Route::get('/admin/citas-pendientes/{paciente}', [CitaController::class, 'citasPendientesPaciente'])
+    ->name('admin.citas_pendientes');
 });
 
 // Centros médicos
