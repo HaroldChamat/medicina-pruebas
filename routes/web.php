@@ -207,6 +207,16 @@ Route::middleware(['cargo:Medico'])->group(function () {
 
     // Historial: el médico puede ver el historial de sus pacientes
     Route::get('/Historial/{paciente}', [HistorialController::class, 'index'])->name('historial.index');
+
+    Route::get('/medico/historial-pacientes', [UserController::class, 'historial_pacientes_medico'])
+        ->name('medico.historial_pacientes');
+
+    Route::get('/medico/citas-pendientes/{paciente}', [CitaController::class, 'citasPendientesPaciente'])
+        ->name('medico.citas_pendientes');
+
+    // El médico necesita poder editar/cargar sus propias citas
+    Route::get('/citas/{id}/edit', [CitaController::class, 'edit']);
+    Route::put('/citas/{id}', [CitaController::class, 'update']);
 });
 
 // ── Solo Paciente ────────────────────────────────────────────────────────────

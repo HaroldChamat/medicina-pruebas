@@ -94,10 +94,20 @@ class CitaController extends Controller
             return response()->json(['error' => 'Cita no encontrada'], 404);
         }
 
-        // Admin solo puede editar citas de su centro
-        if (session('cargo') === 'Admin') {
+        $esAdmin  = session('admin') === 1;
+        $esMedico = session('cargo') === 'Medico';
+
+        if (!$esAdmin && !$esMedico) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        if ($esAdmin) {
             $medicoIds = $this->medicoIdsDeCentro();
             if (!in_array($cita->medico_id, $medicoIds)) {
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+        } else {
+            if ($cita->medico_id !== session('user_id')) {
                 return response()->json(['error' => 'No autorizado'], 403);
             }
         }
@@ -136,7 +146,10 @@ class CitaController extends Controller
 
     public function update(Request $request, $id)
     {
-        if (session('admin') !== 1) {
+        $esAdmin  = session('admin') === 1;
+        $esMedico = session('cargo') === 'Medico';
+
+        if (!$esAdmin && !$esMedico) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
@@ -147,10 +160,17 @@ class CitaController extends Controller
 
         $cita = Cita::findOrFail($id);
 
-        // Admin: solo puede editar citas de su centro
-        $medicoIds = $this->medicoIdsDeCentro();
-        if (!empty($medicoIds) && !in_array($cita->medico_id, $medicoIds)) {
-            return response()->json(['message' => 'No autorizado'], 403);
+        if ($esAdmin) {
+            // Admin: solo puede editar citas de su centro
+            $medicoIds = $this->medicoIdsDeCentro();
+            if (!empty($medicoIds) && !in_array($cita->medico_id, $medicoIds)) {
+                return response()->json(['message' => 'No autorizado'], 403);
+            }
+        } else {
+            // Médico: solo puede editar sus propias citas
+            if ($cita->medico_id !== session('user_id')) {
+                return response()->json(['message' => 'No autorizado'], 403);
+            }
         }
 
         $medico    = $cita->medico;
@@ -190,18 +210,35 @@ class CitaController extends Controller
 
     public function citasPendientesPaciente(\App\Models\User $paciente)
     {
-        if (session('admin') !== 1) abort(403);
+        $esAdmin  = session('admin') === 1;
+        $esMedico = session('cargo') === 'Medico';
 
-        // Verificar que el paciente pertenezca al centro del admin
-        $centroId = session('centro_medico_id');
-        if ($centroId && $paciente->centro_medico_id !== $centroId) {
-            abort(403);
+        if (!$esAdmin && !$esMedico) abort(403);
+
+        $query = Cita::with(['medico', 'prestacion'])
+            ->where('paciente_id', $paciente->id)
+            ->where('estado', 'Pendiente');
+
+        if ($esAdmin) {
+            // Verificar que el paciente pertenezca al centro del admin
+            $centroId = session('centro_medico_id');
+            if ($centroId && $paciente->centro_medico_id !== $centroId) {
+                abort(403);
+            }
+        } else {
+            // Médico: solo sus propias citas pendientes con ese paciente
+            $medicoId = session('user_id');
+
+            $tieneRelacion = Cita::where('medico_id', $medicoId)
+                ->where('paciente_id', $paciente->id)
+                ->exists();
+
+            if (!$tieneRelacion) abort(403);
+
+            $query->where('medico_id', $medicoId);
         }
 
-        $citas = Cita::with(['medico', 'prestacion'])
-            ->where('paciente_id', $paciente->id)
-            ->where('estado', 'Pendiente')
-            ->orderBy('Fecha_y_hora', 'asc')
+        $citas = $query->orderBy('Fecha_y_hora', 'asc')
             ->get()
             ->map(fn($c) => [
                 'id'        => $c->id,

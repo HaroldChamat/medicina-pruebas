@@ -486,6 +486,20 @@
                     <a href="/Horario" class="btn btn-outline-secondary btn-sm rounded-pill">Ver horario</a>
                 </div>
             </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
+                    <div class="icon-dash mx-auto mb-3 bg-success-soft">
+                        <i class="bi bi-people fs-3 text-success"></i>
+                    </div>
+                    <h6 class="fw-bold">Mis pacientes</h6>
+                    <p class="text-muted small mb-3">Consulta el historial y citas pendientes de tus pacientes.</p>
+                    <a href="{{ route('medico.historial_pacientes') }}" class="btn btn-outline-success btn-sm rounded-pill">
+                        Ver pacientes
+                    </a>
+                </div>
+            </div>
+
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm text-center p-3 card-dashboard">
                     <div class="icon-dash mx-auto mb-3 bg-warning-soft">

@@ -6,10 +6,10 @@
     <div class="page-header d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
         <div>
             <h4 class="fw-bold mb-1">
-                <i class="bi bi-clock-history me-2"></i> Historial de Pacientes
+                <i class="bi bi-clock-history me-2"></i> Mis Pacientes
             </h4>
             <p class="small mb-0" style="color: rgba(255,255,255,0.75);">
-                Consulta el historial médico de los pacientes de tu centro.
+                Consulta el historial médico de tus pacientes y gestiona tus citas pendientes.
             </p>
         </div>
         <a href="/login" class="btn btn-outline-light btn-sm rounded-pill">
@@ -53,8 +53,8 @@
         <div class="card border-0 shadow-sm">
             <div class="card-body text-center py-5 text-muted">
                 <i class="bi bi-person-slash fs-1 d-block mb-3"></i>
-                <p class="fw-semibold mb-1">No hay pacientes registrados</p>
-                <small>Aún no hay pacientes asignados a este centro médico.</small>
+                <p class="fw-semibold mb-1">No tienes pacientes registrados</p>
+                <small>Aún no tienes citas asociadas a ningún paciente.</small>
             </div>
         </div>
     @else
@@ -70,7 +70,7 @@
 
                         {{-- Header --}}
                         <div class="card-header border-0 text-white py-3 px-4"
-                             style="background: linear-gradient(135deg, #0d3b6e, #1a6fa8);">
+                             style="background: linear-gradient(135deg, #1a7a4a, #2ecc71);">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="rounded-circle d-flex align-items-center
                                             justify-content-center text-white fw-bold flex-shrink-0"
@@ -110,13 +110,13 @@
 
                             <hr class="my-2">
 
-                            {{-- Estadísticas: 4 columnas --}}
+                            {{-- Estadísticas: 4 columnas (solo respecto a este médico) --}}
                             <div class="row g-2 text-center mb-3">
 
                                 {{-- Total --}}
                                 <div class="col-3">
                                     <div class="rounded-3 py-2" style="background: #f0f4ff;">
-                                        <div class="fw-bold fs-6" style="color: #0d3b6e;">
+                                        <div class="fw-bold fs-6" style="color: #1a7a4a;">
                                             {{ $paciente->total_citas }}
                                         </div>
                                         <div class="text-muted" style="font-size: 0.65rem; line-height: 1.2;">
@@ -277,7 +277,7 @@
 <div class="modal fade" id="modalEditarCitaPendiente" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header" style="background-color: #0d3b6e;">
+            <div class="modal-header" style="background-color: #1a7a4a;">
                 <h5 class="modal-title text-white fw-bold">
                     <i class="bi bi-pencil-square me-2"></i>Editar cita
                 </h5>
@@ -349,7 +349,7 @@
                     <div class="modal-footer px-0 pb-0">
                         <button type="button" class="btn btn-secondary rounded-pill"
                                 data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <button type="submit" class="btn btn-success rounded-pill px-4">
                             <i class="bi bi-save me-1"></i> Guardar
                         </button>
                     </div>
@@ -402,12 +402,6 @@ $(document).ready(function () {
     $('#buscadorPacientes').on('keyup', filtrar);
     $('#filtroCitas').on('change', filtrar);
 
-    $('#btnLimpiarPacientes')?.on('click', function () {
-        $('#buscadorPacientes').val('');
-        $('#filtroCitas').val('');
-        filtrar();
-    });
-
     // ── MODAL CITAS PENDIENTES ────────────────────────────────────────────
     const modalPendientes = new bootstrap.Modal(
         document.getElementById('modalCitasPendientes')
@@ -426,7 +420,8 @@ $(document).ready(function () {
         );
 
         $.ajax({
-            url: '/admin/citas-pendientes/' + pacienteId,
+            // Endpoint exclusivo del médico: solo sus propias citas pendientes con este paciente
+            url: '/medico/citas-pendientes/' + pacienteId,
             method: 'GET',
             success: function (citas) {
                 $('#spinnerPendientes').addClass('d-none');
@@ -450,7 +445,7 @@ $(document).ready(function () {
                             <div class="card-body py-3 px-4">
                                 <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
                                     <div>
-                                        <p class="fw-bold mb-1" style="color:#0d3b6e;">
+                                        <p class="fw-bold mb-1" style="color:#1a7a4a;">
                                             <i class="bi bi-calendar-event me-1"></i>
                                             ${cita.fecha}
                                         </p>
@@ -475,7 +470,7 @@ $(document).ready(function () {
                                             ${cita.codigo}
                                         </small>
                                         <button type="button"
-                                                class="btn btn-sm btn-outline-primary rounded-pill mt-2 btnEditarCitaPendiente"
+                                                class="btn btn-sm btn-outline-success rounded-pill mt-2 btnEditarCitaPendiente"
                                                 data-id="${cita.id}">
                                             <i class="bi bi-pencil-square me-1"></i> Editar
                                         </button>
@@ -486,13 +481,15 @@ $(document).ready(function () {
                     $('#listaCitasPendientes').append(html);
                 });
             },
-            error: function () {
+            error: function (xhr) {
                 $('#spinnerPendientes').addClass('d-none');
                 $('#contenidoPendientes').removeClass('d-none');
                 $('#sinPendientes').removeClass('d-none');
                 $('#sinPendientes').html(
                     '<i class="bi bi-exclamation-triangle fs-2 d-block mb-2 text-danger"></i>' +
-                    'Error al cargar las citas.'
+                    (xhr.status === 403
+                        ? 'No tienes acceso a las citas de este paciente.'
+                        : 'Error al cargar las citas.')
                 );
             }
         });
@@ -512,7 +509,7 @@ $(document).ready(function () {
                 ${nuevoTotal} cita(s) pendiente(s) por atender
                 <i class="bi bi-chevron-right float-end mt-1"></i>
             `);
-        } else {
+        } else if ($btnPendientes.length) {
             // Reemplazar el botón por el badge de "Sin citas pendientes"
             const $span = $(`
                 <span class="badge rounded-pill px-3 py-2 w-100 text-center"
@@ -565,8 +562,13 @@ $(document).ready(function () {
 
                 cargarHorasEcp(cita.medico_id, cita.prestacion_id, fechaSola, horaSola);
             },
-            error: function () {
-                mostrarToast('No se pudo cargar la información de la cita', 'danger');
+            error: function (xhr) {
+                mostrarToast(
+                    xhr.status === 403
+                        ? 'No tienes permiso para editar esta cita'
+                        : 'No se pudo cargar la información de la cita',
+                    'danger'
+                );
             }
         });
     });
@@ -632,11 +634,11 @@ $(document).ready(function () {
     $('#formEditarCitaPendiente').on('submit', function (e) {
         e.preventDefault();
 
-        const citaId   = $('#ecp_cita_id').val();
-        const fechaVal  = $('#ecp_fecha').val();
-        const horaVal   = $('#ecp_hora').val();
-        const fechaHora = (fechaVal && horaVal) ? `${fechaVal} ${horaVal}` : '';
-        const nuevoEstado = $('#ecp_estado').val();
+        const citaId      = $('#ecp_cita_id').val();
+        const fechaVal     = $('#ecp_fecha').val();
+        const horaVal      = $('#ecp_hora').val();
+        const fechaHora    = (fechaVal && horaVal) ? `${fechaVal} ${horaVal}` : '';
+        const nuevoEstado  = $('#ecp_estado').val();
 
         if (!fechaHora) {
             mostrarToast('Selecciona una fecha y hora válidas', 'warning');
@@ -659,7 +661,7 @@ $(document).ready(function () {
                 mostrarToast('Cita actualizada correctamente', 'success');
                 modalEditarPendiente.hide();
 
-                // Si ya no está pendiente, removerla visualmente y refrescar la lista
+                // Si ya no está pendiente, se removerá visualmente al refrescar la lista
                 setTimeout(() => {
                     if (pacienteIdActual) {
                         modalPendientes.show();
