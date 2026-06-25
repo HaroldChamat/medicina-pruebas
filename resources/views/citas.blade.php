@@ -3,28 +3,31 @@
 
     {{-- Filtros: solo Admin --}}
     @if(session('admin') === 1)
-        <div class="container mb-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <span class="fs-5 me-2">🔍</span>
-                        <h5 class="mb-0">Filtros de búsqueda</h5>
-                    </div>
+    <div class="container mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="fs-5 me-2">🔍</span>
+                    <h5 class="mb-0">Filtros de búsqueda</h5>
+                </div>
+                <form method="GET" action="{{ route('citas') }}" id="formFiltros">
                     <div class="row g-3 align-items-end">
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">👨‍⚕️ Médico</label>
-                            <select id="filtroMedico" class="form-select">
+                            <select name="medico_id" id="filtroMedico" class="form-select">
                                 <option value="">Todos los médicos</option>
                                 <optgroup label="Activos">
                                     @foreach($todosMedicos->where('activo', 1) as $medico)
-                                        <option value="{{ $medico->id }}">
+                                        <option value="{{ $medico->id }}"
+                                            {{ request('medico_id') == $medico->id ? 'selected' : '' }}>
                                             {{ $medico->name }} {{ $medico->Apellidos }}
                                         </option>
                                     @endforeach
                                 </optgroup>
                                 <optgroup label="Inactivos">
                                     @foreach($todosMedicos->where('activo', 0) as $medico)
-                                        <option value="{{ $medico->id }}">
+                                        <option value="{{ $medico->id }}"
+                                            {{ request('medico_id') == $medico->id ? 'selected' : '' }}>
                                             ⚫ {{ $medico->name }} {{ $medico->Apellidos }} (inactivo)
                                         </option>
                                     @endforeach
@@ -33,35 +36,31 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">🧑 Paciente</label>
-                            <select id="filtroPaciente" class="form-select">
+                            <select name="paciente_id" id="filtroPaciente" class="form-select">
                                 <option value="">Todos los pacientes</option>
                                 @foreach($pacientes as $paciente)
-                                    <option value="{{ $paciente->id }}">
+                                    <option value="{{ $paciente->id }}"
+                                        {{ request('paciente_id') == $paciente->id ? 'selected' : '' }}>
                                         {{ $paciente->name }} {{ $paciente->Apellidos }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-circle-fill me-1 text-success" style="font-size:0.6rem;"></i>
-                                Estado del médico
-                            </label>
-                            <select id="filtroEstadoMedico" class="form-select">
-                                <option value="">Todos</option>
-                                <option value="1">Solo activos</option>
-                                <option value="0">Solo inactivos</option>
-                            </select>
-                        </div>
                         <div class="col-md-3 d-grid">
-                            <button class="btn btn-outline-secondary" id="btnLimpiarFiltros">
-                                ❌ Limpiar
+                            <button type="submit" class="btn btn-primary">
+                                🔍 Filtrar
                             </button>
                         </div>
+                        <div class="col-md-3 d-grid">
+                            <a href="{{ route('citas') }}" class="btn btn-outline-secondary">
+                                ❌ Limpiar
+                            </a>
+                        </div>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
+    </div>
     @endif
 
     <div class="container">
@@ -905,47 +904,6 @@ $(document).ready(function () {
 
     @endif
 
-    // ─── FILTROS (solo Admin) ────────────────────────────────────────────────
-    @if(session('admin') === 1)
-    const estadoMedicos = {
-        @foreach($todosMedicos as $m)
-        {{ $m->id }}: {{ $m->activo }},
-        @endforeach
-    };
-
-    function aplicarFiltrosCitas() {
-        const medicoSel   = $('#filtroMedico').val();
-        const pacienteSel = $('#filtroPaciente').val();
-        const estadoSel   = $('#filtroEstadoMedico').val();
-
-        $('tbody tr').each(function () {
-            const medicoFila   = $(this).data('medico')?.toString();
-            const pacienteFila = $(this).data('paciente')?.toString();
-            const activoMedico = estadoMedicos[medicoFila] !== undefined
-                ? estadoMedicos[medicoFila].toString() : '1';
-
-            const ok =
-                (!medicoSel   || medicoFila   === medicoSel) &&
-                (!pacienteSel || pacienteFila === pacienteSel) &&
-                (!estadoSel   || activoMedico  === estadoSel);
-
-            $(this).toggle(ok);
-        });
-    }
-
-    // El filtro de médico ya NO controla al de paciente —
-    // ambos funcionan de forma independiente
-    $('#filtroMedico').on('change', aplicarFiltrosCitas);
-    $('#filtroPaciente').on('change', aplicarFiltrosCitas);
-    $('#filtroEstadoMedico').on('change', aplicarFiltrosCitas);
-
-    $('#btnLimpiarFiltros').on('click', function () {
-        $('#filtroMedico').val('');
-        $('#filtroPaciente').val('');
-        $('#filtroEstadoMedico').val('');
-        $('tbody tr').show();
-    });
-    @endif
 
     // ─── WHATSAPP ────────────────────────────────────────────────────────────
     @if(session('admin') === 1)

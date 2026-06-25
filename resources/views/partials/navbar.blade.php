@@ -82,6 +82,11 @@
                         <i class="bi bi-clock me-1"></i> Mi horario
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white fw-semibold px-3" href="{{ route('medico.historial_pacientes') }}">
+                        <i class="bi bi-people me-1"></i> Mis pacientes
+                    </a>
+                </li>
 
                 {{-- Tickets con badge para Médico --}}
                 <li class="nav-item">

@@ -82,6 +82,63 @@ class UserController extends Controller
         return view('admin.pacientes', compact('pacientes'));
     }
 
+    public function historial_pacientes()
+    {
+        if (session('admin') !== 1) abort(403);
+
+        $centroId = session('centro_medico_id');
+
+        $pacientes = User::with(['cargo'])
+            ->whereHas('cargo', fn($q) => $q->where('Nombre_cargo', 'Paciente'))
+            ->when($centroId, fn($q) => $q->where('centro_medico_id', $centroId))
+            ->withCount([
+                'citasPaciente as total_citas',
+                'citasPaciente as citas_programadas' => fn($q) =>
+                    $q->where('estado', 'Programada'),
+                'citasPaciente as citas_pendientes'  => fn($q) =>
+                    $q->where('estado', 'Pendiente'),
+                'citasPaciente as citas_completadas' => fn($q) =>
+                    $q->where('estado', 'Finalizada'),
+                'citasPaciente as citas_canceladas'  => fn($q) =>
+                    $q->where('estado', 'Cancelada'),
+            ])
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.historial_pacientes', compact('pacientes'));
+    }
+
+    public function historial_pacientes_medico()
+    {
+        if (session('cargo') !== 'Medico') abort(403);
+
+        $medicoId = session('user_id');
+
+        // Solo pacientes que tengan al menos una cita con este médico
+        $pacienteIds = \App\Models\Cita::where('medico_id', $medicoId)
+            ->pluck('paciente_id')
+            ->unique();
+
+        $pacientes = User::with(['cargo'])
+            ->whereIn('id', $pacienteIds)
+            ->withCount([
+                'citasPaciente as total_citas' => fn($q) =>
+                    $q->where('medico_id', $medicoId),
+                'citasPaciente as citas_programadas' => fn($q) =>
+                    $q->where('medico_id', $medicoId)->where('estado', 'Programada'),
+                'citasPaciente as citas_pendientes'  => fn($q) =>
+                    $q->where('medico_id', $medicoId)->where('estado', 'Pendiente'),
+                'citasPaciente as citas_completadas' => fn($q) =>
+                    $q->where('medico_id', $medicoId)->where('estado', 'Finalizada'),
+                'citasPaciente as citas_canceladas'  => fn($q) =>
+                    $q->where('medico_id', $medicoId)->where('estado', 'Cancelada'),
+            ])
+            ->orderBy('name')
+            ->get();
+
+        return view('Medico.historial_pacientes', compact('pacientes'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([
